@@ -205,10 +205,10 @@ impl App
                 self.scroll -= 1;
             }
         }
-        else if y >= (self.screen_size.1 - 2) as i16
+        else if y >= (self.screen_size.1 - 3) as i16
         {
-            y = self.screen_size.1 as i16 - 3;
-            if self.scroll < self.row_count as u16 - (self.screen_size.1 - 2)
+            y = self.screen_size.1 as i16 - 4;
+            if self.scroll < self.row_count as u16 - (self.screen_size.1 - 3)
             {
                 self.scroll += 1;
             }
@@ -350,7 +350,8 @@ impl App
 
     pub fn run<B: Backend>(&mut self, terminal: &mut tui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
     {
-        self.resize_if_needed(terminal.size()?.width);
+        self.screen_size = (terminal.size()?.width, terminal.size()?.height);
+        self.resize_if_needed(self.screen_size.0);
 
         while self.needs_to_exit == false {
             if event::poll(self.poll_time)?
