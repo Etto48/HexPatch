@@ -1,7 +1,9 @@
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event::{self, KeyCode};
-use tui::{backend::Backend, layout::Rect, style::{Color, Modifier, Style}, text::{Span, Spans, Text}, widgets::Block};
+use ratatui::{backend::Backend, layout::Rect, style::{Color, Modifier, Style}, text::{Line, Span, Text}, widgets::Block};
+
+use crate::paragraph::Paragraph;
 
 pub struct App<'a> 
 {
@@ -67,8 +69,8 @@ impl <'a> App<'a>
 
     fn bytes_to_styled_hex(bytes: &[u8], block_size: usize, blocks_per_row: usize) -> Text<'a>
     {
-        let mut ret = Text::raw("");
-        let mut current_line = Spans::default();
+        let mut ret = Text::default();
+        let mut current_line = Line::default();
         let mut local_block = 0;
         let mut local_byte = 0;
         for b in bytes
@@ -93,15 +95,15 @@ impl <'a> App<'a>
 
             let style = Self::get_style_for_byte(*b);
             let span = Span::styled(hex_string, style);
-            current_line.0.push(span);
+            current_line.spans.push(span);
 
             if next_line
             {
-                let new_line = std::mem::replace(&mut current_line, Spans::default());
+                let new_line = std::mem::replace(&mut current_line, Line::default());
                 ret.lines.push(new_line);
             }
         }
-        if current_line.0.len() > 0
+        if current_line.spans.len() > 0
         {
             ret.lines.push(current_line);
         }
@@ -111,8 +113,8 @@ impl <'a> App<'a>
 
     fn bytes_to_styled_text(bytes: &'_[u8], block_size: usize, blocks_per_row: usize) -> Text<'a>
     {
-        let mut ret = Text::raw("");
-        let mut current_line = Spans::default();
+        let mut ret = Text::default();
+        let mut current_line = Line::default();
         let mut local_block = 0;
         let mut local_byte = 0;
         for b in bytes
@@ -137,15 +139,15 @@ impl <'a> App<'a>
 
             let style = Self::get_style_for_byte(*b);
             let span = Span::styled(char_string, style);
-            current_line.0.push(span);
+            current_line.spans.push(span);
 
             if next_line
             {
-                let new_line = std::mem::replace(&mut current_line, Spans::default());
+                let new_line = std::mem::replace(&mut current_line, Line::default());
                 ret.lines.push(new_line);
             }
         }
-        if current_line.0.len() > 0
+        if current_line.spans.len() > 0
         {
             ret.lines.push(current_line);
         }
@@ -201,13 +203,13 @@ impl <'a> App<'a>
 
     fn addresses(size: usize, block_size: usize, blocks_per_row: usize) -> Text<'a>
     {
-        let mut result = Text::raw("");
+        let mut result = Text::default();
 
         for i in 0..=size/(block_size * blocks_per_row)
         {
-            let mut spans = Spans::default();
-            spans.0.push(Span::styled(format!("{:16X}", i * block_size * blocks_per_row), Style::default().fg(Color::DarkGray)));
-            result.lines.push(spans);
+            let mut line = Line::default();
+            line.spans.push(Span::styled(format!("{:16X}", i * block_size * blocks_per_row), Style::default().fg(Color::DarkGray)));
+            result.lines.push(line);
         }
         result
     }
@@ -276,7 +278,7 @@ impl <'a> App<'a>
             let line_index = block_index / self.blocks_per_row as u16;
             let line_byte_index = local_byte_index + self.block_size as u16 * local_block_index;
 
-            let mut old_str = self.data.lines[line_index as usize].0[line_byte_index as usize].content.to_string();
+            let mut old_str = self.data.lines[line_index as usize].spans[line_byte_index as usize].content.to_string();
 
             unsafe {
                 old_str.as_bytes_mut()[(local_x % 3) as usize] = value as u8;
@@ -286,15 +288,15 @@ impl <'a> App<'a>
 
             let byte = u8::from_str_radix(&hex, 16).unwrap();
             let style = Self::get_style_for_byte(byte);
-            self.data.lines[line_index as usize].0[line_byte_index as usize] = Span::styled(old_str, style);
+            self.data.lines[line_index as usize].spans[line_byte_index as usize] = Span::styled(old_str, style);
             
             let text = App::u8_to_char(byte);
-            let old_str = self.text_view.lines[line_index as usize].0[line_byte_index as usize].content.to_string();
+            let old_str = self.text_view.lines[line_index as usize].spans[line_byte_index as usize].content.to_string();
             let text_iterator = old_str.chars().filter(|c| c.is_whitespace());
             let mut new_str = text.to_string();
             new_str.extend(text_iterator);
 
-            self.text_view.lines[line_index as usize].0[line_byte_index as usize] = Span::styled(new_str, style);
+            self.text_view.lines[line_index as usize].spans[line_byte_index as usize] = Span::styled(new_str, style);
         }
     }
 
@@ -302,9 +304,9 @@ impl <'a> App<'a>
     {
         
         let mut output = Vec::with_capacity(self.data.lines.len() * self.block_size * self.blocks_per_row);
-        for lines in &self.data.lines
+        for line in &self.data.lines
         {
-            for span in &lines.0
+            for span in line
             {
                 let mut hex = span.content.to_string();
                 hex.retain(|c| c.is_whitespace() == false);
@@ -392,7 +394,7 @@ impl <'a> App<'a>
         Ok(())
     }
 
-    pub fn run<B: Backend>(&mut self, terminal: &mut tui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
+    pub fn run<B: Backend>(&mut self, terminal: &mut ratatui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
     {
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_if_needed(self.screen_size.0);
@@ -413,17 +415,21 @@ impl <'a> App<'a>
                 let address_rect = Rect::new(0, 0, 18, f.size().height - output_rect.height);
                 let hex_editor_rect = Rect::new(address_rect.width, 0, (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16, f.size().height - output_rect.height);
                 let text_view_rect = Rect::new(address_rect.width + hex_editor_rect.width, 0, (self.block_size * 2 * self.blocks_per_row + self.blocks_per_row) as u16, f.size().height - output_rect.height);
-                let output_block = tui::widgets::Paragraph::new(Text::raw(&self.output))
-                    .block(Block::default().borders(tui::widgets::Borders::LEFT));
-                let address_block = tui::widgets::Paragraph::new(self.address_view.clone())
-                    .block(Block::default().title("Address").borders(tui::widgets::Borders::ALL))
+                
+                let output_block = ratatui::widgets::Paragraph::new(Text::raw(&self.output))
+                    .block(Block::default().borders(ratatui::widgets::Borders::LEFT));
+                let address_block = Paragraph::new(&self.address_view)
+                    .block(Block::default().title("Address").borders(ratatui::widgets::Borders::ALL))
                     .scroll((self.scroll, 0));
-                let hex_editor_block = tui::widgets::Paragraph::new(self.data.clone())
-                    .block(Block::default().title("Hex Editor").borders(tui::widgets::Borders::ALL))
+                
+                let hex_editor_block = Paragraph::new(&self.data)
+                    .block(Block::default().title("Hex Editor").borders(ratatui::widgets::Borders::ALL))
                     .scroll((self.scroll, 0));
-                let text_view_block = tui::widgets::Paragraph::new(self.text_view.clone())
-                    .block(Block::default().title("Text View").borders(tui::widgets::Borders::ALL))
+                
+                let text_view_block = Paragraph::new(&self.text_view)
+                    .block(Block::default().title("Text View").borders(ratatui::widgets::Borders::ALL))
                     .scroll((self.scroll, 0));
+
                 f.render_widget(output_block, output_rect);
                 f.render_widget(address_block, address_rect);
                 f.render_widget(hex_editor_block, hex_editor_rect);

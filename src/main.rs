@@ -1,7 +1,7 @@
 use clap::Parser;
 use crossterm::{event::{DisableMouseCapture, EnableMouseCapture}, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
 use hex_edit::{app::App, args};
-use tui::backend::CrosstermBackend;
+use ratatui::backend::CrosstermBackend;
 
 fn main() {
 
@@ -14,7 +14,7 @@ fn main() {
         EnableMouseCapture
     ).expect("Failed to execute setup commands");
     let backend = CrosstermBackend::new(stdout);
-    let mut terminal = tui::Terminal::new(backend).expect("Failed to create terminal");
+    let mut terminal = ratatui::Terminal::new(backend).expect("Failed to create terminal");
 
     terminal.clear().expect("Failed to clear terminal");
     let mut app = App::new(args.file).expect("Failed to create app");
