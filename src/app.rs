@@ -1,7 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event::{self, KeyCode};
-use ratatui::{backend::Backend, layout::Rect, style::{Color, Modifier, Style}, text::{Line, Span, Text}, widgets::Block};
+use ratatui::{backend::Backend, layout::Rect, style::{Color, Modifier, Style}, text::{Line, Span, Text}, widgets::{Block, ScrollbarState}};
 
 use crate::paragraph::Paragraph;
 
@@ -430,10 +430,18 @@ impl <'a> App<'a>
                     .block(Block::default().title("Text View").borders(ratatui::widgets::Borders::ALL))
                     .scroll((self.scroll, 0));
 
+                let scrollbar = ratatui::widgets::Scrollbar::new(ratatui::widgets::ScrollbarOrientation::VerticalRight)
+                    .track_symbol(Some("█"))
+                    .track_style(Style::default().fg(Color::DarkGray))
+                    .begin_symbol(None)
+                    .end_symbol(None);
+                let mut scrollbar_state = ScrollbarState::new(self.data.lines.len()).position(self.scroll as usize + self.cursor.1 as usize);
+
                 f.render_widget(output_block, output_rect);
                 f.render_widget(address_block, address_rect);
                 f.render_widget(hex_editor_block, hex_editor_rect);
                 f.render_widget(text_view_block, text_view_rect);
+                f.render_stateful_widget(scrollbar, f.size(), &mut scrollbar_state);
             })?;
             
             terminal.set_cursor(self.cursor.0 + 19, self.cursor.1 + 1)?;
