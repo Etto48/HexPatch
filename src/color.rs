@@ -8,6 +8,7 @@ pub enum Color
     Yellow,
     Cyan,
     Magenta,
+    None
 }
 
 impl Color
@@ -24,6 +25,7 @@ impl Color
             Color::Yellow => "\x1b[33m",
             Color::Cyan => "\x1b[36m",
             Color::Magenta => "\x1b[35m",
+            Color::None => "\x1b[0m"
         }
     }
 }
