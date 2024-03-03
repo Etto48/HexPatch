@@ -3,8 +3,6 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event::{self, KeyCode};
 use tui::{backend::Backend, layout::Rect, text::Text, widgets::Block};
 
-use crate::color::Color;
-
 pub struct App 
 {
     path: PathBuf,
@@ -45,17 +43,6 @@ impl App
             block_size,
             blocks_per_row,
         })
-    }
-
-    pub fn byte_color(byte: u8) -> Color
-    {
-        match byte
-        {
-            // non-printable
-            0..=31 | 127..=255 => Color::White,
-            // printable
-            32..=126 => Color::Green,
-        }
     }
 
     pub fn row_count(data_len: usize, block_size: usize, blocks_per_row: usize) -> usize
