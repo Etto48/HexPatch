@@ -330,6 +330,7 @@ impl <'a> App<'a>
         let data = self.data_to_vec_u8();
         self.output = "Saving...".to_string();
         std::fs::write(&self.path, &data).unwrap();
+        self.dirty = false;
         self.output = format!("Saved to {}", self.path.to_str().unwrap());
     }
 
