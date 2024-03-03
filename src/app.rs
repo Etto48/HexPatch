@@ -9,6 +9,7 @@ pub struct App<'a>
 {
     path: PathBuf,
     output: String,
+    dirty: bool,
     address_view: Text<'a>,
     data: Text<'a>,
     text_view: Text<'a>,
@@ -32,6 +33,7 @@ impl <'a> App<'a>
         Ok(App{
             path: file_path,
             output: "^C: quit, ^S: save, ^X: save and quit".to_string(),
+            dirty: false,
             address_view: Self::addresses(data.len(), block_size, blocks_per_row),
             data: Self::bytes_to_styled_hex(&data, block_size, blocks_per_row),
             text_view: Self::bytes_to_styled_text(&data, block_size, blocks_per_row),
@@ -280,6 +282,11 @@ impl <'a> App<'a>
 
             let mut old_str = self.data.lines[line_index as usize].spans[line_byte_index as usize].content.to_string();
 
+            if old_str.as_bytes()[(local_x % 3) as usize] != value as u8
+            {
+                self.dirty = true;
+            }
+
             unsafe {
                 old_str.as_bytes_mut()[(local_x % 3) as usize] = value as u8;
             }
@@ -422,8 +429,10 @@ impl <'a> App<'a>
                     .block(Block::default().title("Address").borders(ratatui::widgets::Borders::ALL))
                     .scroll((self.scroll, 0));
                 
+                let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
+
                 let hex_editor_block = Paragraph::new(&self.data)
-                    .block(Block::default().title("Hex Editor").borders(ratatui::widgets::Borders::ALL))
+                    .block(Block::default().title(editor_title).borders(ratatui::widgets::Borders::ALL))
                     .scroll((self.scroll, 0));
                 
                 let text_view_block = Paragraph::new(&self.text_view)
