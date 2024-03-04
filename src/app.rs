@@ -491,6 +491,10 @@ impl <'a> App<'a>
                     _ => {}
                 }
             },
+            event::Event::Resize(width, _height) =>
+            {
+                self.resize_if_needed(width);
+            },
             _ => {}
         }
         Ok(())
