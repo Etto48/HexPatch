@@ -519,7 +519,8 @@ impl <'a> App<'a>
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_if_needed(self.screen_size.0);
 
-        while self.needs_to_exit == false {
+        while self.needs_to_exit == false 
+        {
             if event::poll(self.poll_time)?
             {
                 while event::poll(Duration::from_millis(0))?
@@ -528,6 +529,8 @@ impl <'a> App<'a>
                     self.handle_event(event)?;
                 }
             }
+
+            terminal.hide_cursor()?;
 
             terminal.draw(|f| {
                 self.screen_size = (f.size().width, f.size().height);
