@@ -722,11 +722,7 @@ impl <'a> App<'a>
 
             })?;
             
-            if self.popup.is_some()
-            {
-
-            }
-            else 
+            if self.popup.is_none()
             {
                 terminal.set_cursor(self.cursor.0 + 18, self.cursor.1 + 1)?;
                 terminal.show_cursor()?;   
