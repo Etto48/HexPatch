@@ -1,9 +1,16 @@
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event::{self, KeyCode};
-use ratatui::{backend::Backend, layout::Rect, style::{Color, Modifier, Style}, text::{Line, Span, Text}, widgets::{Block, ScrollbarState}};
+use ratatui::{backend::Backend, layout::Rect, style::{Color, Modifier, Style}, text::{Line, Span, Text}, widgets::{Block, Borders, ScrollbarState}};
 
 use crate::paragraph::Paragraph;
+
+pub enum SavePopupState
+{
+    QuitDirty(bool),
+    SaveAndQuit(bool),
+    Save(bool),
+}
 
 pub struct App<'a> 
 {
@@ -18,6 +25,8 @@ pub struct App<'a>
     poll_time: Duration,
     needs_to_exit: bool,
     screen_size: (u16, u16),
+
+    saving_popup: Option<SavePopupState>,
 
     block_size: usize,
     blocks_per_row: usize,
@@ -42,6 +51,9 @@ impl <'a> App<'a>
             poll_time: Duration::from_millis(1000),
             needs_to_exit: false,
             screen_size: (1,1),
+
+            saving_popup: None,
+
             block_size,
             blocks_per_row,
         })
@@ -216,7 +228,7 @@ impl <'a> App<'a>
         for i in 0..=size/(block_size * blocks_per_row)
         {
             let mut line = Line::default();
-            line.spans.push(Span::styled(format!("{:16X}", i * block_size * blocks_per_row), Style::default().fg(Color::DarkGray)));
+            line.spans.push(Span::styled(format!("{:16X}", i * block_size * blocks_per_row), if i % 2 == 0 {Style::default().fg(Color::DarkGray)} else {Style::default()}));
             result.lines.push(line);
         }
         result
@@ -340,7 +352,7 @@ impl <'a> App<'a>
         self.output = format!("Saved to {}", self.path.to_str().unwrap());
     }
 
-    fn handle_event(&mut self, event: event::Event) -> Result<(),Box<dyn std::error::Error>>
+    fn handle_event_normal(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
     {
         match event
         {
@@ -363,14 +375,21 @@ impl <'a> App<'a>
                         match c
                         {
                             'c' => {
-                                self.needs_to_exit = true;
+                                if self.dirty
+                                {
+                                    self.saving_popup = Some(SavePopupState::QuitDirty(false));
+                                }
+                                else
+                                {
+                                    self.needs_to_exit = true;
+                                }
                             },
                             's' => {
-                                self.save_data();
+                                self.saving_popup = Some(SavePopupState::Save(false));
+                                //self.save_data();
                             },
                             'x' => {
-                                self.needs_to_exit = true;
-                                self.save_data();
+                                self.saving_popup = Some(SavePopupState::SaveAndQuit(false));
                             }
                             _ => {}
                         }
@@ -404,6 +423,89 @@ impl <'a> App<'a>
             },
             _ => {}
         }
+        Ok(())
+    }
+
+    fn handle_event_saving(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
+    {
+        match event
+        {
+            event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
+                match event.code
+                {
+                    KeyCode::Left |
+                    KeyCode::Right => {
+                        match self.saving_popup
+                        {
+                            Some(SavePopupState::Save(yes_selected)) =>
+                            {
+                                self.saving_popup = Some(SavePopupState::Save(!yes_selected));
+                            }
+                            Some(SavePopupState::SaveAndQuit(yes_selected)) =>
+                            {
+                                self.saving_popup = Some(SavePopupState::SaveAndQuit(!yes_selected));
+                            }
+                            Some(SavePopupState::QuitDirty(yes_selected)) =>
+                            {
+                                self.saving_popup = Some(SavePopupState::QuitDirty(!yes_selected));
+                            },
+                            None => {}
+                        }
+                    },
+                    KeyCode::Enter => {
+                        match self.saving_popup
+                        {
+                            Some(SavePopupState::Save(yes_selected)) =>
+                            {
+                                if yes_selected
+                                {
+                                    self.save_data();
+                                }
+                                self.saving_popup = None;
+                            },
+                            Some(SavePopupState::SaveAndQuit(yes_selected)) =>
+                            {
+                                if yes_selected
+                                {
+                                    self.save_data();
+                                    self.needs_to_exit = true;
+                                }
+                                self.saving_popup = None;
+                            },
+                            Some(SavePopupState::QuitDirty(yes_selected)) =>
+                            {
+                                if yes_selected
+                                {
+                                    self.save_data();
+                                    self.needs_to_exit = true;
+                                }
+                                else
+                                {
+                                    self.needs_to_exit = true;
+                                }
+                                self.saving_popup = None;
+                            },
+                            None => {}
+                        }
+                    },
+                    _ => {}
+                }
+            },
+            _ => {}
+        }
+        Ok(())
+    }
+
+    fn handle_event(&mut self, event: event::Event) -> Result<(),Box<dyn std::error::Error>>
+    {
+        if self.saving_popup.is_some()
+        {
+            self.handle_event_saving(event)?;
+        }
+        else 
+        {
+            self.handle_event_normal(event)?;
+        }
 
         Ok(())
     }
@@ -426,24 +528,26 @@ impl <'a> App<'a>
             terminal.draw(|f| {
                 self.screen_size = (f.size().width, f.size().height);
                 let output_rect = Rect::new(0, f.size().height - 1, f.size().width, 1);
-                let address_rect = Rect::new(0, 0, 18, f.size().height - output_rect.height);
+                let address_rect = Rect::new(0, 0, 17, f.size().height - output_rect.height);
                 let hex_editor_rect = Rect::new(address_rect.width, 0, (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16, f.size().height - output_rect.height);
-                let text_view_rect = Rect::new(address_rect.width + hex_editor_rect.width, 0, (self.block_size * 2 * self.blocks_per_row + self.blocks_per_row) as u16, f.size().height - output_rect.height);
+                let text_view_rect = Rect::new(address_rect.width + hex_editor_rect.width, 0, (self.block_size * 2 * self.blocks_per_row + self.blocks_per_row) as u16 - 1, f.size().height - output_rect.height);
+
+                let save_popup_rect = Rect::new(f.size().width / 2 - 27, f.size().height / 2 - 2, 54, 5);
                 
                 let output_block = ratatui::widgets::Paragraph::new(Text::raw(&self.output))
-                    .block(Block::default().borders(ratatui::widgets::Borders::LEFT));
+                    .block(Block::default().borders(Borders::LEFT));
                 let address_block = Paragraph::new(&self.address_view)
-                    .block(Block::default().title("Address").borders(ratatui::widgets::Borders::ALL))
+                    .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM))
                     .scroll((self.scroll, 0));
                 
                 let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
 
                 let hex_editor_block = Paragraph::new(&self.data)
-                    .block(Block::default().title(editor_title).borders(ratatui::widgets::Borders::ALL))
+                    .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
                     .scroll((self.scroll, 0));
                 
                 let text_view_block = Paragraph::new(&self.text_view)
-                    .block(Block::default().title("Text View").borders(ratatui::widgets::Borders::ALL))
+                    .block(Block::default().title("Text View").borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
                     .scroll((self.scroll, 0));
 
                 let scrollbar = ratatui::widgets::Scrollbar::new(ratatui::widgets::ScrollbarOrientation::VerticalRight)
@@ -458,10 +562,75 @@ impl <'a> App<'a>
                 f.render_widget(hex_editor_block, hex_editor_rect);
                 f.render_widget(text_view_block, text_view_rect);
                 f.render_stateful_widget(scrollbar, f.size(), &mut scrollbar_state);
+
+                if let Some(save_popup_state) = &self.saving_popup 
+                {
+                    let clear = ratatui::widgets::Clear::default();
+
+                    let mut save_text = Text::default();
+                    save_text.lines.extend(
+                        vec![
+                            Line::raw("The file will be saved."),
+                            Line::raw("Are you sure?"),
+                            Line::from(vec![
+                                Span::styled("Yes", Style::default().fg(Color::Green)),
+                                Span::raw("  "),
+                                Span::styled("No", Style::default().fg(Color::Red))
+                            ])
+                        ]
+                    );
+
+                    match &save_popup_state
+                    {
+                        SavePopupState::SaveAndQuit(_yes_selected) =>
+                        {
+                            save_text.lines[0].spans[0].content = "The file will be saved and the program will exit.".to_string().into();
+                        },
+                        SavePopupState::Save(_yes_selected) =>
+                        {
+                            save_text.lines[0].spans[0].content = "The file will be saved.".to_string().into();
+                        },
+                        SavePopupState::QuitDirty(_yes_selected) =>
+                        {
+                            save_text.lines[0].spans[0].content = "The file has been modified.".to_string().into();
+                            save_text.lines[1].spans[0].content = "Do you want to save before quitting?".to_string().into();
+                        },
+                    }
+                    
+                    
+                    let yes_selected = *match save_popup_state
+                    {
+                        SavePopupState::Save(yes_selected) => yes_selected,
+                        SavePopupState::SaveAndQuit(yes_selected) => yes_selected,
+                        SavePopupState::QuitDirty(yes_selected) => yes_selected,
+                    };
+                    if yes_selected
+                    {
+                        save_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
+                    }
+                    else
+                    {
+                        save_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
+                    }
+
+                    let popup = ratatui::widgets::Paragraph::new(save_text)
+                        .block(Block::default().title("Save").borders(Borders::ALL))
+                        .alignment(ratatui::layout::Alignment::Center);
+                    f.render_widget(clear, save_popup_rect);
+                    f.render_widget(popup, save_popup_rect);
+                }
+
             })?;
             
-            terminal.set_cursor(self.cursor.0 + 19, self.cursor.1 + 1)?;
-            terminal.show_cursor()?;
+            if self.saving_popup.is_some()
+            {
+
+            }
+            else 
+            {
+                terminal.set_cursor(self.cursor.0 + 18, self.cursor.1 + 1)?;
+                terminal.show_cursor()?;   
+            }
         }
 
         Ok(())
