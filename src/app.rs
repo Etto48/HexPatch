@@ -5,11 +5,12 @@ use ratatui::{backend::Backend, layout::Rect, style::{Color, Modifier, Style}, t
 
 use crate::paragraph::Paragraph;
 
-pub enum SavePopupState
+pub enum PopupState
 {
-    QuitDirty(bool),
+    QuitDirtySave(bool),
     SaveAndQuit(bool),
     Save(bool),
+    Help
 }
 
 pub struct App<'a> 
@@ -26,7 +27,7 @@ pub struct App<'a>
     needs_to_exit: bool,
     screen_size: (u16, u16),
 
-    saving_popup: Option<SavePopupState>,
+    popup: Option<PopupState>,
 
     block_size: usize,
     blocks_per_row: usize,
@@ -41,7 +42,7 @@ impl <'a> App<'a>
         let blocks_per_row = 3;
         Ok(App{
             path: file_path,
-            output: "^C: quit, ^S: save, ^X: save and quit".to_string(),
+            output: "H: help, ^C: quit, ^S: save, ^X: save and quit".to_string(),
             dirty: false,
             address_view: Self::addresses(data.len(), block_size, blocks_per_row),
             data: Self::bytes_to_styled_hex(&data, block_size, blocks_per_row),
@@ -52,7 +53,7 @@ impl <'a> App<'a>
             needs_to_exit: false,
             screen_size: (1,1),
 
-            saving_popup: None,
+            popup: None,
 
             block_size,
             blocks_per_row,
@@ -377,7 +378,7 @@ impl <'a> App<'a>
                             'c' => {
                                 if self.dirty
                                 {
-                                    self.saving_popup = Some(SavePopupState::QuitDirty(false));
+                                    self.popup = Some(PopupState::QuitDirtySave(false));
                                 }
                                 else
                                 {
@@ -385,17 +386,32 @@ impl <'a> App<'a>
                                 }
                             },
                             's' => {
-                                self.saving_popup = Some(SavePopupState::Save(false));
-                                //self.save_data();
+                                self.popup = Some(PopupState::Save(false));
                             },
                             'x' => {
-                                self.saving_popup = Some(SavePopupState::SaveAndQuit(false));
-                            }
+                                if self.dirty
+                                {
+                                    self.popup = Some(PopupState::SaveAndQuit(false));
+                                }
+                                else
+                                {
+                                    self.needs_to_exit = true;
+                                }
+                            },
                             _ => {}
                         }
                     },
                     KeyCode::Char(c) => {
-                        self.edit_data(c);
+                        match c
+                        {
+                            '0'..='9' | 'A'..='F' | 'a'..='f' => {
+                                self.edit_data(c);
+                            },
+                            'h' => {
+                                self.popup = Some(PopupState::Help);
+                            }
+                            _ => {}
+                        }
                     },
                     _ => {}
                 }
@@ -426,7 +442,7 @@ impl <'a> App<'a>
         Ok(())
     }
 
-    fn handle_event_saving(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
+    fn handle_event_popup(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
     {
         match event
         {
@@ -435,44 +451,45 @@ impl <'a> App<'a>
                 {
                     KeyCode::Left |
                     KeyCode::Right => {
-                        match self.saving_popup
+                        match self.popup
                         {
-                            Some(SavePopupState::Save(yes_selected)) =>
+                            Some(PopupState::Save(yes_selected)) =>
                             {
-                                self.saving_popup = Some(SavePopupState::Save(!yes_selected));
+                                self.popup = Some(PopupState::Save(!yes_selected));
                             }
-                            Some(SavePopupState::SaveAndQuit(yes_selected)) =>
+                            Some(PopupState::SaveAndQuit(yes_selected)) =>
                             {
-                                self.saving_popup = Some(SavePopupState::SaveAndQuit(!yes_selected));
+                                self.popup = Some(PopupState::SaveAndQuit(!yes_selected));
                             }
-                            Some(SavePopupState::QuitDirty(yes_selected)) =>
+                            Some(PopupState::QuitDirtySave(yes_selected)) =>
                             {
-                                self.saving_popup = Some(SavePopupState::QuitDirty(!yes_selected));
+                                self.popup = Some(PopupState::QuitDirtySave(!yes_selected));
                             },
+                            Some(PopupState::Help) => {}
                             None => {}
                         }
                     },
                     KeyCode::Enter => {
-                        match self.saving_popup
+                        match self.popup
                         {
-                            Some(SavePopupState::Save(yes_selected)) =>
+                            Some(PopupState::Save(yes_selected)) =>
                             {
                                 if yes_selected
                                 {
                                     self.save_data();
                                 }
-                                self.saving_popup = None;
+                                self.popup = None;
                             },
-                            Some(SavePopupState::SaveAndQuit(yes_selected)) =>
+                            Some(PopupState::SaveAndQuit(yes_selected)) =>
                             {
                                 if yes_selected
                                 {
                                     self.save_data();
                                     self.needs_to_exit = true;
                                 }
-                                self.saving_popup = None;
+                                self.popup = None;
                             },
-                            Some(SavePopupState::QuitDirty(yes_selected)) =>
+                            Some(PopupState::QuitDirtySave(yes_selected)) =>
                             {
                                 if yes_selected
                                 {
@@ -483,10 +500,17 @@ impl <'a> App<'a>
                                 {
                                     self.needs_to_exit = true;
                                 }
-                                self.saving_popup = None;
+                                self.popup = None;
                             },
+                            Some(PopupState::Help) => 
+                            {
+                                self.popup = None;
+                            }
                             None => {}
                         }
+                    },
+                    KeyCode::Esc => {
+                        self.popup = None;
                     },
                     _ => {}
                 }
@@ -502,9 +526,9 @@ impl <'a> App<'a>
 
     fn handle_event(&mut self, event: event::Event) -> Result<(),Box<dyn std::error::Error>>
     {
-        if self.saving_popup.is_some()
+        if self.popup.is_some()
         {
-            self.handle_event_saving(event)?;
+            self.handle_event_popup(event)?;
         }
         else 
         {
@@ -538,8 +562,6 @@ impl <'a> App<'a>
                 let address_rect = Rect::new(0, 0, 17, f.size().height - output_rect.height);
                 let hex_editor_rect = Rect::new(address_rect.width, 0, (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16, f.size().height - output_rect.height);
                 let text_view_rect = Rect::new(address_rect.width + hex_editor_rect.width, 0, (self.block_size * 2 * self.blocks_per_row + self.blocks_per_row) as u16 - 1, f.size().height - output_rect.height);
-
-                let save_popup_rect = Rect::new(f.size().width / 2 - 27, f.size().height / 2 - 2, 54, 5);
                 
                 let output_block = ratatui::widgets::Paragraph::new(Text::raw(&self.output))
                     .block(Block::default().borders(Borders::LEFT));
@@ -570,66 +592,137 @@ impl <'a> App<'a>
                 f.render_widget(text_view_block, text_view_rect);
                 f.render_stateful_widget(scrollbar, f.size(), &mut scrollbar_state);
 
-                if let Some(save_popup_state) = &self.saving_popup 
+                if let Some(popup_state) = &self.popup 
                 {
                     let clear = ratatui::widgets::Clear::default();
 
-                    let mut save_text = Text::default();
-                    save_text.lines.extend(
-                        vec![
-                            Line::raw("The file will be saved."),
-                            Line::raw("Are you sure?"),
-                            Line::from(vec![
-                                Span::styled("Yes", Style::default().fg(Color::Green)),
-                                Span::raw("  "),
-                                Span::styled("No", Style::default().fg(Color::Red))
-                            ])
-                        ]
-                    );
+                    let mut popup_text = Text::default();
+                    let popup_title;
 
-                    match &save_popup_state
+                    let mut popup_rect = Rect::new(f.size().width / 2 - 27, f.size().height / 2 - 2, 54, 5);
+
+                    match &popup_state
                     {
-                        SavePopupState::SaveAndQuit(_yes_selected) =>
+                        PopupState::SaveAndQuit(yes_selected) =>
                         {
-                            save_text.lines[0].spans[0].content = "The file will be saved and the program will exit.".to_string().into();
+                            popup_title = "Save and Quit";
+                            popup_text.lines.extend(
+                                vec![
+                                    Line::raw("The file will be saved and the program will quit."),
+                                    Line::raw("Are you sure?"),
+                                    Line::from(vec![
+                                        Span::styled("Yes", Style::default().fg(Color::Green)),
+                                        Span::raw("  "),
+                                        Span::styled("No", Style::default().fg(Color::Red))
+                                    ])
+                                ]
+                            );
+                            if *yes_selected
+                            {
+                                popup_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
+                            }
+                            else
+                            {
+                                popup_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
+                            }
                         },
-                        SavePopupState::Save(_yes_selected) =>
+                        PopupState::Save(yes_selected) =>
                         {
-                            save_text.lines[0].spans[0].content = "The file will be saved.".to_string().into();
+                            popup_title = "Save";
+                            popup_text.lines.extend(
+                                vec![
+                                    Line::raw("The file will be saved."),
+                                    Line::raw("Are you sure?"),
+                                    Line::from(vec![
+                                        Span::styled("Yes", Style::default().fg(Color::Green)),
+                                        Span::raw("  "),
+                                        Span::styled("No", Style::default().fg(Color::Red))
+                                    ])
+                                ]
+                            );
+                            if *yes_selected
+                            {
+                                popup_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
+                            }
+                            else
+                            {
+                                popup_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
+                            }
                         },
-                        SavePopupState::QuitDirty(_yes_selected) =>
+                        PopupState::QuitDirtySave(yes_selected) =>
                         {
-                            save_text.lines[0].spans[0].content = "The file has been modified.".to_string().into();
-                            save_text.lines[1].spans[0].content = "Do you want to save before quitting?".to_string().into();
+                            popup_title = "Quit";
+                            popup_text.lines.extend(
+                                vec![
+                                    Line::raw("The file has been modified."),
+                                    Line::raw("Do you want to save before quitting?"),
+                                    Line::from(vec![
+                                        Span::styled("Yes", Style::default().fg(Color::Green)),
+                                        Span::raw("  "),
+                                        Span::styled("No", Style::default().fg(Color::Red))
+                                    ])
+                                ]
+                            );
+                            if *yes_selected
+                            {
+                                popup_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
+                            }
+                            else
+                            {
+                                popup_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
+                            }
                         },
-                    }
-                    
-                    
-                    let yes_selected = *match save_popup_state
-                    {
-                        SavePopupState::Save(yes_selected) => yes_selected,
-                        SavePopupState::SaveAndQuit(yes_selected) => yes_selected,
-                        SavePopupState::QuitDirty(yes_selected) => yes_selected,
-                    };
-                    if yes_selected
-                    {
-                        save_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
-                    }
-                    else
-                    {
-                        save_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
+                        PopupState::Help =>
+                        {
+                            popup_rect = Rect::new(f.size().width / 2 - 15, f.size().height / 2 - 4, 30, 8);
+                            popup_title = "Help";
+                            popup_text.lines.extend(
+                                vec![
+                                    Line::from(
+                                        vec![
+                                            Span::styled("^S", Style::default().fg(Color::Green)),
+                                            Span::raw(": Save")
+                                        ]
+                                    ),
+                                    Line::from(
+                                        vec![
+                                            Span::styled("^X", Style::default().fg(Color::Green)),
+                                            Span::raw(": Save and Quit")
+                                        ]
+                                    ),
+                                    Line::from(
+                                        vec![
+                                            Span::styled("^C", Style::default().fg(Color::Green)),
+                                            Span::raw(": Quit")
+                                        ]
+                                    ),
+                                    Line::from(
+                                        vec![
+                                            Span::styled("H", Style::default().fg(Color::Green)),
+                                            Span::raw(": Help")
+                                        ]
+                                    ),
+                                    Line::default(),
+                                    Line::from(
+                                        vec![
+                                            Span::styled("Ok", Style::default().fg(Color::Black).bg(Color::White)),
+                                        ]
+                                    )
+                                ]
+                            );
+                        }
                     }
 
-                    let popup = ratatui::widgets::Paragraph::new(save_text)
-                        .block(Block::default().title("Save").borders(Borders::ALL))
+                    let popup = ratatui::widgets::Paragraph::new(popup_text)
+                        .block(Block::default().title(popup_title).borders(Borders::ALL))
                         .alignment(ratatui::layout::Alignment::Center);
-                    f.render_widget(clear, save_popup_rect);
-                    f.render_widget(popup, save_popup_rect);
+                    f.render_widget(clear, popup_rect);
+                    f.render_widget(popup, popup_rect);
                 }
 
             })?;
             
-            if self.saving_popup.is_some()
+            if self.popup.is_some()
             {
 
             }
