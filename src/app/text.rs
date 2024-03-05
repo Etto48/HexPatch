@@ -69,7 +69,8 @@ impl <'a> App<'a>
         if self.text_last_byte_index < self.data.len()
         {
             let old_byte = self.data[self.text_last_byte_index];
-            self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = Self::get_style_for_byte(&self.color_settings, old_byte);
+            let style = Self::get_style_for_byte(&self.color_settings, old_byte);
+            self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = style;
         }
 
         self.text_last_byte_index = cursor_position.global_byte_index;

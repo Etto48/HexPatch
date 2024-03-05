@@ -1,5 +1,5 @@
 use iced_x86::Instruction;
-use ratatui::{style::{Color, Style}, text::{Line, Span, Text}};
+use ratatui::text::{Line, Span, Text};
 
 use super::{app::App, color_settings::ColorSettings};
 
@@ -11,11 +11,11 @@ impl <'a> App<'a>
         line.spans.push(Span::styled(format!("{:16X}",instruction.ip()), 
             if selected
             {
-                Style::default().fg(Color::Black).bg(Color::White)
+                color_settings.assembly_selected
             }
             else 
             {    
-                Style::default()
+                color_settings.assembly_address
             }
         ));
         line.spans.push(Span::raw(" "));
@@ -63,9 +63,8 @@ impl <'a> App<'a>
         let current_ip = cursor_position.global_byte_index.min(self.assembly_offsets.len() - 1);
         let current_scroll = self.assembly_offsets[current_ip];
         
-        self.assembly_view.lines[self.assembly_scroll].spans[0].style = Style::default();
-        self.assembly_view.lines[current_scroll].spans[0].style = 
-            Style::default().fg(Color::Black).bg(Color::White);
+        self.assembly_view.lines[self.assembly_scroll].spans[0].style = self.color_settings.assembly_address;
+        self.assembly_view.lines[current_scroll].spans[0].style = self.color_settings.assembly_selected;
         self.assembly_scroll = current_scroll;
     }
 

@@ -16,6 +16,8 @@ pub struct App<'a>
     pub(super) text_view: Text<'a>,
     pub(super) assembly_view: Text<'a>,
     pub(super) assembly_offsets: Vec<usize>,
+    pub(super) hex_last_byte_index: usize,
+    pub(super) hex_cursor: (usize, usize),
     pub(super) text_last_byte_index: usize,
     pub(super) text_cursor: (usize, usize),
     pub(super) assembly_scroll: usize,
@@ -56,6 +58,8 @@ impl <'a> App<'a>
             text_view, 
             assembly_view,
             assembly_offsets,
+            hex_last_byte_index: 0,
+            hex_cursor: (0,0),
             text_last_byte_index: 0,
             text_cursor: (0,0),
             assembly_scroll: 0,
@@ -211,8 +215,6 @@ impl <'a> App<'a>
                 }
             }
 
-            terminal.hide_cursor()?;
-
             terminal.draw(|f| {
                 self.screen_size = (f.size().width, f.size().height);
                 let output_rect = Rect::new(0, f.size().height - 1, f.size().width, 1);
@@ -298,12 +300,6 @@ impl <'a> App<'a>
                 }
 
             })?;
-            
-            if self.popup.is_none()
-            {
-                terminal.set_cursor(self.cursor.0 + 18, self.cursor.1 + 1)?;
-                terminal.show_cursor()?;   
-            }
         }
 
         Ok(())

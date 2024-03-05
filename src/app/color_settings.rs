@@ -4,6 +4,7 @@ use super::App;
 
 pub struct ColorSettings
 {
+    pub hex_selected: Style,
     pub hex_null: Style,
     pub hex_alphanumeric: Style,
     pub hex_symbol: Style,
@@ -13,6 +14,8 @@ pub struct ColorSettings
 
     pub text_selected: Style,
 
+    pub assembly_selected: Style,
+    pub assembly_address: Style,
     pub assembly_nop: Style,
     pub assembly_bad: Style,
     pub assembly_default: Style,
@@ -24,6 +27,7 @@ impl Default for ColorSettings
     {
         Self
         {
+            hex_selected: Style::default().fg(Color::Black).bg(Color::White),
             hex_null: Style::default().fg(Color::DarkGray),
             hex_alphanumeric: Style::default().fg(Color::Rgb(204, 152, 113)),
             hex_symbol: Style::default().fg(Color::Rgb(204, 152, 113)).add_modifier(Modifier::DIM),
@@ -33,6 +37,8 @@ impl Default for ColorSettings
 
             text_selected: Style::default().fg(Color::Black).bg(Color::White),
 
+            assembly_selected: Style::default().fg(Color::Black).bg(Color::White),
+            assembly_address: Style::default().fg(Color::DarkGray),
             assembly_nop: Style::default().fg(Color::DarkGray),
             assembly_bad: Style::default().fg(Color::LightRed),
             assembly_default: Style::default().fg(Color::Rgb(204, 152, 113)),

@@ -36,6 +36,7 @@ impl <'a> App<'a>
 
     pub(super) fn move_cursor(&mut self, dx: i16, dy: i16)
     {
+        // TODO: check that the cursor does not overflow the screen
         let (x, y) = self.cursor;
         let mut x = x as i16 + dx;
         let mut y = y as i16 + dy;
@@ -82,6 +83,7 @@ impl <'a> App<'a>
         }
 
         self.cursor = (x as u16, y as u16);
+        self.update_hex_cursor();
         self.update_text_cursor();
         self.update_assembly_scroll();
     }
@@ -93,6 +95,7 @@ impl <'a> App<'a>
             self.cursor.1 = 0;
         }
         self.scroll = self.scroll.saturating_sub((self.screen_size.1 - 3) as usize);
+        self.update_hex_cursor();
         self.update_text_cursor();
         self.update_assembly_scroll();
     }
@@ -104,6 +107,7 @@ impl <'a> App<'a>
             self.cursor.1 = (self.hex_view.lines.len() % self.screen_size.1 as usize - 3) as u16;
         }
         self.scroll = (self.scroll + (self.screen_size.1 - 3) as usize).min(self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize);
+        self.update_hex_cursor();
         self.update_text_cursor();
         self.update_assembly_scroll();
     }
@@ -114,6 +118,7 @@ impl <'a> App<'a>
         let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - 3;
         let y = (self.screen_size.1 - 4).min(self.hex_view.lines.len() as u16 - 1);
         self.cursor = (x, y);
+        self.update_hex_cursor();
         self.update_text_cursor();
         self.update_assembly_scroll();
     }
@@ -122,6 +127,7 @@ impl <'a> App<'a>
     {
         self.cursor = (0, 0);
         self.scroll = 0;
+        self.update_hex_cursor();
         self.update_text_cursor();
         self.update_assembly_scroll();
     }
