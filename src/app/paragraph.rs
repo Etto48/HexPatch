@@ -7,7 +7,7 @@ use ratatui::{
         Block, Widget,
     },
 };
-use crate::reflow::{LineComposer, LineTruncator, WordWrapper};
+use super::reflow::{LineComposer, LineTruncator, WordWrapper};
 use std::iter;
 use unicode_width::UnicodeWidthStr;
 
