@@ -1,6 +1,6 @@
 use clap::Parser;
 use crossterm::{event::{DisableMouseCapture, EnableMouseCapture}, execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
-use hex_edit::{app::App, args};
+use hex_patch::{app::App, args};
 use ratatui::backend::CrosstermBackend;
 
 fn main() {
