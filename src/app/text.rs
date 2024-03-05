@@ -10,8 +10,17 @@ impl <'a> App<'a>
         let mut current_line = Line::default();
         let mut local_block = 0;
         let mut local_byte = 0;
+        let mut byte_index = 0;
         for b in bytes
         {
+            let style = if byte_index == 0
+            {
+                color_settings.text_selected
+            }
+            else
+            {
+                Self::get_style_for_byte(color_settings, *b)
+            };
             let mut next_line = false;
             let char = Self::u8_to_char(*b);
             let mut char_string = char.to_string();
@@ -30,7 +39,6 @@ impl <'a> App<'a>
                 }
             }
 
-            let style = Self::get_style_for_byte(color_settings, *b);
             let span = Span::styled(char_string, style);
             current_line.spans.push(span);
 
@@ -39,6 +47,7 @@ impl <'a> App<'a>
                 let new_line = std::mem::replace(&mut current_line, Line::default());
                 ret.lines.push(new_line);
             }
+            byte_index += 1;
         }
         if current_line.spans.len() > 0
         {

@@ -136,6 +136,7 @@ impl <'a> App<'a>
             self.text_view.lines[cursor_position.line_index as usize]
                 .spans[cursor_position.line_byte_index as usize] = Span::styled(new_str, style);
         }
+        self.update_text_cursor();
         self.edit_assembly();
     }
 
