@@ -60,9 +60,9 @@ impl <'a> App<'a>
             x = 0;
             y += 1;
         }
-        if y >= (self.data.lines.len() as i16 - 1)
+        if y >= (self.hex_view.lines.len() as i16 - 1)
         {
-            y = self.data.lines.len() as i16 - 1;
+            y = self.hex_view.lines.len() as i16 - 1;
         }
         if y < 0
         {
@@ -75,7 +75,7 @@ impl <'a> App<'a>
         else if y >= (self.screen_size.1 - 3) as i16
         {
             y = self.screen_size.1 as i16 - 4;
-            if self.scroll < self.data.lines.len() as u16 - (self.screen_size.1 - 3)
+            if self.scroll < self.hex_view.lines.len() as u16 - (self.screen_size.1 - 3)
             {
                 self.scroll += 1;
             }
@@ -87,7 +87,7 @@ impl <'a> App<'a>
 
     pub(super) fn move_cursor_to_end(&mut self)
     {
-        self.scroll = self.data.lines.len() as u16 - (self.screen_size.1 - 3);
+        self.scroll = self.hex_view.lines.len() as u16 - (self.screen_size.1 - 3);
         let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 - 1;
         let y = self.screen_size.1 - 4;
         self.cursor = (x, y);

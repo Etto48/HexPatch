@@ -10,8 +10,9 @@ pub struct App<'a>
     pub(super) path: PathBuf,
     pub(super) output: String,
     pub(super) dirty: bool,
+    pub(super) data: Vec<u8>,
     pub(super) address_view: Text<'a>,
-    pub(super) data: Text<'a>,
+    pub(super) hex_view: Text<'a>,
     pub(super) text_view: Text<'a>,
     pub(super) assembly_view: Text<'a>,
     pub(super) assembly_offsets: Vec<usize>,
@@ -40,14 +41,18 @@ impl <'a> App<'a>
         }
         let block_size = 8;
         let blocks_per_row = 3;
+        let address_view = Self::addresses(data.len(), block_size, blocks_per_row);
+        let hex_view = Self::bytes_to_styled_hex(&data, block_size, blocks_per_row);
+        let text_view = Self::bytes_to_styled_text(&data, block_size, blocks_per_row);
         let (assembly_view, assembly_offsets) = Self::assembly_from_bytes(&data);
         Ok(App{
             path: file_path,
+            data,
             output: "Press H to view a help page.".to_string(),
             dirty: false,
-            address_view: Self::addresses(data.len(), block_size, blocks_per_row),
-            data: Self::bytes_to_styled_hex(&data, block_size, blocks_per_row),
-            text_view: Self::bytes_to_styled_text(&data, block_size, blocks_per_row),
+            address_view,
+            hex_view,
+            text_view, 
             assembly_view,
             assembly_offsets,
             assembly_scroll: 0,
@@ -187,10 +192,9 @@ impl <'a> App<'a>
     pub(super) fn resize(&mut self, blocks_per_row: usize)
     {
         self.blocks_per_row = blocks_per_row;
-        let bin_data = self.data_to_vec_u8();
-        self.address_view = Self::addresses(bin_data.len(), self.block_size, self.blocks_per_row);
-        self.data = Self::bytes_to_styled_hex(&bin_data, self.block_size, self.blocks_per_row);
-        self.text_view = Self::bytes_to_styled_text(&bin_data, self.block_size, self.blocks_per_row);
+        self.address_view = Self::addresses(self.data.len(), self.block_size, self.blocks_per_row);
+        self.hex_view = Self::bytes_to_styled_hex(&self.data, self.block_size, self.blocks_per_row);
+        self.text_view = Self::bytes_to_styled_text(&self.data, self.block_size, self.blocks_per_row);
     }
 
     pub(super) fn calc_blocks_per_row(&self, width: u16) -> usize
@@ -248,7 +252,7 @@ impl <'a> App<'a>
         {   
             let cursor_position = self.get_cursor_position();
 
-            let mut old_str = self.data.lines[cursor_position.line_index as usize]
+            let mut old_str = self.hex_view.lines[cursor_position.line_index as usize]
                 .spans[cursor_position.line_byte_index as usize].content.to_string();
 
             if old_str.as_bytes()[(cursor_position.local_x % 3) as usize] != value as u8
@@ -263,8 +267,11 @@ impl <'a> App<'a>
             let hex = old_str.chars().filter(|c| c.is_whitespace() == false).collect::<String>();
 
             let byte = u8::from_str_radix(&hex, 16).unwrap();
+
+            self.data[cursor_position.global_byte_index as usize] = byte;
+
             let style = Self::get_style_for_byte(byte);
-            self.data.lines[cursor_position.line_index as usize]
+            self.hex_view.lines[cursor_position.line_index as usize]
                 .spans[cursor_position.line_byte_index as usize] = Span::styled(old_str, style);
             
             let text = App::u8_to_char(byte);
@@ -277,31 +284,14 @@ impl <'a> App<'a>
             self.text_view.lines[cursor_position.line_index as usize]
                 .spans[cursor_position.line_byte_index as usize] = Span::styled(new_str, style);
         }
-    }
-
-    pub(super) fn data_to_vec_u8(&self) -> Vec<u8>
-    {
-        
-        let mut output = Vec::with_capacity(self.data.lines.len() * self.block_size * self.blocks_per_row);
-        for line in &self.data.lines
-        {
-            for span in line
-            {
-                let mut hex = span.content.to_string();
-                hex.retain(|c| c.is_whitespace() == false);
-                let byte = u8::from_str_radix(&hex, 16).unwrap();
-                output.push(byte);
-            }
-        }
-        output
+        self.edit_assembly();
     }
 
     pub(super) fn save_data(&mut self)
     {
         self.output = "Converting data...".to_string();
-        let data = self.data_to_vec_u8();
         self.output = "Saving...".to_string();
-        std::fs::write(&self.path, &data).unwrap();
+        std::fs::write(&self.path, &self.data).unwrap();
         self.dirty = false;
         self.output = format!("Saved to {}", self.path.to_str().unwrap());
     }
@@ -459,7 +449,7 @@ impl <'a> App<'a>
                 
                 let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
 
-                let hex_editor_block = Paragraph::new(&self.data)
+                let hex_editor_block = Paragraph::new(&self.hex_view)
                     .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
                     .scroll((self.scroll, 0));
                 
@@ -486,7 +476,7 @@ impl <'a> App<'a>
                     .track_style(Style::default().fg(Color::DarkGray))
                     .begin_symbol(None)
                     .end_symbol(None);
-                let mut scrollbar_state = ScrollbarState::new(self.data.lines.len()).position(self.scroll as usize + self.cursor.1 as usize);
+                let mut scrollbar_state = ScrollbarState::new(self.hex_view.lines.len()).position(self.scroll as usize + self.cursor.1 as usize);
 
                 f.render_widget(output_block, output_rect);
                 f.render_widget(address_block, address_rect);
