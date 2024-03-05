@@ -23,13 +23,15 @@ impl <'a> App<'a>
             };
             let mut next_line = false;
             let char = Self::u8_to_char(*b);
-            let mut char_string = char.to_string();
-            char_string.push(' ');
+            let char_string = char.to_string();
+            let span = Span::styled(char_string, style);
+            current_line.spans.push(span);
+            let mut spacing_string = " ".to_string();
             local_byte += 1;
             if local_byte % block_size == 0
             {
                 local_byte = 0;
-                char_string.push(' ');
+                spacing_string.push(' ');
 
                 local_block += 1;
                 if local_block % blocks_per_row == 0
@@ -39,7 +41,7 @@ impl <'a> App<'a>
                 }
             }
 
-            let span = Span::styled(char_string, style);
+            let span = Span::raw(spacing_string);
             current_line.spans.push(span);
 
             if next_line
@@ -62,6 +64,7 @@ impl <'a> App<'a>
         let cursor_position = self.get_cursor_position();
         let current_line = cursor_position.line_index;
         let current_byte = cursor_position.line_byte_index;
+        let current_text_span = current_byte * 2;
 
         if self.text_last_byte_index < self.data.len()
         {
@@ -70,7 +73,7 @@ impl <'a> App<'a>
         }
 
         self.text_last_byte_index = cursor_position.global_byte_index;
-        self.text_cursor = (current_line, current_byte);
+        self.text_cursor = (current_line, current_text_span);
         if self.text_cursor.0 < self.text_view.lines.len() && self.text_cursor.1 < self.text_view.lines[self.text_cursor.0].spans.len()
         {
             self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = self.color_settings.text_selected;

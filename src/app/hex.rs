@@ -104,37 +104,33 @@ impl <'a> App<'a>
         {   
             let cursor_position = self.get_cursor_position();
 
-            let mut old_str = self.hex_view.lines[cursor_position.line_index as usize]
-                .spans[cursor_position.line_byte_index as usize].content.to_string();
+            let mut old_str = self.hex_view.lines[cursor_position.line_index]
+                .spans[cursor_position.line_byte_index].content.to_string();
 
-            if old_str.as_bytes()[(cursor_position.local_x % 3) as usize] != value as u8
+            if old_str.as_bytes()[cursor_position.local_x % 3] != value as u8
             {
                 self.dirty = true;
             }
 
             unsafe { // this is safe because the string is guaranteed to be ASCII and the length is guaranteed to be at least 3
-                old_str.as_bytes_mut()[(cursor_position.local_x % 3) as usize] = value as u8;
+                old_str.as_bytes_mut()[cursor_position.local_x % 3] = value as u8;
             }
             
             let hex = old_str.chars().filter(|c| c.is_whitespace() == false).collect::<String>();
 
             let byte = u8::from_str_radix(&hex, 16).unwrap();
 
-            self.data[cursor_position.global_byte_index as usize] = byte;
+            self.data[cursor_position.global_byte_index] = byte;
 
             let style = Self::get_style_for_byte(&self.color_settings, byte);
-            self.hex_view.lines[cursor_position.line_index as usize]
-                .spans[cursor_position.line_byte_index as usize] = Span::styled(old_str, style);
+            self.hex_view.lines[cursor_position.line_index]
+                .spans[cursor_position.line_byte_index] = Span::styled(old_str, style);
             
             let text = App::u8_to_char(byte);
-            let old_str = self.text_view.lines[cursor_position.line_index as usize]
-                .spans[cursor_position.line_byte_index as usize].content.to_string();
-            let text_iterator = old_str.chars().filter(|c| c.is_whitespace());
-            let mut new_str = text.to_string();
-            new_str.extend(text_iterator);
+            let new_str = text.to_string();
 
-            self.text_view.lines[cursor_position.line_index as usize]
-                .spans[cursor_position.line_byte_index as usize] = Span::styled(new_str, style);
+            self.text_view.lines[cursor_position.line_index]
+                .spans[cursor_position.line_byte_index * 2] = Span::styled(new_str, style);
         }
         self.update_text_cursor();
         self.edit_assembly();
