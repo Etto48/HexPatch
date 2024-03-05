@@ -6,8 +6,4 @@ pub mod data;
 pub mod info_mode;
 pub mod cursor_position;
 
-// ripped from tui-rs
-pub mod paragraph;
-pub mod reflow;
-
 pub use app::App;

@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::{Line, Span, Text}, widgets::{Block, Borders, ScrollbarState}, Frame};
 
-use super::{info_mode::InfoMode, paragraph::Paragraph, popup_state::PopupState};
+use super::{info_mode::InfoMode, popup_state::PopupState};
 
 pub struct App<'a> 
 {
@@ -18,7 +18,7 @@ pub struct App<'a>
     pub(super) assembly_offsets: Vec<usize>,
     pub(super) assembly_scroll: usize,
     pub(super) info_mode: InfoMode,
-    pub(super) scroll: u16,
+    pub(super) scroll: usize,
     pub(super) cursor: (u16, u16),
     pub(super) poll_time: Duration,
     pub(super) needs_to_exit: bool,
@@ -35,10 +35,6 @@ impl <'a> App<'a>
     pub fn new(file_path: PathBuf) -> Result<Self,String>
     {
         let data = std::fs::read(&file_path).map_err(|e| e.to_string())?;
-        if data.len() > 0xFFFF
-        {
-            return Err("File is too large (size > 0xFFFF Bytes), ratatui does not support this many lines for some reason.".to_string());
-        }
         let block_size = 8;
         let blocks_per_row = 3;
         let address_view = Self::addresses(data.len(), block_size, blocks_per_row);
@@ -217,31 +213,47 @@ impl <'a> App<'a>
 
                 let output_block = ratatui::widgets::Paragraph::new(Text::raw(&self.output))
                     .block(Block::default().borders(Borders::LEFT));
-                let address_block = Paragraph::new(&self.address_view)
-                    .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM))
-                    .scroll((self.scroll, 0));
+                
+                let line_start_index = self.scroll;
+                let line_end_index = (self.scroll + f.size().height as usize - 2).min(self.hex_view.lines.len());
+
+                let address_subview_lines = &self.address_view.lines[line_start_index..line_end_index];
+                let mut address_subview = Text::default();
+                address_subview.lines.extend(address_subview_lines.iter().cloned());
+
+                let hex_subview_lines = &self.hex_view.lines[line_start_index..line_end_index];
+                let mut hex_subview = Text::default();
+                hex_subview.lines.extend(hex_subview_lines.iter().cloned());
+
+                let address_block = ratatui::widgets::Paragraph::new(address_subview)
+                    .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM));
                 
                 let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
 
-                let hex_editor_block = Paragraph::new(&self.hex_view)
-                    .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
-                    .scroll((self.scroll, 0));
+                let hex_editor_block = ratatui::widgets::Paragraph::new(hex_subview)
+                    .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT | Borders::BOTTOM));
                 
                 let info_view_block = 
                 match &self.info_mode 
                 {
                     InfoMode::Text =>
                     {
-                        Paragraph::new(&self.text_view)
+                        let text_subview_lines = &self.text_view.lines[line_start_index..line_end_index];
+                        let mut text_subview = Text::default();
+                        text_subview.lines.extend(text_subview_lines.iter().cloned());
+                        ratatui::widgets::Paragraph::new(text_subview)
                             .block(Block::default().title("Text View").borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
-                            .scroll((self.scroll, 0))
                     },
                     InfoMode::Assembly =>
                     {
+                        let assembly_start_index = self.get_assembly_view_scroll();
+                        let assembly_end_index = (assembly_start_index + f.size().height as usize - 2).min(self.assembly_view.lines.len());
+                        let assembly_subview_lines = &self.assembly_view.lines[assembly_start_index..assembly_end_index];
+                        let mut assembly_subview = Text::default();
+                        assembly_subview.lines.extend(assembly_subview_lines.iter().cloned());
                         info_view_rect.width = f.size().width - address_rect.width - hex_editor_rect.width - 2;
-                        Paragraph::new(&self.assembly_view)
+                        ratatui::widgets::Paragraph::new(assembly_subview)
                             .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
-                            .scroll((self.get_assembly_view_scroll() as u16, 0))
                     }
                 };
 

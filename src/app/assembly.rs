@@ -54,7 +54,7 @@ impl <'a> App<'a>
     pub(super) fn update_assembly_scroll(&mut self)
     {
         let cursor_position = self.get_cursor_position();
-        let current_ip = cursor_position.global_byte_index as usize;
+        let current_ip = cursor_position.global_byte_index.min(self.assembly_offsets.len() - 1);
         let current_scroll = self.assembly_offsets[current_ip];
         
         self.assembly_view.lines[self.assembly_scroll].spans[0].style = Style::default();

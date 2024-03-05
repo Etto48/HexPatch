@@ -2,26 +2,26 @@ use super::App;
 
 pub struct CursorPosition
 {
-    pub local_x: u16,
-    pub local_byte_index: u16,
-    pub block_index: u16,
-    pub local_block_index: u16,
-    pub line_index: u16,
-    pub line_byte_index: u16,
-    pub global_byte_index: u16,
+    pub local_x: usize,
+    pub local_byte_index: usize,
+    pub block_index: usize,
+    pub local_block_index: usize,
+    pub line_index: usize,
+    pub line_byte_index: usize,
+    pub global_byte_index: usize,
 }
 
 impl <'a> App<'a>
 {
     pub(super) fn get_cursor_position(&self) -> CursorPosition
     {
-        let local_x = self.cursor.0 % (self.block_size as u16 * 3 + 1);
+        let local_x = self.cursor.0 as usize % (self.block_size * 3 + 1);
         let local_byte_index = local_x / 3;
-        let block_index = self.cursor.0 / (self.block_size as u16 * 3 + 1) + (self.scroll + self.cursor.1) * self.blocks_per_row as u16;
-        let local_block_index = block_index % self.blocks_per_row as u16;
-        let line_index = block_index / self.blocks_per_row as u16;
-        let line_byte_index = local_byte_index + self.block_size as u16 * local_block_index;
-        let global_byte_index = line_byte_index + line_index * self.block_size as u16 * self.blocks_per_row as u16;
+        let block_index = self.cursor.0 as usize / (self.block_size * 3 + 1) + (self.scroll + self.cursor.1 as usize) * self.blocks_per_row;
+        let local_block_index = block_index % self.blocks_per_row;
+        let line_index = block_index / self.blocks_per_row;
+        let line_byte_index = local_byte_index + self.block_size * local_block_index;
+        let global_byte_index = line_byte_index + line_index * self.block_size * self.blocks_per_row;
 
         CursorPosition {
             local_x,
@@ -75,7 +75,7 @@ impl <'a> App<'a>
         else if y >= (self.screen_size.1 - 3) as i16
         {
             y = self.screen_size.1 as i16 - 4;
-            if self.scroll < self.hex_view.lines.len() as u16 - (self.screen_size.1 - 3)
+            if self.scroll < self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize
             {
                 self.scroll += 1;
             }
@@ -87,7 +87,7 @@ impl <'a> App<'a>
 
     pub(super) fn move_cursor_to_end(&mut self)
     {
-        self.scroll = self.hex_view.lines.len() as u16 - (self.screen_size.1 - 3);
+        self.scroll = self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize;
         let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 - 1;
         let y = self.screen_size.1 - 4;
         self.cursor = (x, y);
