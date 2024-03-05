@@ -23,6 +23,12 @@ impl <'a> App<'a>
                     KeyCode::Right => {
                         self.move_cursor(1, 0);
                     },
+                    KeyCode::PageUp => {
+                        self.move_cursor_page_up();
+                    },
+                    KeyCode::PageDown => {
+                        self.move_cursor_page_down();
+                    },
                     KeyCode::Home => 
                     {
                         self.move_cursor_to_start();

@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::{Line, Span, Text}, widgets::{Block, Borders, ScrollbarState}, Frame};
 
-use super::{info_mode::InfoMode, popup_state::PopupState};
+use super::{color_settings::{self, ColorSettings}, info_mode::InfoMode, popup_state::PopupState};
 
 pub struct App<'a> 
 {
@@ -24,6 +24,8 @@ pub struct App<'a>
     pub(super) needs_to_exit: bool,
     pub(super) screen_size: (u16, u16),
 
+    pub(super) color_settings: ColorSettings,
+
     pub(super) popup: Option<PopupState>,
 
     pub(super) block_size: usize,
@@ -35,12 +37,13 @@ impl <'a> App<'a>
     pub fn new(file_path: PathBuf) -> Result<Self,String>
     {
         let data = std::fs::read(&file_path).map_err(|e| e.to_string())?;
+        let color_settings = color_settings::ColorSettings::default();
         let block_size = 8;
         let blocks_per_row = 3;
         let address_view = Self::addresses(data.len(), block_size, blocks_per_row);
-        let hex_view = Self::bytes_to_styled_hex(&data, block_size, blocks_per_row);
-        let text_view = Self::bytes_to_styled_text(&data, block_size, blocks_per_row);
-        let (assembly_view, assembly_offsets) = Self::assembly_from_bytes(&data);
+        let hex_view = Self::bytes_to_styled_hex(&color_settings, &data, block_size, blocks_per_row);
+        let text_view = Self::bytes_to_styled_text(&color_settings, &data, block_size, blocks_per_row);
+        let (assembly_view, assembly_offsets) = Self::assembly_from_bytes(&color_settings, &data);
         Ok(App{
             path: file_path,
             data,
@@ -58,6 +61,8 @@ impl <'a> App<'a>
             poll_time: Duration::from_millis(1000),
             needs_to_exit: false,
             screen_size: (1,1),
+
+            color_settings,
 
             popup: None,
 

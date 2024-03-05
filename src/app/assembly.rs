@@ -1,11 +1,11 @@
 use iced_x86::Instruction;
 use ratatui::{style::{Color, Style}, text::{Line, Span, Text}};
 
-use super::app::App;
+use super::{app::App, color_settings::ColorSettings};
 
 impl <'a> App<'a>
 {
-    fn instruction_to_line(instruction: &Instruction, selected: bool) -> Line<'a>
+    fn instruction_to_line(color_settings: &ColorSettings, instruction: &Instruction, selected: bool) -> Line<'a>
     {
         let mut line = Line::default();
         line.spans.push(Span::styled(format!("{:16X}",instruction.ip()), 
@@ -23,14 +23,20 @@ impl <'a> App<'a>
         let mut instruction_pieces = instruction_string.split_whitespace();
         let mnemonic = instruction_pieces.next().unwrap().to_string();
         let args = instruction_pieces.collect::<Vec<&str>>().join(" ");
-        
-        line.spans.push(Span::styled(mnemonic, Style::default().fg(Color::Yellow)));
+        let mnemonic_style = 
+        match instruction.mnemonic() {
+            iced_x86::Mnemonic::Nop => color_settings.assembly_nop,
+            iced_x86::Mnemonic::INVALID => color_settings.assembly_bad,
+            _ => color_settings.assembly_default,
+        };
+
+        line.spans.push(Span::styled(mnemonic, mnemonic_style));
         line.spans.push(Span::raw(" "));
         line.spans.push(Span::raw(args));
         line
     }
 
-    pub(super) fn assembly_from_bytes(bytes: &[u8]) -> (Text<'a>, Vec<usize>)
+    pub(super) fn assembly_from_bytes(color_settings: &ColorSettings, bytes: &[u8]) -> (Text<'a>, Vec<usize>)
     {
         let mut output = Text::default();
         let mut line_offsets = vec![0; bytes.len()];
@@ -39,7 +45,7 @@ impl <'a> App<'a>
         let mut line_index = 0;
         for instruction in decoder {
             
-            let line = Self::instruction_to_line(&instruction, line_index == 0);
+            let line = Self::instruction_to_line(color_settings, &instruction, line_index == 0);
             
             for _ in 0..instruction.len() {
                 line_offsets[byte_index] = line_index;
@@ -65,15 +71,16 @@ impl <'a> App<'a>
 
     pub(super) fn get_assembly_view_scroll(&self) -> usize
     {
-        let center_of_view = (self.screen_size.1 - 3) as isize / 2;
-        let view_scroll = (self.assembly_scroll as isize - center_of_view).max(0);
+        let visible_lines = self.screen_size.1 - 3;
+        let center_of_view = visible_lines / 2;
+        let view_scroll = (self.assembly_scroll as isize - center_of_view as isize).clamp(0, (self.assembly_view.lines.len() as isize - visible_lines as isize).max(0));
         
         return view_scroll as usize;
     }
 
     pub(super) fn edit_assembly(&mut self)
     {
-        (self.assembly_view, self.assembly_offsets) = Self::assembly_from_bytes(&self.data);
+        (self.assembly_view, self.assembly_offsets) = Self::assembly_from_bytes(&self.color_settings, &self.data);
         self.assembly_scroll = 0;
         self.update_assembly_scroll();
     }

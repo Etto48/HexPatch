@@ -85,10 +85,30 @@ impl <'a> App<'a>
         self.update_assembly_scroll();
     }
 
+    pub(super) fn move_cursor_page_up(&mut self)
+    {
+        if self.scroll == 0
+        {
+            self.cursor.1 = 0;
+        }
+        self.scroll = self.scroll.saturating_sub((self.screen_size.1 - 3) as usize);
+        self.update_assembly_scroll();
+    }
+
+    pub(super) fn move_cursor_page_down(&mut self)
+    {
+        if self.scroll == self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize
+        {
+            self.cursor.1 = (self.hex_view.lines.len() % self.screen_size.1 as usize - 3) as u16;
+        }
+        self.scroll = (self.scroll + (self.screen_size.1 - 3) as usize).min(self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize);
+        self.update_assembly_scroll();
+    }
+
     pub(super) fn move_cursor_to_end(&mut self)
     {
         self.scroll = self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize;
-        let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 - 1;
+        let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - 3;
         let y = self.screen_size.1 - 4;
         self.cursor = (x, y);
         self.update_assembly_scroll();
