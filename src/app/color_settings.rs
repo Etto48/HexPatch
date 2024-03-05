@@ -11,6 +11,8 @@ pub struct ColorSettings
     pub hex_whitespace: Style,
     pub hex_default: Style,
 
+    pub text_selected: Style,
+
     pub assembly_nop: Style,
     pub assembly_bad: Style,
     pub assembly_default: Style,
@@ -28,6 +30,8 @@ impl Default for ColorSettings
             hex_end_of_line: Style::default().fg(Color::LightRed),
             hex_whitespace: Style::default().fg(Color::Rgb(244, 202, 183)),
             hex_default: Style::default(),
+
+            text_selected: Style::default().fg(Color::Black).bg(Color::White),
 
             assembly_nop: Style::default().fg(Color::DarkGray),
             assembly_bad: Style::default().fg(Color::LightRed),

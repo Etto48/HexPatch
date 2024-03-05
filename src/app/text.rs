@@ -48,6 +48,26 @@ impl <'a> App<'a>
         ret
     }
 
+    pub(super) fn update_text_cursor(&mut self)
+    {
+        let cursor_position = self.get_cursor_position();
+        let current_line = cursor_position.line_index;
+        let current_byte = cursor_position.line_byte_index;
+
+        if self.text_last_byte_index < self.data.len()
+        {
+            let old_byte = self.data[self.text_last_byte_index];
+            self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = Self::get_style_for_byte(&self.color_settings, old_byte);
+        }
+
+        self.text_last_byte_index = cursor_position.global_byte_index;
+        self.text_cursor = (current_line, current_byte);
+        if self.text_cursor.0 < self.text_view.lines.len() && self.text_cursor.1 < self.text_view.lines[self.text_cursor.0].spans.len()
+        {
+            self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = self.color_settings.text_selected;
+        }
+    }
+
     pub(super) fn u8_to_char(input: u8) -> char
     {
         match input
