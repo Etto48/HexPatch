@@ -524,6 +524,11 @@ impl ElfHeader
         }
     }
 
+    pub fn bitness(&self) -> u32
+    {
+        self.bitness.to_num_bits()
+    }
+
     pub fn print_header(data: &[u8])
     {
         let header = ElfHeader::parse_header(data).expect("File is not ELF");

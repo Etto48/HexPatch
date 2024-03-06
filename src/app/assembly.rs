@@ -1,7 +1,42 @@
 use iced_x86::Instruction;
 use ratatui::text::{Line, Span, Text};
 
-use super::{app::App, color_settings::ColorSettings, elf::ElfHeader};
+use super::{app::App, color_settings::ColorSettings, elf::ElfHeader, pe::PEHeader};
+
+pub enum Header
+{
+    Elf(ElfHeader),
+    PE(PEHeader),
+}
+
+impl Header
+{
+    pub fn parse_header(bytes: &[u8]) -> Option<Header>
+    {
+        let elf_header = ElfHeader::parse_header(bytes);
+        match elf_header
+        {
+            Some(header) => return Some(Header::Elf(header)),
+            None => {},
+        };
+        let pe_header = PEHeader::parse_header(bytes);
+        match pe_header
+        {
+            Some(header) => return Some(Header::PE(header)),
+            None => {},
+        };
+        None
+    }
+
+    pub fn bitness(&self) -> u32
+    {
+        match self
+        {
+            Header::Elf(header) => header.bitness(),
+            Header::PE(header) => header.bitness(),
+        }
+    }
+}
 
 impl <'a> App<'a>
 {
@@ -41,9 +76,14 @@ impl <'a> App<'a>
         let mut output = Text::default();
         let mut line_offsets = vec![0; bytes.len()];
 
-        let header = ElfHeader::parse_header(bytes).unwrap_or(ElfHeader::default());
+        let header = Header::parse_header(bytes);
+        let bitness = match header
+        {
+            Some(header) => header.bitness(),
+            None => 64,
+        };
 
-        let decoder = iced_x86::Decoder::new(header.bitness.to_num_bits(), bytes, iced_x86::DecoderOptions::NONE);
+        let decoder = iced_x86::Decoder::new(bitness, bytes, iced_x86::DecoderOptions::NONE);
         let mut byte_index = 0;
         let mut line_index = 0;
         for instruction in decoder {

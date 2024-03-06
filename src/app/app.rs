@@ -41,7 +41,9 @@ impl <'a> App<'a>
 {
     pub fn new(file_path: PathBuf) -> Result<Self,String>
     {
-        let data = std::fs::read(&file_path).map_err(|e| e.to_string())?;
+        let canonical_path = file_path.canonicalize().map_err(|e| e.to_string())?;
+
+        let data = std::fs::read(&canonical_path).map_err(|e| e.to_string())?;
         let color_settings = color_settings::ColorSettings::default();
         let block_size = 8;
         let blocks_per_row = 3;
@@ -50,7 +52,7 @@ impl <'a> App<'a>
         let text_view = Self::bytes_to_styled_text(&color_settings, &data, block_size, blocks_per_row);
         let (assembly_view, assembly_offsets) = Self::assembly_from_bytes(&color_settings, &data);
         Ok(App{
-            path: file_path,
+            path: canonical_path,
             data,
             output: "Press H to view a help page.".to_string(),
             dirty: false,
