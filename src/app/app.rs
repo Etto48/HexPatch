@@ -1,7 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event;
-use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::{Line, Span, Text}, widgets::{Block, Borders, ScrollbarState}, Frame};
+use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::Text, widgets::{Block, Borders, ScrollbarState}};
 
 use super::{color_settings::{self, ColorSettings}, info_mode::InfoMode, popup_state::PopupState};
 
@@ -79,126 +79,6 @@ impl <'a> App<'a>
             block_size,
             blocks_per_row,
         })
-    }
-
-    pub(super) fn fill_popup(popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text, popup_rect: &mut Rect)
-    {
-        match &popup_state
-        {
-            PopupState::SaveAndQuit(yes_selected) =>
-            {
-                *popup_title = "Save and Quit";
-                popup_text.lines.extend(
-                    vec![
-                        Line::raw("The file will be saved and the program will quit."),
-                        Line::raw("Are you sure?"),
-                        Line::from(vec![
-                            Span::styled("Yes", Style::default().fg(Color::Green)),
-                            Span::raw("  "),
-                            Span::styled("No", Style::default().fg(Color::Red))
-                        ])
-                    ]
-                );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
-                }
-            },
-            PopupState::Save(yes_selected) =>
-            {
-                *popup_title = "Save";
-                popup_text.lines.extend(
-                    vec![
-                        Line::raw("The file will be saved."),
-                        Line::raw("Are you sure?"),
-                        Line::from(vec![
-                            Span::styled("Yes", Style::default().fg(Color::Green)),
-                            Span::raw("  "),
-                            Span::styled("No", Style::default().fg(Color::Red))
-                        ])
-                    ]
-                );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
-                }
-            },
-            PopupState::QuitDirtySave(yes_selected) =>
-            {
-                *popup_title = "Quit";
-                popup_text.lines.extend(
-                    vec![
-                        Line::raw("The file has been modified."),
-                        Line::raw("Do you want to save before quitting?"),
-                        Line::from(vec![
-                            Span::styled("Yes", Style::default().fg(Color::Green)),
-                            Span::raw("  "),
-                            Span::styled("No", Style::default().fg(Color::Red))
-                        ])
-                    ]
-                );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = Style::default().fg(Color::White).bg(Color::Green);
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = Style::default().fg(Color::White).bg(Color::Red);
-                }
-            },
-            PopupState::Help =>
-            {
-                *popup_rect = Rect::new(f.size().width / 2 - 15, f.size().height / 2 - 4, 30, 8);
-                *popup_title = "Help";
-                popup_text.lines.extend(
-                    vec![
-                        Line::from(
-                            vec![
-                                Span::styled("^S", Style::default().fg(Color::Green)),
-                                Span::raw(": Save")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled("^X", Style::default().fg(Color::Green)),
-                                Span::raw(": Save and Quit")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled("^C", Style::default().fg(Color::Green)),
-                                Span::raw(": Quit")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" V", Style::default().fg(Color::Green)),
-                                Span::raw(": Switch info view")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" H", Style::default().fg(Color::Green)),
-                                Span::raw(": Help")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled("Ok", Style::default().fg(Color::Black).bg(Color::White)),
-                            ]
-                        )
-                    ]
-                );
-            }
-        }
     }
 
     pub fn run<B: Backend>(&mut self, terminal: &mut ratatui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
@@ -292,7 +172,7 @@ impl <'a> App<'a>
 
                     let mut popup_rect = Rect::new(f.size().width / 2 - 27, f.size().height / 2 - 2, 54, 5);
 
-                    Self::fill_popup(popup_state, f, &mut popup_title, &mut popup_text, &mut popup_rect);
+                    Self::fill_popup(&self.color_settings, popup_state, f, &mut popup_title, &mut popup_text, &mut popup_rect);
 
                     let popup = ratatui::widgets::Paragraph::new(popup_text)
                         .block(Block::default().title(popup_title).borders(Borders::ALL))

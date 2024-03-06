@@ -22,6 +22,16 @@ pub struct ColorSettings
     pub assembly_nop: Style,
     pub assembly_bad: Style,
     pub assembly_default: Style,
+
+    pub help_command: Style,
+    pub hep_description: Style,
+
+    pub yes: Style,
+    pub yes_selected: Style,
+    pub no: Style,
+    pub no_selected: Style,
+    pub ok: Style,
+    pub ok_selected: Style,
 }
 
 impl Default for ColorSettings
@@ -48,6 +58,16 @@ impl Default for ColorSettings
             assembly_nop: Style::default().fg(Color::DarkGray),
             assembly_bad: Style::default().fg(Color::LightRed),
             assembly_default: Style::default().fg(Color::Rgb(204, 152, 113)),
+
+            help_command: Style::default().fg(Color::LightGreen),
+            hep_description: Style::default().fg(Color::Gray),
+
+            yes: Style::default().fg(Color::Green),
+            yes_selected: Style::default().fg(Color::Black).bg(Color::Green),
+            no: Style::default().fg(Color::Red),
+            no_selected: Style::default().fg(Color::Black).bg(Color::Red),
+            ok: Style::default().fg(Color::White),
+            ok_selected: Style::default().fg(Color::Black).bg(Color::White),
         }
     }
 }

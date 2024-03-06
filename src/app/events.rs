@@ -75,6 +75,12 @@ impl <'a> App<'a>
                             'h' => {
                                 self.popup = Some(PopupState::Help);
                             },
+                            'p' => {
+                                self.popup = Some(PopupState::Patch(String::new()));
+                            },
+                            'j' => {
+                                self.popup = Some(PopupState::JumpToAddress(String::new()));
+                            },
                             'v' => {
                                 match self.info_mode {
                                     super::info_mode::InfoMode::Text => 
@@ -128,8 +134,16 @@ impl <'a> App<'a>
                 {
                     KeyCode::Left |
                     KeyCode::Right => {
-                        match self.popup
+                        match &self.popup
                         {
+                            Some(PopupState::Patch(_assembly)) =>
+                            {
+                                todo!("Patch popup");
+                            }
+                            Some(PopupState::JumpToAddress(_address)) =>
+                            {
+                                todo!("Jump to address popup");
+                            }
                             Some(PopupState::Save(yes_selected)) =>
                             {
                                 self.popup = Some(PopupState::Save(!yes_selected));
@@ -147,11 +161,19 @@ impl <'a> App<'a>
                         }
                     },
                     KeyCode::Enter => {
-                        match self.popup
+                        match &self.popup
                         {
+                            Some(PopupState::Patch(_assembly)) =>
+                            {
+                                todo!("Patch popup");
+                            }
+                            Some(PopupState::JumpToAddress(_address)) =>
+                            {
+                                todo!("Jump to address popup");
+                            }
                             Some(PopupState::Save(yes_selected)) =>
                             {
-                                if yes_selected
+                                if *yes_selected
                                 {
                                     self.save_data();
                                 }
@@ -159,7 +181,7 @@ impl <'a> App<'a>
                             },
                             Some(PopupState::SaveAndQuit(yes_selected)) =>
                             {
-                                if yes_selected
+                                if *yes_selected
                                 {
                                     self.save_data();
                                     self.needs_to_exit = true;
@@ -168,7 +190,7 @@ impl <'a> App<'a>
                             },
                             Some(PopupState::QuitDirtySave(yes_selected)) =>
                             {
-                                if yes_selected
+                                if *yes_selected
                                 {
                                     self.save_data();
                                     self.needs_to_exit = true;
