@@ -1,7 +1,7 @@
 use iced_x86::Instruction;
 use ratatui::text::{Line, Span, Text};
 
-use super::{app::App, color_settings::ColorSettings};
+use super::{app::App, color_settings::ColorSettings, elf::ElfHeader};
 
 impl <'a> App<'a>
 {
@@ -40,7 +40,10 @@ impl <'a> App<'a>
     {
         let mut output = Text::default();
         let mut line_offsets = vec![0; bytes.len()];
-        let decoder = iced_x86::Decoder::new(64, bytes, iced_x86::DecoderOptions::NONE);
+
+        let header = ElfHeader::parse_header(bytes).unwrap_or(ElfHeader::default());
+
+        let decoder = iced_x86::Decoder::new(header.bitness.to_num_bits(), bytes, iced_x86::DecoderOptions::NONE);
         let mut byte_index = 0;
         let mut line_index = 0;
         for instruction in decoder {
