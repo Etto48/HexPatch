@@ -31,6 +31,24 @@ pub enum MachineType
     WceMipsV2 = 0x169,
 }
 
+pub enum OptionalHeaderMagic
+{
+    PE32 = 0x10B,
+    PE32Plus = 0x20B,
+}
+
+pub struct OptionalHeader
+{
+    pub magic: OptionalHeaderMagic,
+    pub major_linker_version: u8,
+    pub minor_linker_version: u8,
+    pub size_of_code: u32,
+    pub size_of_initialized_data: u32,
+    pub size_of_uninitialized_data: u32,
+    pub address_of_entry_point: u32,
+    pub base_of_code: u32,
+}
+
 pub struct PEHeader
 {
     pub signature_offset: usize,
@@ -41,6 +59,8 @@ pub struct PEHeader
     pub number_of_symbols: u32,
     pub size_of_optional_header: u16,
     pub characteristics: u16,
+
+    pub optional_header: OptionalHeader,
 }
 
 impl PEHeader
@@ -107,16 +127,66 @@ impl PEHeader
         let number_of_symbols = u32::from_le_bytes([bytes[signature_offset as usize + 16], bytes[signature_offset as usize + 17], bytes[signature_offset as usize + 18], bytes[signature_offset as usize + 19]]);
         let size_of_optional_header = u16::from_le_bytes([bytes[signature_offset as usize + 20], bytes[signature_offset as usize + 21]]);
         let characteristics = u16::from_le_bytes([bytes[signature_offset as usize + 22], bytes[signature_offset as usize + 23]]);
-        Some(PEHeader {
-            signature_offset: signature_offset as usize,
-            machine,
-            number_of_sections,
-            time_date_stamp,
-            pointer_to_symbol_table,
-            number_of_symbols,
-            size_of_optional_header,
-            characteristics,
-        })
+
+        let optional_header = if size_of_optional_header != 0
+        {
+            let magic = u16::from_le_bytes([bytes[signature_offset as usize + 24], bytes[signature_offset as usize + 25]]);
+            let magic = match magic
+            {
+                0x10B => Some(OptionalHeaderMagic::PE32),
+                0x20B => Some(OptionalHeaderMagic::PE32Plus),
+                _ => None,
+            };
+            if let Some(magic) = magic
+            {
+                let major_linker_version = bytes[signature_offset as usize + 26];
+                let minor_linker_version = bytes[signature_offset as usize + 27];
+                let size_of_code = u32::from_le_bytes([bytes[signature_offset as usize + 28], bytes[signature_offset as usize + 29], bytes[signature_offset as usize + 30], bytes[signature_offset as usize + 31]]);
+                let size_of_initialized_data = u32::from_le_bytes([bytes[signature_offset as usize + 32], bytes[signature_offset as usize + 33], bytes[signature_offset as usize + 34], bytes[signature_offset as usize + 35]]);
+                let size_of_uninitialized_data = u32::from_le_bytes([bytes[signature_offset as usize + 36], bytes[signature_offset as usize + 37], bytes[signature_offset as usize + 38], bytes[signature_offset as usize + 39]]);
+                let address_of_entry_point = u32::from_le_bytes([bytes[signature_offset as usize + 40], bytes[signature_offset as usize + 41], bytes[signature_offset as usize + 42], bytes[signature_offset as usize + 43]]);
+                let base_of_code = u32::from_le_bytes([bytes[signature_offset as usize + 44], bytes[signature_offset as usize + 45], bytes[signature_offset as usize + 46], bytes[signature_offset as usize + 47]]);
+                
+                Some(OptionalHeader{
+                    magic,
+                    major_linker_version,
+                    minor_linker_version,
+                    size_of_code,
+                    size_of_initialized_data,
+                    size_of_uninitialized_data,
+                    address_of_entry_point,
+                    base_of_code,
+                })
+            }
+            else 
+            {
+                None
+            }
+        }
+        else
+        {
+            None
+        };
+        if let Some(optional_header) = optional_header
+        {
+            Some(PEHeader {
+                signature_offset: signature_offset as usize,
+                machine,
+                number_of_sections,
+                time_date_stamp,
+                pointer_to_symbol_table,
+                number_of_symbols,
+                size_of_optional_header,
+                characteristics,
+                optional_header,
+            })    
+        }
+        else 
+        {
+            None
+        }
+
+        
     }
 
     pub fn bitness(&self) -> u32

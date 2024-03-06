@@ -36,6 +36,15 @@ impl Header
             Header::PE(header) => header.bitness(),
         }
     }
+
+    pub fn entry_point(&self) -> u64
+    {
+        match self
+        {
+            Header::Elf(header) => header.entry_point,
+            Header::PE(header) => header.optional_header.address_of_entry_point as u64,
+        }
+    }
 }
 
 impl <'a> App<'a>
