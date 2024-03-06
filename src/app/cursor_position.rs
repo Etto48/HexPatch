@@ -68,8 +68,13 @@ impl <'a> App<'a>
         }
     }
 
-    pub(super) fn jump_to(&mut self, address: usize)
+    pub(super) fn jump_to(&mut self, mut address: usize)
     {
+        if address >= self.data.len()
+        {
+            address = self.data.len() - 1;
+        }
+
         let expected_cursor_position = self.get_expected_cursor_position(address, false);
         let CursorPosition { local_x, line_index, .. } = expected_cursor_position;
         let y = line_index as isize - self.scroll as isize;
