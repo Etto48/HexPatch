@@ -1,4 +1,4 @@
-use ratatui::{style::{Color, Style}, text::{Line, Span, Text}};
+use ratatui::text::{Line, Span, Text};
 
 use super::{color_settings::ColorSettings, App};
 
@@ -76,10 +76,14 @@ impl <'a> App<'a>
     pub(super) fn resize(&mut self, blocks_per_row: usize)
     {
         self.blocks_per_row = blocks_per_row;
-        self.address_view = Self::addresses(self.data.len(), self.block_size, self.blocks_per_row);
+        self.address_view = Self::addresses(&&self.color_settings, self.data.len(), self.block_size, self.blocks_per_row);
         self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
-        // TODO: check if cursor is updated correctly
+
+        // TODO: this is still buggy
+
+        self.update_hex_cursor();
+        self.update_text_cursor();
     }
 
     pub(super) fn calc_blocks_per_row(&self, width: u16) -> usize
@@ -100,19 +104,6 @@ impl <'a> App<'a>
         [symbols[high as usize], symbols[low as usize]]
     }
 
-    pub(super) fn addresses(size: usize, block_size: usize, blocks_per_row: usize) -> Text<'a>
-    {
-        let mut result = Text::default();
-
-        for i in 0..=size/(block_size * blocks_per_row)
-        {
-            let mut line = Line::default();
-            line.spans.push(Span::styled(format!("{:16X}", i * block_size * blocks_per_row), if i % 2 == 0 {Style::default().fg(Color::DarkGray)} else {Style::default()}));
-            result.lines.push(line);
-        }
-        result
-    }
-
     pub(super) fn edit_data(&mut self, mut value: char)
     {
         value = value.to_uppercase().next().unwrap(); 
@@ -121,7 +112,7 @@ impl <'a> App<'a>
         {   
             let cursor_position = self.get_cursor_position();
             
-            let hex = if cursor_position.local_x % 3 == 0
+            let hex = if cursor_position.high_byte
             {
                 format!("{}{}", value, self.hex_view.lines[cursor_position.line_index]
                     .spans[cursor_position.line_byte_index * 3 + 1].content)
@@ -145,7 +136,7 @@ impl <'a> App<'a>
 
             let style = Self::get_style_for_byte(&self.color_settings, byte);
             self.hex_view.lines[cursor_position.line_index]
-                .spans[cursor_position.line_byte_index * 3 + cursor_position.local_x % 3] = Span::styled(value.to_string(), style);
+                .spans[cursor_position.line_byte_index * 3 + cursor_position.get_high_byte_offset()] = Span::styled(value.to_string(), style);
             
             let text = App::u8_to_char(byte);
             let new_str = text.to_string();
@@ -169,7 +160,7 @@ impl <'a> App<'a>
         }
 
         self.hex_last_byte_index = cursor_position.global_byte_index;
-        self.hex_cursor = (cursor_position.line_index, cursor_position.line_byte_index * 3 + cursor_position.local_x % 3);
+        self.hex_cursor = (cursor_position.line_index, cursor_position.line_byte_index * 3 + cursor_position.get_high_byte_offset());
         if self.hex_cursor.0 < self.hex_view.lines.len() && self.hex_cursor.1 < self.hex_view.lines[self.hex_cursor.0].spans.len()
         {
             self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = self.color_settings.hex_selected;

@@ -1,5 +1,6 @@
 pub mod app;
 pub mod assembly;
+pub mod address;
 pub mod hex;
 pub mod text;
 pub mod events;

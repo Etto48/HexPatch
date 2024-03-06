@@ -4,6 +4,9 @@ use super::App;
 
 pub struct ColorSettings
 {
+    pub address_selected: Style,
+    pub address_default: Style,
+
     pub hex_selected: Style,
     pub hex_null: Style,
     pub hex_alphanumeric: Style,
@@ -27,6 +30,9 @@ impl Default for ColorSettings
     {
         Self
         {
+            address_selected: Style::default().fg(Color::Black).bg(Color::White),
+            address_default: Style::default().fg(Color::DarkGray),
+
             hex_selected: Style::default().fg(Color::Black).bg(Color::White),
             hex_null: Style::default().fg(Color::DarkGray),
             hex_alphanumeric: Style::default().fg(Color::Rgb(204, 152, 113)),
