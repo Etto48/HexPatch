@@ -48,6 +48,49 @@ impl <'a> App<'a>
         }
     }
 
+    pub(super) fn get_expected_cursor_position(&self, global_byte_index: usize, high_byte: bool) -> CursorPosition
+    {
+        let block_index = global_byte_index / self.block_size;
+        let line_index = block_index / self.blocks_per_row;
+        let local_block_index = block_index % self.blocks_per_row;
+        let local_byte_index = global_byte_index % self.block_size;
+        let local_x = (local_byte_index + local_block_index * self.block_size) * 3 + local_block_index;
+
+        CursorPosition {
+            local_x,
+            local_byte_index,
+            block_index,
+            local_block_index,
+            line_index,
+            line_byte_index: local_byte_index + local_block_index * self.block_size,
+            global_byte_index,
+            high_byte,
+        }
+    }
+
+    pub(super) fn jump_to(&mut self, address: usize)
+    {
+        let expected_cursor_position = self.get_expected_cursor_position(address, false);
+        let CursorPosition { local_x, line_index, .. } = expected_cursor_position;
+        let y = line_index as isize - self.scroll as isize;
+
+        if y < 0
+        {
+            self.scroll = line_index;
+            self.cursor = (local_x as u16, 0);
+        }
+        else if y < self.screen_size.1 as isize - 3
+        {
+            self.cursor = (local_x as u16, y as u16);
+        }
+        else
+        {
+            self.scroll = line_index - (self.screen_size.1 - 4) as usize;
+            self.cursor = (local_x as u16, (self.screen_size.1 - 4) as u16);
+        }
+        self.update_cursors();
+    }
+
     pub(super) fn move_cursor(&mut self, dx: isize, dy: isize)
     {
         // TODO: check that the cursor does not overflow the data

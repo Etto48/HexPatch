@@ -76,10 +76,10 @@ impl <'a> App<'a>
                                 self.popup = Some(PopupState::Help);
                             },
                             'p' => {
-                                self.popup = Some(PopupState::Patch(String::new()));
+                                self.popup = Some(PopupState::Patch { assembly: String::new(), cursor: 0});
                             },
                             'j' => {
-                                self.popup = Some(PopupState::JumpToAddress(String::new()));
+                                self.popup = Some(PopupState::JumpToAddress { address: String::new(), cursor: 0});
                             },
                             'v' => {
                                 match self.info_mode {
@@ -125,8 +125,79 @@ impl <'a> App<'a>
         Ok(())
     }
 
+    fn handle_string_edit(string: &mut String, cursor: &mut usize, event: &event::Event, charset: Option<&str>, capitalize: bool, max_len: Option<usize>) -> Result<(), Box<dyn std::error::Error>>
+    {
+        match event
+        {
+            event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
+                match event.code
+                {
+                    KeyCode::Backspace => {
+                        if *cursor > 0
+                        {
+                            string.remove(*cursor - 1);
+                            *cursor -= 1;
+                        }
+                    },
+                    KeyCode::Delete => {
+                        if *cursor < string.len()
+                        {
+                            string.remove(*cursor);
+                        }
+                    },
+                    KeyCode::Left => {
+                        if *cursor > 0
+                        {
+                            *cursor -= 1;
+                        }
+                    },
+                    KeyCode::Right => {
+                        if *cursor < string.len()
+                        {
+                            *cursor += 1;
+                        }
+                    },
+                    KeyCode::Char(mut c) => {
+                        if capitalize
+                        {
+                            c = c.to_ascii_uppercase();
+                        }
+                        if (max_len == None || string.len() < max_len.expect("Just checked")) &&
+                            (charset.is_none() || charset.expect("Just checked").contains(c))
+                        {
+                            string.insert(*cursor, c);
+                            *cursor += 1;
+                        }
+                    },
+                    KeyCode::End => {
+                        *cursor = string.len();
+                    },
+                    KeyCode::Home => {
+                        *cursor = 0;
+                    },
+                    _ => {}
+                }
+            },
+            _ => {}
+        }
+        Ok(())
+    }
+
     fn handle_event_popup(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
     {
+        match &mut self.popup
+        {
+            Some(PopupState::Patch {assembly, cursor}) =>
+            {
+                Self::handle_string_edit(assembly, cursor, &event, None, false, None)?;
+            }
+            Some(PopupState::JumpToAddress {address, cursor}) =>
+            {
+                Self::handle_string_edit(address, cursor, &event, Some("0123456789ABCDEF"), true, Some(16))?;
+            }
+            _ => {}
+        }
+
         match event
         {
             event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
@@ -136,13 +207,13 @@ impl <'a> App<'a>
                     KeyCode::Right => {
                         match &self.popup
                         {
-                            Some(PopupState::Patch(_assembly)) =>
+                            Some(PopupState::Patch {assembly: _assembly, cursor: _cursor}) =>
                             {
-                                todo!("Patch popup");
+                                
                             }
-                            Some(PopupState::JumpToAddress(_address)) =>
+                            Some(PopupState::JumpToAddress {address: _address, cursor: _cursor}) =>
                             {
-                                todo!("Jump to address popup");
+                                
                             }
                             Some(PopupState::Save(yes_selected)) =>
                             {
@@ -163,13 +234,17 @@ impl <'a> App<'a>
                     KeyCode::Enter => {
                         match &self.popup
                         {
-                            Some(PopupState::Patch(_assembly)) =>
+                            Some(PopupState::Patch {assembly: _assembly, cursor: _cursor}) =>
                             {
                                 todo!("Patch popup");
                             }
-                            Some(PopupState::JumpToAddress(_address)) =>
+                            Some(PopupState::JumpToAddress {address, cursor: _cursor}) =>
                             {
-                                todo!("Jump to address popup");
+                                if let Ok(address) = usize::from_str_radix(address, 16)
+                                {
+                                    self.jump_to(address);
+                                }
+                                self.popup = None;
                             }
                             Some(PopupState::Save(yes_selected)) =>
                             {

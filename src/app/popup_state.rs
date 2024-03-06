@@ -4,8 +4,16 @@ use super::{color_settings::ColorSettings, App};
 
 pub enum PopupState
 {
-    Patch(String),
-    JumpToAddress(String),
+    Patch
+    {
+        assembly: String,
+        cursor: usize
+    },
+    JumpToAddress
+    {
+        address: String,
+        cursor: usize
+    },
     QuitDirtySave(bool),
     SaveAndQuit(bool),
     Save(bool),
@@ -14,28 +22,61 @@ pub enum PopupState
 
 impl <'a> App<'a>
 {
-    pub(super) fn fill_popup(color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text, popup_rect: &mut Rect)
+
+    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize) -> Line<'a>
+    {
+        let string = s.to_string();
+        let mut spans = vec![Span::raw(" ")];
+        for (i, c) in string.chars().enumerate()
+        {
+            if i == cursor
+            {
+                spans.push(Span::styled(c.to_string(), color_settings.ok_selected));
+            }
+            else
+            {
+                spans.push(Span::raw(c.to_string()));
+            }
+        }
+        
+        spans.push(Span::styled(" ", if cursor == string.len() {
+            color_settings.ok_selected
+        } else {
+            color_settings.ok
+        }));
+        Line::from(spans)
+    }
+
+    pub(super) fn fill_popup(color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'a>, popup_rect: &mut Rect)
     {
         match &popup_state
         {
-            PopupState::Patch(assembly) =>
+            PopupState::Patch {assembly, cursor} =>
             {
                 *popup_title = "Patch";
+                *popup_rect = Rect::new(f.size().width / 2 - 16, f.size().height / 2 - 3, 32, 7);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, assembly, *cursor);
                 popup_text.lines.extend(
                     vec![
                         Line::raw("Enter the assembly to patch:"),
-                        Line::raw(assembly.clone()),
+                        Line::raw("──────────────────────────────"),
+                        editable_string.left_aligned(),
+                        Line::raw("──────────────────────────────"),
                         Line::from(vec![Span::styled("Ok", color_settings.ok_selected)])
                     ]
                 );
             }
-            PopupState::JumpToAddress(address) =>
+            PopupState::JumpToAddress {address, cursor} =>
             {
                 *popup_title = "Jump";
+                *popup_rect = Rect::new(f.size().width / 2 - 16, f.size().height / 2 - 3, 32, 7);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor);
                 popup_text.lines.extend(
                     vec![
                         Line::raw("Enter the address to jump to:"),
-                        Line::raw(address.clone()),
+                        Line::raw("──────────────────────────────"),
+                        editable_string.right_aligned(),
+                        Line::raw("──────────────────────────────"),
                         Line::from(vec![Span::styled("Ok", color_settings.ok_selected)])
                     ]
                 );
