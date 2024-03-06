@@ -18,13 +18,27 @@ impl <'a> App<'a>
     {
         match &popup_state
         {
-            PopupState::Patch(_assembly) =>
+            PopupState::Patch(assembly) =>
             {
-                todo!("Patch popup");
+                *popup_title = "Patch";
+                popup_text.lines.extend(
+                    vec![
+                        Line::raw("Enter the assembly to patch:"),
+                        Line::raw(assembly.clone()),
+                        Line::from(vec![Span::styled("Ok", color_settings.ok_selected)])
+                    ]
+                );
             }
-            PopupState::JumpToAddress(_address) =>
+            PopupState::JumpToAddress(address) =>
             {
-                todo!("Jump to address popup");
+                *popup_title = "Jump";
+                popup_text.lines.extend(
+                    vec![
+                        Line::raw("Enter the address to jump to:"),
+                        Line::raw(address.clone()),
+                        Line::from(vec![Span::styled("Ok", color_settings.ok_selected)])
+                    ]
+                );
             }
             PopupState::SaveAndQuit(yes_selected) =>
             {
