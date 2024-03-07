@@ -135,8 +135,13 @@ impl <'a> App<'a>
             }
 
             let style = Self::get_style_for_byte(&self.color_settings, byte);
+            let [high_char, low_char] = Self::u8_to_hex(byte);
+
             self.hex_view.lines[cursor_position.line_index]
-                .spans[cursor_position.line_byte_index * 3 + cursor_position.get_high_byte_offset()] = Span::styled(value.to_string(), style);
+                .spans[cursor_position.line_byte_index * 3] = Span::styled(high_char.to_string(), style);
+            self.hex_view.lines[cursor_position.line_index]
+                .spans[cursor_position.line_byte_index * 3 + 1] = Span::styled(low_char.to_string(), style);
+            
             
             let text = App::u8_to_char(byte);
             let new_str = text.to_string();
