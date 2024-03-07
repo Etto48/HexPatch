@@ -86,10 +86,12 @@ impl <'a> App<'a>
                                     super::info_mode::InfoMode::Text => 
                                     {
                                         self.info_mode = super::info_mode::InfoMode::Assembly;
+                                        self.update_hex_cursor();
                                     },
                                     super::info_mode::InfoMode::Assembly => 
                                     {
                                         self.info_mode = super::info_mode::InfoMode::Text;
+                                        self.update_hex_cursor();
                                     },
                                 }
                             }

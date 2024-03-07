@@ -80,10 +80,11 @@ impl <'a> App<'a>
         line
     }
 
-    pub(super) fn assembly_from_bytes(color_settings: &ColorSettings, bytes: &[u8]) -> (Text<'a>, Vec<usize>)
+    pub(super) fn assembly_from_bytes(color_settings: &ColorSettings, bytes: &[u8]) -> (Text<'a>, Vec<usize>, Vec<Instruction>)
     {
         let mut output = Text::default();
         let mut line_offsets = vec![0; bytes.len()];
+        let mut instructions = Vec::new();
 
         let header = Header::parse_header(bytes);
         let bitness = match header
@@ -96,7 +97,7 @@ impl <'a> App<'a>
         let mut byte_index = 0;
         let mut line_index = 0;
         for instruction in decoder {
-            
+            instructions.push(instruction);
             let line = Self::instruction_to_line(color_settings, &instruction, line_index == 0);
             
             for _ in 0..instruction.len() {
@@ -106,7 +107,7 @@ impl <'a> App<'a>
             line_index += 1;
             output.lines.push(line);
         }
-        (output, line_offsets)
+        (output, line_offsets, instructions)
     }
 
     pub(super) fn update_assembly_scroll(&mut self)
@@ -129,9 +130,21 @@ impl <'a> App<'a>
         return view_scroll as usize;
     }
 
+    pub(super) fn get_current_instruction(&self) -> Instruction
+    {
+        let current_istruction_index =  self.assembly_offsets[self.get_cursor_position().global_byte_index];
+        self.assembly_instructions[current_istruction_index as usize]
+    }
+
+    pub(super) fn get_instruction_at(&self, index: usize) -> Instruction
+    {
+        let current_istruction_index =  self.assembly_offsets[index];
+        self.assembly_instructions[current_istruction_index as usize]
+    }
+
     pub(super) fn edit_assembly(&mut self)
     {
-        (self.assembly_view, self.assembly_offsets) = Self::assembly_from_bytes(&self.color_settings, &self.data);
+        (self.assembly_view, self.assembly_offsets, self.assembly_instructions) = Self::assembly_from_bytes(&self.color_settings, &self.data);
         self.assembly_scroll = 0;
         self.update_assembly_scroll();
     }
