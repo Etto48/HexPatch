@@ -234,15 +234,17 @@ impl <'a> App<'a>
                         }
                     },
                     KeyCode::Enter => {
-                        match &self.popup
+                        let popup = self.popup.clone();
+                        match popup
                         {
-                            Some(PopupState::Patch {assembly: _assembly, cursor: _cursor}) =>
+                            Some(PopupState::Patch {assembly, cursor: _cursor}) =>
                             {
-                                todo!("Patch popup");
+                                self.patch(&assembly);
+                                self.popup = None;
                             }
                             Some(PopupState::JumpToAddress {address, cursor: _cursor}) =>
                             {
-                                if let Ok(address) = usize::from_str_radix(address, 16)
+                                if let Ok(address) = usize::from_str_radix(&address, 16)
                                 {
                                     self.jump_to(address);
                                 }
@@ -250,7 +252,7 @@ impl <'a> App<'a>
                             }
                             Some(PopupState::Save(yes_selected)) =>
                             {
-                                if *yes_selected
+                                if yes_selected
                                 {
                                     self.save_data();
                                 }
@@ -258,7 +260,7 @@ impl <'a> App<'a>
                             },
                             Some(PopupState::SaveAndQuit(yes_selected)) =>
                             {
-                                if *yes_selected
+                                if yes_selected
                                 {
                                     self.save_data();
                                     self.needs_to_exit = true;
@@ -267,7 +269,7 @@ impl <'a> App<'a>
                             },
                             Some(PopupState::QuitDirtySave(yes_selected)) =>
                             {
-                                if *yes_selected
+                                if yes_selected
                                 {
                                     self.save_data();
                                     self.needs_to_exit = true;

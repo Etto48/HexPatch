@@ -2,6 +2,7 @@ use ratatui::{layout::Rect, text::{Line, Span, Text}, Frame};
 
 use super::{color_settings::ColorSettings, App};
 
+#[derive(Clone, Debug)]
 pub enum PopupState
 {
     Patch

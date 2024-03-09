@@ -1,6 +1,8 @@
 use iced_x86::Instruction;
 use ratatui::text::{Line, Span, Text};
 
+use crate::asm::asm;
+
 use super::{app::App, color_settings::ColorSettings, elf::ElfHeader, pe::PEHeader};
 
 pub enum Header
@@ -108,6 +110,45 @@ impl <'a> App<'a>
             output.lines.push(line);
         }
         (output, line_offsets, instructions)
+    }
+
+    pub(super) fn bytes_from_assembly(&self, assembly: &str) -> Option<Vec<u8>>
+    {        
+        let current_ip = self.get_current_instruction().ip();
+        let bytes = asm::assemble_line(assembly, current_ip, 64);
+        match bytes
+        {
+            Ok(bytes) => Some(bytes),
+            Err(_) => None,
+        }
+    }
+
+    pub(super) fn patch_bytes(&mut self, bytes: &[u8])
+    {
+        let current_ip = self.get_current_instruction().ip();
+        for (i, byte) in bytes.iter().enumerate()
+        {
+            self.data[current_ip as usize + i] = *byte;
+        }
+        self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
+        self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
+        (self.assembly_view, self.assembly_offsets, self.assembly_instructions) = Self::assembly_from_bytes(&self.color_settings, &self.data);
+        self.hex_cursor = (0,0);
+        self.hex_last_byte_index = 0;
+        self.text_cursor = (0,0);
+        self.text_last_byte_index = 0;
+        self.assembly_scroll = 0;
+        self.update_cursors();
+    }
+
+    pub(super) fn patch(&mut self, assembly: &str)
+    {
+        let bytes = self.bytes_from_assembly(assembly);
+        match bytes
+        {
+            Some(bytes) => self.patch_bytes(&bytes),
+            None => {},
+        }
     }
 
     pub(super) fn update_assembly_scroll(&mut self)
