@@ -11,5 +11,6 @@ pub mod popup_state;
 pub mod info_mode;
 pub mod cursor_position;
 pub mod color_settings;
+pub mod header;
 
 pub use app::App;

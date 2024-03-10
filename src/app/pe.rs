@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy)]
 pub enum MachineType
 {
     Unknown = 0x0,
@@ -31,12 +32,14 @@ pub enum MachineType
     WceMipsV2 = 0x169,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum OptionalHeaderMagic
 {
     PE32 = 0x10B,
     PE32Plus = 0x20B,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct OptionalHeader
 {
     pub magic: OptionalHeaderMagic,
@@ -49,6 +52,7 @@ pub struct OptionalHeader
     pub base_of_code: u32,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct PEHeader
 {
     pub signature_offset: usize,

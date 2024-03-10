@@ -4,11 +4,12 @@ use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::Text, widgets::{Block, Borders, ScrollbarState}};
 use iced_x86::Instruction;
 
-use super::{color_settings::{self, ColorSettings}, info_mode::InfoMode, log::LogLine, popup_state::PopupState};
+use super::{color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, popup_state::PopupState};
 
 pub struct App<'a> 
 {
     pub(super) path: PathBuf,
+    pub(super) header: Option<Header>,
     pub(super) log: Vec<LogLine>,
     pub(super) output: String,
     pub(super) dirty: bool,
@@ -53,9 +54,11 @@ impl <'a> App<'a>
         let address_view = Self::addresses(&color_settings, data.len(), block_size, blocks_per_row);
         let hex_view = Self::bytes_to_styled_hex(&color_settings, &data, block_size, blocks_per_row);
         let text_view = Self::bytes_to_styled_text(&color_settings, &data, block_size, blocks_per_row);
-        let (assembly_view, assembly_offsets, assembly_instructions) = Self::assembly_from_bytes(&color_settings, &data);
+        let header = Header::parse_header(&data);
+        let (assembly_view, assembly_offsets, assembly_instructions) = Self::assembly_from_bytes(&color_settings, &data, &header);
         Ok(App{
             path: canonical_path,
+            header,
             log: Vec::new(),
             data,
             output: "Press H to view a help page.".to_string(),

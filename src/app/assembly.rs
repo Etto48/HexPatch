@@ -3,51 +3,7 @@ use ratatui::text::{Line, Span, Text};
 
 use crate::asm::assembler::assemble;
 
-use super::{app::App, color_settings::ColorSettings, elf::ElfHeader, pe::PEHeader};
-
-pub enum Header
-{
-    Elf(ElfHeader),
-    PE(PEHeader),
-}
-
-impl Header
-{
-    pub fn parse_header(bytes: &[u8]) -> Option<Header>
-    {
-        let elf_header = ElfHeader::parse_header(bytes);
-        match elf_header
-        {
-            Some(header) => return Some(Header::Elf(header)),
-            None => {},
-        };
-        let pe_header = PEHeader::parse_header(bytes);
-        match pe_header
-        {
-            Some(header) => return Some(Header::PE(header)),
-            None => {},
-        };
-        None
-    }
-
-    pub fn bitness(&self) -> u32
-    {
-        match self
-        {
-            Header::Elf(header) => header.bitness(),
-            Header::PE(header) => header.bitness(),
-        }
-    }
-
-    pub fn entry_point(&self) -> u64
-    {
-        match self
-        {
-            Header::Elf(header) => header.entry_point,
-            Header::PE(header) => header.optional_header.address_of_entry_point as u64,
-        }
-    }
-}
+use super::{app::App, color_settings::ColorSettings, header::Header};
 
 impl <'a> App<'a>
 {
@@ -82,13 +38,12 @@ impl <'a> App<'a>
         line
     }
 
-    pub(super) fn assembly_from_bytes(color_settings: &ColorSettings, bytes: &[u8]) -> (Text<'a>, Vec<usize>, Vec<Instruction>)
+    pub(super) fn assembly_from_bytes(color_settings: &ColorSettings, bytes: &[u8], header: &Option<Header>) -> (Text<'a>, Vec<usize>, Vec<Instruction>)
     {
         let mut output = Text::default();
         let mut line_offsets = vec![0; bytes.len()];
         let mut instructions = Vec::new();
 
-        let header = Header::parse_header(bytes);
         let bitness = match header
         {
             Some(header) => header.bitness(),
