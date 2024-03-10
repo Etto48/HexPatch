@@ -8,5 +8,7 @@ edition = "2021"
 [dependencies]
 clap = { version = "4.5.1", features = ["derive"] }
 crossterm = "0.27.0"
-iced-x86 = { version = "1.21.0", features = ["code_asm"] }
+iced-x86 = "1.21.0"
 ratatui = "0.26.1"
+tempfile = "3.10.1"
+which = "6.0.0"

@@ -1,7 +1,7 @@
 use iced_x86::Instruction;
 use ratatui::text::{Line, Span, Text};
 
-use crate::asm::asm;
+use crate::asm::assembler::assemble;
 
 use super::{app::App, color_settings::ColorSettings, elf::ElfHeader, pe::PEHeader};
 
@@ -112,14 +112,16 @@ impl <'a> App<'a>
         (output, line_offsets, instructions)
     }
 
-    pub(super) fn bytes_from_assembly(&self, assembly: &str) -> Option<Vec<u8>>
+    pub(super) fn bytes_from_assembly(&self, assembly: &str) -> Result<Vec<u8>, String>
     {        
-        let current_ip = self.get_current_instruction().ip();
-        let bytes = asm::assemble_line(assembly, current_ip, 64);
+        let bytes = assemble(assembly, 64);
         match bytes
         {
-            Ok(bytes) => Some(bytes),
-            Err(_) => None,
+            Ok(bytes) => Ok(bytes),
+            Err(e) => 
+            {
+                Err(format!("{}", e.to_string()))
+            },
         }
     }
 
@@ -146,8 +148,10 @@ impl <'a> App<'a>
         let bytes = self.bytes_from_assembly(assembly);
         match bytes
         {
-            Some(bytes) => self.patch_bytes(&bytes),
-            None => {},
+            Ok(bytes) => self.patch_bytes(&bytes),
+            Err(e) => {
+                self.output = e;
+            }
         }
     }
 
