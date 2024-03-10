@@ -302,9 +302,10 @@ impl <'a> App<'a>
                             Some(PopupState::Log(scroll)) =>
                             {
                                 *scroll += 1;
-                                if *scroll >= self.log.len()
+                                let lines = 8;
+                                if *scroll as isize >= self.log.len() as isize - lines as isize
                                 {
-                                    *scroll = self.log.len().saturating_sub(1);
+                                    *scroll = self.log.len().saturating_sub(lines);
                                 }
                                 self.popup = Some(PopupState::Log(*scroll));
                             }
