@@ -5,6 +5,7 @@ use super::{color_settings::ColorSettings, App};
 #[derive(Clone, Debug)]
 pub enum PopupState
 {
+    Log(usize),
     Patch
     {
         assembly: String,
@@ -48,10 +49,23 @@ impl <'a> App<'a>
         Line::from(spans)
     }
 
-    pub(super) fn fill_popup(color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'a>, popup_rect: &mut Rect)
+    pub(super) fn fill_popup(&'a self, color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'a>, popup_rect: &mut Rect)
     {
         match &popup_state
         {
+            PopupState::Log(scroll) =>
+            {
+                *popup_title = "Log";
+                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 5, 60, 10);
+                if self.log.len() > 0
+                {
+                    // take the last 8 lines skipping "scroll" lines from the bottom
+                    for line in self.log.iter().rev().skip(*scroll).take(8).rev()
+                    {
+                        popup_text.lines.push(line.to_line(color_settings));
+                    }
+                }
+            }
             PopupState::Patch {assembly, cursor} =>
             {
                 *popup_title = "Patch";

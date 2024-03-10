@@ -160,7 +160,7 @@ impl <'a> App<'a>
         {
             Ok(bytes) => self.patch_bytes(&bytes),
             Err(e) => {
-                self.output = e;
+                self.log("Error", &e);
             }
         }
     }
@@ -199,8 +199,71 @@ impl <'a> App<'a>
 
     pub(super) fn edit_assembly(&mut self)
     {
-        (self.assembly_view, self.assembly_offsets, self.assembly_instructions) = Self::assembly_from_bytes(&self.color_settings, &self.data);
-        self.assembly_scroll = 0;
+        let from_byte = self.get_current_instruction().ip() as usize;
+        let mut decoder = iced_x86::Decoder::new(64, &self.data[from_byte..], iced_x86::DecoderOptions::NONE);
+        decoder.set_ip(from_byte as u64);
+        let mut offsets = Vec::new();
+        let mut instructions = Vec::new();
+        let mut instruction_lines = Vec::new();
+        let mut to_byte = self.data.len();
+
+        let from_instruction = self.assembly_offsets[from_byte];
+
+        for instruction in decoder
+        {   
+            let old_instruction = self.get_instruction_at(instruction.ip() as usize);
+            if old_instruction == instruction && old_instruction.ip() == instruction.ip()
+            {
+                to_byte = old_instruction.ip() as usize;
+                break;
+            }
+            instructions.push(instruction);
+            instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction, false));
+            for _ in 0..instruction.len()
+            {
+                offsets.push(from_instruction + instructions.len() - 1);
+            }
+        }
+        if from_byte == to_byte
+        {
+            return;
+        }
+
+        let to_instruction = self.assembly_offsets[to_byte];
+
+        let mut original_instruction_count = 1;
+        let mut original_instruction_ip = self.assembly_offsets[from_byte];
+        for i in from_byte..to_byte
+        {
+            if self.assembly_offsets[i] != original_instruction_ip
+            {
+                original_instruction_count += 1;
+                original_instruction_ip = self.assembly_offsets[i];
+            }
+        }
+
+        let new_instruction_count = instructions.len();
+
+        let delta = new_instruction_count as isize - original_instruction_count as isize;
+
+        self.assembly_offsets.splice(from_byte..to_byte, offsets);
+        for offset in self.assembly_offsets.iter_mut().skip(to_byte)
+        {
+            *offset = (*offset as isize + delta) as usize;
+        }
+
+        for i in from_instruction..to_instruction
+        {
+            self.log("Debug", &format!("Removing instruction \"{}\" at {}", self.assembly_instructions[i], self.assembly_instructions[i].ip()));
+        }
+        for i in 0..instructions.len()
+        {
+            self.log("Debug", &format!("Adding instruction \"{}\" at {}", instructions[i], instructions[i].ip()));
+        }
+
+        self.assembly_instructions.splice(from_instruction..to_instruction, instructions);
+        self.assembly_view.lines.splice(from_instruction..to_instruction, instruction_lines);
+
         self.update_assembly_scroll();
     }
 }

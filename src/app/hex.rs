@@ -205,10 +205,8 @@ impl <'a> App<'a>
 
     pub(super) fn save_data(&mut self)
     {
-        self.output = "Converting data...".to_string();
-        self.output = "Saving...".to_string();
         std::fs::write(&self.path, &self.data).unwrap();
         self.dirty = false;
-        self.output = format!("Saved to {}", self.path.to_str().unwrap());
+        self.log("Info", &format!("Saved to {}", self.path.to_str().unwrap()));
     }
 }

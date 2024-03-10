@@ -4,11 +4,12 @@ use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::Text, widgets::{Block, Borders, ScrollbarState}};
 use iced_x86::Instruction;
 
-use super::{color_settings::{self, ColorSettings}, info_mode::InfoMode, popup_state::PopupState};
+use super::{color_settings::{self, ColorSettings}, info_mode::InfoMode, log::LogLine, popup_state::PopupState};
 
 pub struct App<'a> 
 {
     pub(super) path: PathBuf,
+    pub(super) log: Vec<LogLine>,
     pub(super) output: String,
     pub(super) dirty: bool,
     pub(super) data: Vec<u8>,
@@ -55,6 +56,7 @@ impl <'a> App<'a>
         let (assembly_view, assembly_offsets, assembly_instructions) = Self::assembly_from_bytes(&color_settings, &data);
         Ok(App{
             path: canonical_path,
+            log: Vec::new(),
             data,
             output: "Press H to view a help page.".to_string(),
             dirty: false,
@@ -177,7 +179,7 @@ impl <'a> App<'a>
 
                     let mut popup_rect = Rect::new(f.size().width / 2 - 27, f.size().height / 2 - 2, 54, 5);
 
-                    Self::fill_popup(&self.color_settings, popup_state, f, &mut popup_title, &mut popup_text, &mut popup_rect);
+                    self.fill_popup(&self.color_settings, popup_state, f, &mut popup_title, &mut popup_text, &mut popup_rect);
 
                     let popup = ratatui::widgets::Paragraph::new(popup_text)
                         .block(Block::default().title(popup_title).borders(Borders::ALL))

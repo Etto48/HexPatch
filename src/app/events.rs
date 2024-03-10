@@ -75,6 +75,9 @@ impl <'a> App<'a>
                             'h' => {
                                 self.popup = Some(PopupState::Help);
                             },
+                            'l' => {
+                                self.popup = Some(PopupState::Log(0));
+                            },
                             'p' => {
                                 self.popup = Some(PopupState::Patch { assembly: String::new(), cursor: 0});
                             },
@@ -209,14 +212,6 @@ impl <'a> App<'a>
                     KeyCode::Right => {
                         match &self.popup
                         {
-                            Some(PopupState::Patch {assembly: _assembly, cursor: _cursor}) =>
-                            {
-                                
-                            }
-                            Some(PopupState::JumpToAddress {address: _address, cursor: _cursor}) =>
-                            {
-                                
-                            }
                             Some(PopupState::Save(yes_selected)) =>
                             {
                                 self.popup = Some(PopupState::Save(!yes_selected));
@@ -229,14 +224,17 @@ impl <'a> App<'a>
                             {
                                 self.popup = Some(PopupState::QuitDirtySave(!yes_selected));
                             },
-                            Some(PopupState::Help) => {}
-                            None => {}
+                            _ => {}
                         }
                     },
                     KeyCode::Enter => {
                         let popup = self.popup.clone();
                         match popup
                         {
+                            Some(PopupState::Log(_)) =>
+                            {
+                                self.popup = None;
+                            }
                             Some(PopupState::Patch {assembly, cursor: _cursor}) =>
                             {
                                 self.patch(&assembly);
@@ -285,6 +283,32 @@ impl <'a> App<'a>
                                 self.popup = None;
                             }
                             None => {}
+                        }
+                    },
+                    KeyCode::Down => {
+                        match &mut self.popup
+                        {
+                            Some(PopupState::Log(scroll)) =>
+                            {
+                                *scroll = scroll.saturating_sub(1);
+                                self.popup = Some(PopupState::Log(*scroll));
+                            }
+                            _ => {}
+                        }
+                    },
+                    KeyCode::Up => {
+                        match &mut self.popup
+                        {
+                            Some(PopupState::Log(scroll)) =>
+                            {
+                                *scroll += 1;
+                                if *scroll >= self.log.len()
+                                {
+                                    *scroll = self.log.len().saturating_sub(1);
+                                }
+                                self.popup = Some(PopupState::Log(*scroll));
+                            }
+                            _ => {}
                         }
                     },
                     KeyCode::Esc => {

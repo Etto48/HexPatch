@@ -1,4 +1,5 @@
 pub mod app;
+pub mod log;
 pub mod assembly;
 pub mod address;
 pub mod hex;

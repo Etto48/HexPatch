@@ -33,6 +33,12 @@ pub struct ColorSettings
     pub no_selected: Style,
     pub ok: Style,
     pub ok_selected: Style,
+
+    pub log_info: Style,
+    pub log_debug: Style,
+    pub log_warning: Style,
+    pub log_error: Style,
+    pub log_message: Style,
 }
 
 impl Default for ColorSettings
@@ -70,6 +76,12 @@ impl Default for ColorSettings
             no_selected: Style::default().fg(Color::Black).bg(Color::Red),
             ok: Style::default().fg(Color::White),
             ok_selected: Style::default().fg(Color::Black).bg(Color::White),
+
+            log_info: Style::default().fg(Color::LightBlue),
+            log_debug: Style::default().fg(Color::LightGreen),
+            log_warning: Style::default().fg(Color::Yellow),
+            log_error: Style::default().fg(Color::Red),
+            log_message: Style::default().fg(Color::White),
         }
     }
 }
