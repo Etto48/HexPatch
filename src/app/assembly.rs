@@ -38,17 +38,13 @@ impl <'a> App<'a>
         line
     }
 
-    pub(super) fn assembly_from_bytes(color_settings: &ColorSettings, bytes: &[u8], header: &Option<Header>) -> (Text<'a>, Vec<usize>, Vec<Instruction>)
+    pub(super) fn assembly_from_bytes(color_settings: &ColorSettings, bytes: &[u8], header: &Header) -> (Text<'a>, Vec<usize>, Vec<Instruction>)
     {
         let mut output = Text::default();
         let mut line_offsets = vec![0; bytes.len()];
         let mut instructions = Vec::new();
 
-        let bitness = match header
-        {
-            Some(header) => header.bitness(),
-            None => 64,
-        };
+        let bitness = header.bitness();
 
         let decoder = iced_x86::Decoder::new(bitness, bytes, iced_x86::DecoderOptions::NONE);
         let mut byte_index = 0;
@@ -69,7 +65,7 @@ impl <'a> App<'a>
 
     pub(super) fn bytes_from_assembly(&self, assembly: &str) -> Result<Vec<u8>, String>
     {        
-        let bytes = assemble(assembly, 64);
+        let bytes = assemble(assembly, self.header.bitness());
         match bytes
         {
             Ok(bytes) => Ok(bytes),
@@ -155,7 +151,7 @@ impl <'a> App<'a>
     pub(super) fn edit_assembly(&mut self)
     {
         let from_byte = self.get_current_instruction().ip() as usize;
-        let mut decoder = iced_x86::Decoder::new(64, &self.data[from_byte..], iced_x86::DecoderOptions::NONE);
+        let mut decoder = iced_x86::Decoder::new(self.header.bitness(), &self.data[from_byte..], iced_x86::DecoderOptions::NONE);
         decoder.set_ip(from_byte as u64);
         let mut offsets = Vec::new();
         let mut instructions = Vec::new();

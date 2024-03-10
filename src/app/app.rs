@@ -9,7 +9,7 @@ use super::{color_settings::{self, ColorSettings}, header::Header, info_mode::In
 pub struct App<'a> 
 {
     pub(super) path: PathBuf,
-    pub(super) header: Option<Header>,
+    pub(super) header: Header,
     pub(super) log: Vec<LogLine>,
     pub(super) output: String,
     pub(super) dirty: bool,
