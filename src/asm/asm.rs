@@ -1,8 +1,8 @@
-use std::error::Error;
+use std::{error::Error};
 
-use iced_x86::{code_asm::CodeAssembler, Mnemonic};
+use iced_x86::{code_asm::{CodeAssembler}, Mnemonic};
 
-use super::parser::decode_mnemonic;
+use super::{parser::{decode_mnemonic, parse_operand}, operand::Operand};
 
 pub fn assemble_line(line: &str, instruction_pointer: u64, bitness: u32) -> Result<Vec<u8>, Box<dyn Error>>
 {
@@ -14,13 +14,22 @@ pub fn assemble_line(line: &str, instruction_pointer: u64, bitness: u32) -> Resu
         return Err("Invalid mnemonic".into());
     }
 
+    let mut operands = Vec::new();
+    for token in tokens.iter().skip(1) {
+        let op = parse_operand(token);
+        if op.is_none() {
+            return Err("Invalid operand".into());
+        }
+        operands.push(op.unwrap());
+    }
+
     let mut a = CodeAssembler::new(bitness)?;
 
     match mnemonic
     {
         Mnemonic::INVALID => unreachable!(),
         Mnemonic::Aaa => {
-            if tokens.len() != 1 {
+            if operands.len() != 0 {
                 return Err("Invalid number of arguments".into());
             }
             a.aaa()?;
@@ -437,7 +446,341 @@ pub fn assemble_line(line: &str, instruction_pointer: u64, bitness: u32) -> Resu
         Mnemonic::Monitor => todo!(),
         Mnemonic::Monitorx => todo!(),
         Mnemonic::Montmul => todo!(),
-        Mnemonic::Mov => todo!(),
+        Mnemonic::Mov => 
+        {
+            if operands.len() != 2 {
+                return Err("Invalid number of arguments".into());
+            }
+            match operands[0]
+            {
+                Operand::Reg8(o0) => 
+                {
+                    match operands[1]
+                    {
+                        Operand::Reg8(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Reg16(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg32(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg64(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegXmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegYmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegZmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegK(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegBnd(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegCr(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegDr(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegSt(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegMm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegTr(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegTmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegSegment(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Immediate(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Memory(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                    }
+                },
+                Operand::Reg16(o0) => 
+                {
+                    match operands[1]
+                    {
+                        Operand::Reg8(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg16(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Reg32(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg64(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegXmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegYmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegZmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegK(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegBnd(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegCr(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegDr(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegSt(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegMm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegTr(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegTmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegSegment(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Immediate(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Memory(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                    }
+                },
+                Operand::Reg32(o0) => 
+                {
+                    match operands[1]
+                    {
+                        Operand::Reg8(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg16(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg32(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Reg64(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegXmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegYmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegZmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegK(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegBnd(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegCr(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::RegDr(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::RegSt(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegMm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegTr(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::RegTmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegSegment(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Immediate(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Memory(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                    }
+                },
+                Operand::Reg64(o0) => 
+                {
+                    match operands[1]
+                    {
+                        Operand::Reg8(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg16(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg32(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Reg64(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::RegXmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegYmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegZmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegK(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegBnd(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegCr(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::RegDr(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::RegSt(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegMm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegTr(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegTmm(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::RegSegment(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                        Operand::Immediate(_o1) => 
+                        {
+                            return Err("Invalid operand size".into());
+                        },
+                        Operand::Memory(o1) => 
+                        {
+                            a.mov(o0, o1)?;
+                        },
+                    }
+                },
+                Operand::RegXmm(o0) => todo!(),
+                Operand::RegYmm(o0) => todo!(),
+                Operand::RegZmm(o0) => todo!(),
+                Operand::RegK(o0) => todo!(),
+                Operand::RegBnd(o0) => todo!(),
+                Operand::RegCr(o0) => todo!(),
+                Operand::RegDr(o0) => todo!(),
+                Operand::RegSt(o0) => todo!(),
+                Operand::RegMm(o0) => todo!(),
+                Operand::RegTr(o0) => todo!(),
+                Operand::RegTmm(o0) => todo!(),
+                Operand::RegSegment(o0) => todo!(),
+                Operand::Immediate(o0) => todo!(),
+                Operand::Memory(o0) => todo!(),
+            }
+        },
         Mnemonic::Movapd => todo!(),
         Mnemonic::Movaps => todo!(),
         Mnemonic::Movbe => todo!(),
@@ -490,7 +833,7 @@ pub fn assemble_line(line: &str, instruction_pointer: u64, bitness: u32) -> Resu
         Mnemonic::Neg => todo!(),
         Mnemonic::Nop => 
         {
-            if tokens.len() != 1 {
+            if operands.len() != 0 {
                 return Err("Invalid number of arguments".into());
             }
             a.nop()?;
