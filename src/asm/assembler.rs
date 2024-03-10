@@ -32,14 +32,15 @@ pub fn assemble(asm: &str, bitness: u32) -> Result<Vec<u8>, Box<dyn Error>> {
         .arg(output_file.path())
         .arg("-f")
         .arg("bin")
+        .arg("-s")
         .arg(input_file.path())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?
         .wait_with_output()?;
     
-    if !out.status.success() {
-        return Err(format!("Assembler failed: {}", String::from_utf8_lossy(&out.stderr)).into());
+    if !out.status.success() || out.stderr.len() > 0 || out.stdout.len() > 0 {
+        return Err(format!("Assembler failed: {}", String::from_utf8_lossy(&out.stdout)).into());
     }
     else {
         let mut output = Vec::new();

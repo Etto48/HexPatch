@@ -132,6 +132,7 @@ impl <'a> App<'a>
         {
             self.data[current_ip as usize + i] = *byte;
         }
+        self.dirty = true;
         self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         (self.assembly_view, self.assembly_offsets, self.assembly_instructions) = Self::assembly_from_bytes(&self.color_settings, &self.data);
