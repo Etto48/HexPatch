@@ -127,20 +127,29 @@ impl <'a> App<'a>
 
     pub(super) fn patch_bytes(&mut self, bytes: &[u8])
     {
-        let current_ip = self.get_current_instruction().ip();
+        let current_instruction = self.get_current_instruction();
+        let current_ip = current_instruction.ip();
         for (i, byte) in bytes.iter().enumerate()
         {
             self.data[current_ip as usize + i] = *byte;
         }
+        self.color_instruction_bytes(&current_instruction, true);
+        for (i, byte) in bytes.iter().enumerate()
+        {
+            let style = Self::get_style_for_byte(&self.color_settings, *byte);
+            let cursor_position = self.get_expected_cursor_position(current_ip as usize + i, true);
+            let [high_byte, low_byte] = Self::u8_to_hex(*byte);
+
+            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].content = high_byte.to_string().into();
+            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].style = style;
+            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].content = low_byte.to_string().into();
+            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].style = style;
+            
+            self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].content = Self::u8_to_char(*byte).to_string().into();
+            self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].style = style;
+        }
         self.dirty = true;
-        self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
-        self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
-        (self.assembly_view, self.assembly_offsets, self.assembly_instructions) = Self::assembly_from_bytes(&self.color_settings, &self.data);
-        self.hex_cursor = (0,0);
-        self.hex_last_byte_index = 0;
-        self.text_cursor = (0,0);
-        self.text_last_byte_index = 0;
-        self.assembly_scroll = 0;
+        self.edit_assembly();
         self.update_cursors();
     }
 
