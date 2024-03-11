@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MachineType
 {
     Unknown = 0x0,
@@ -32,14 +32,14 @@ pub enum MachineType
     WceMipsV2 = 0x169,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OptionalHeaderMagic
 {
     PE32 = 0x10B,
     PE32Plus = 0x20B,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OptionalHeader
 {
     pub magic: OptionalHeaderMagic,
@@ -52,7 +52,22 @@ pub struct OptionalHeader
     pub base_of_code: u32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Section
+{
+    pub name: String,
+    pub virtual_size: u32,
+    pub virtual_address: u32,
+    pub size_of_raw_data: u32,
+    pub pointer_to_raw_data: u32,
+    pub pointer_to_relocations: u32,
+    pub pointer_to_linenumbers: u32,
+    pub number_of_relocations: u16,
+    pub number_of_linenumbers: u16,
+    pub characteristics: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PEHeader
 {
     pub signature_offset: usize,
@@ -65,6 +80,7 @@ pub struct PEHeader
     pub characteristics: u16,
 
     pub optional_header: OptionalHeader,
+    pub section_table: Vec<Section>,
 }
 
 impl PEHeader
@@ -132,8 +148,10 @@ impl PEHeader
         let size_of_optional_header = u16::from_le_bytes([bytes[signature_offset as usize + 20], bytes[signature_offset as usize + 21]]);
         let characteristics = u16::from_le_bytes([bytes[signature_offset as usize + 22], bytes[signature_offset as usize + 23]]);
 
+        let size_of_header = 24;
         let optional_header = if size_of_optional_header != 0
         {
+            
             let magic = u16::from_le_bytes([bytes[signature_offset as usize + 24], bytes[signature_offset as usize + 25]]);
             let magic = match magic
             {
@@ -151,7 +169,7 @@ impl PEHeader
                 let address_of_entry_point = u32::from_le_bytes([bytes[signature_offset as usize + 40], bytes[signature_offset as usize + 41], bytes[signature_offset as usize + 42], bytes[signature_offset as usize + 43]]);
                 let base_of_code = u32::from_le_bytes([bytes[signature_offset as usize + 44], bytes[signature_offset as usize + 45], bytes[signature_offset as usize + 46], bytes[signature_offset as usize + 47]]);
                 
-                Some(OptionalHeader{
+                OptionalHeader{
                     magic,
                     major_linker_version,
                     minor_linker_version,
@@ -160,36 +178,67 @@ impl PEHeader
                     size_of_uninitialized_data,
                     address_of_entry_point,
                     base_of_code,
-                })
+                }
             }
             else 
             {
-                None
+                return None;
             }
         }
         else
         {
-            None
+            return None;
         };
-        if let Some(optional_header) = optional_header
+
+        if bytes.len() <= signature_offset as usize + size_of_header + size_of_optional_header as usize
         {
-            Some(PEHeader {
-                signature_offset: signature_offset as usize,
-                machine,
-                number_of_sections,
-                time_date_stamp,
-                pointer_to_symbol_table,
-                number_of_symbols,
-                size_of_optional_header,
-                characteristics,
-                optional_header,
-            })    
+            return None;
         }
-        else 
+        let sections = bytes[signature_offset as usize + size_of_header + size_of_optional_header as usize ..].chunks(40).take(number_of_sections as usize);
+        let mut section_table = Vec::new();
+        for section in sections
         {
-            None
+            if section.len() < 40
+            {
+                return None;
+            }
+            let name = String::from_utf8_lossy(&section[0..8]).to_string();
+            let virtual_size = u32::from_le_bytes([section[8], section[9], section[10], section[11]]);
+            let virtual_address = u32::from_le_bytes([section[12], section[13], section[14], section[15]]);
+            let size_of_raw_data = u32::from_le_bytes([section[16], section[17], section[18], section[19]]);
+            let pointer_to_raw_data = u32::from_le_bytes([section[20], section[21], section[22], section[23]]);
+            let pointer_to_relocations = u32::from_le_bytes([section[24], section[25], section[26], section[27]]);
+            let pointer_to_linenumbers = u32::from_le_bytes([section[28], section[29], section[30], section[31]]);
+            let number_of_relocations = u16::from_le_bytes([section[32], section[33]]);
+            let number_of_linenumbers = u16::from_le_bytes([section[34], section[35]]);
+            let characteristics = u32::from_le_bytes([section[36], section[37], section[38], section[39]]);
+            section_table.push(Section {
+                name,
+                virtual_size,
+                virtual_address,
+                size_of_raw_data,
+                pointer_to_raw_data,
+                pointer_to_relocations,
+                pointer_to_linenumbers,
+                number_of_relocations,
+                number_of_linenumbers,
+                characteristics,
+            });
         }
 
+
+        Some(PEHeader {
+            signature_offset: signature_offset as usize,
+            machine,
+            number_of_sections,
+            time_date_stamp,
+            pointer_to_symbol_table,
+            number_of_symbols,
+            size_of_optional_header,
+            characteristics,
+            optional_header,
+            section_table,
+        })    
         
     }
 

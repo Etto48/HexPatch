@@ -93,6 +93,27 @@ impl <'a> App<'a>
 
     pub fn run<B: Backend>(&mut self, terminal: &mut ratatui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
     {
+        if self.header != Header::None
+        {
+            match &self.header
+            {
+                Header::Elf(_) => self.log("Info","Loaded ELF file."),
+                Header::PE(_) => self.log("Info","Loaded PE file."),
+                Header::None => unreachable!(),
+            }
+            self.log("Info", &format!("Bitness: {}", self.header.bitness()));
+            self.log("Info", &format!("Entry point: 0x{:X}", self.header.entry_point()));
+            for section in self.header.get_sections()
+            {
+                self.log("Info", &format!("Section: {}", section));
+            }
+        }
+        else
+        {
+            self.log("Info", "No header found. Assuming 64-bit.");
+        }
+        
+
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_if_needed(self.screen_size.0);
 

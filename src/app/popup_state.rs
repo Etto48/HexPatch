@@ -167,7 +167,7 @@ impl <'a> App<'a>
             },
             PopupState::Help =>
             {
-                *popup_rect = Rect::new(f.size().width / 2 - 15, f.size().height / 2 - 5, 30, 10);
+                *popup_rect = Rect::new(f.size().width / 2 - 15, f.size().height / 2 - 5, 30, 11);
                 *popup_title = "Help";
                 popup_text.lines.extend(
                     vec![
@@ -205,6 +205,12 @@ impl <'a> App<'a>
                             vec![
                                 Span::styled(" P", color_settings.help_command),
                                 Span::raw(": Patch assembly")
+                            ]
+                        ).left_aligned(),
+                        Line::from(
+                            vec![
+                                Span::styled(" L", color_settings.help_command),
+                                Span::raw(": Log")
                             ]
                         ).left_aligned(),
                         Line::from(

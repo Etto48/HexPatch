@@ -150,7 +150,22 @@ pub enum InstructionSet
     WDC65C816 = 0x101,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Clone)]
+pub struct Section
+{
+    pub name: String,
+    pub section_type: u32,
+    pub flags: u64,
+    pub address: u64,
+    pub offset: u64,
+    pub size: u64,
+    pub link: u32,
+    pub info: u32,
+    pub address_alignment: u64,
+    pub entry_size: u64,
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct ElfHeader
 {
     pub bitness: Bitness,
@@ -169,7 +184,8 @@ pub struct ElfHeader
     pub program_header_entry_count: u16,
     pub section_header_entry_size: u16,
     pub section_header_entry_count: u16,
-    pub section_header_string_table_index: u16
+    pub section_header_string_table_index: u16,
+    pub section_table: Vec<Section>,
 }
 
 impl ElfHeader
@@ -493,6 +509,171 @@ impl ElfHeader
                     }
                 };
 
+                if section_header_table as usize + section_header_entry_count as usize * section_header_entry_size as usize > bytes.len()
+                {
+                    return None;
+                }
+                let section_table = &bytes[section_header_table as usize .. section_header_table as usize + section_header_entry_count as usize * section_header_entry_size as usize];
+                let mut sections = Vec::new();
+                let section_table = section_table.chunks(section_header_entry_size as usize);
+                if section_table.len() != section_header_entry_count as usize
+                {
+                    return None;
+                }
+                let section_string_table = &bytes[section_header_table as usize + section_header_string_table_index as usize * section_header_entry_size as usize..];
+                let string_table_offset = match bitness
+                {
+                    Bitness::Bit32 => 
+                    {
+                        match endianness
+                        {
+                            Endianness::Little => u32::from_le_bytes([section_string_table[0x10], section_string_table[0x11], section_string_table[0x12], section_string_table[0x13]]) as u64,
+                            Endianness::Big => u32::from_be_bytes([section_string_table[0x10], section_string_table[0x11], section_string_table[0x12], section_string_table[0x13]]) as u64,
+                        }
+                    },
+                    Bitness::Bit64 => 
+                    {
+                        match endianness
+                        {
+                            Endianness::Little => u64::from_le_bytes([section_string_table[0x18], section_string_table[0x19], section_string_table[0x1A], section_string_table[0x1B], section_string_table[0x1C], section_string_table[0x1D], section_string_table[0x1E], section_string_table[0x1F]]),
+                            Endianness::Big => u64::from_be_bytes([section_string_table[0x18], section_string_table[0x19], section_string_table[0x1A], section_string_table[0x1B], section_string_table[0x1C], section_string_table[0x1D], section_string_table[0x1E], section_string_table[0x1F]]),
+                        }
+                    },
+                };
+                let string_table = &bytes[string_table_offset as usize..];
+                for section in section_table
+                {
+                    if section.len() < section_header_entry_size as usize
+                    {
+                        return None;
+                    }
+                    let name_offset = match endianness
+                    {
+                        Endianness::Little => u32::from_le_bytes([section[0], section[1], section[2], section[3]]),
+                        Endianness::Big => u32::from_be_bytes([section[0], section[1], section[2], section[3]])
+                    };
+                    let name = match string_table.get(name_offset as usize..)
+                    {
+                        Some(name) => 
+                        {
+                            let max_name_size = 0x40;
+                            let name: String = name.iter().take_while(|&&c| c != 0).take(max_name_size).map(|&c| c as char).collect();
+                            name
+                        },
+                        None => 
+                        {
+                            return None
+                        }
+                    };
+                    let section_type = match endianness
+                    {
+                        Endianness::Little => u32::from_le_bytes([section[4], section[5], section[6], section[7]]),
+                        Endianness::Big => u32::from_be_bytes([section[4], section[5], section[6], section[7]])
+                    };
+                    let flags = match bitness
+                    {
+                        Bitness::Bit32 => match endianness
+                        {
+                            Endianness::Little => u32::from_le_bytes([section[8], section[9], section[10], section[11]]) as u64,
+                            Endianness::Big => u32::from_be_bytes([section[8], section[9], section[10], section[11]]) as u64
+                        },
+                        Bitness::Bit64 => match endianness
+                        {
+                            Endianness::Little => u64::from_le_bytes([section[8], section[9], section[10], section[11], section[12], section[13], section[14], section[15]]),
+                            Endianness::Big => u64::from_be_bytes([section[8], section[9], section[10], section[11], section[12], section[13], section[14], section[15]])
+                        }
+                    };
+                    let address = match bitness
+                    {
+                        Bitness::Bit32 => match endianness
+                        {
+                            Endianness::Little => u32::from_le_bytes([section[12], section[13], section[14], section[15]]) as u64,
+                            Endianness::Big => u32::from_be_bytes([section[12], section[13], section[14], section[15]]) as u64
+                        },
+                        Bitness::Bit64 => match endianness
+                        {
+                            Endianness::Little => u64::from_le_bytes([section[16], section[17], section[18], section[19], section[20], section[21], section[22], section[23]]),
+                            Endianness::Big => u64::from_be_bytes([section[16], section[17], section[18], section[19], section[20], section[21], section[22], section[23]])
+                        }
+                    };
+                    let offset = match bitness
+                    {
+                        Bitness::Bit32 => match endianness
+                        {
+                            Endianness::Little => u32::from_le_bytes([section[16], section[17], section[18], section[19]]) as u64,
+                            Endianness::Big => u32::from_be_bytes([section[16], section[17], section[18], section[19]]) as u64
+                        },
+                        Bitness::Bit64 => match endianness
+                        {
+                            Endianness::Little => u64::from_le_bytes([section[24], section[25], section[26], section[27], section[28], section[29], section[30], section[31]]),
+                            Endianness::Big => u64::from_be_bytes([section[24], section[25], section[26], section[27], section[28], section[29], section[30], section[31]])
+                        }
+                    };
+                    let size = match bitness
+                    {
+                        Bitness::Bit32 => match endianness
+                        {
+                            Endianness::Little => u32::from_le_bytes([section[20], section[21], section[22], section[23]]) as u64,
+                            Endianness::Big => u32::from_be_bytes([section[20], section[21], section[22], section[23]]) as u64
+                        },
+                        Bitness::Bit64 => match endianness
+                        {
+                            Endianness::Little => u64::from_le_bytes([section[32], section[33], section[34], section[35], section[36], section[37], section[38], section[39]]),
+                            Endianness::Big => u64::from_be_bytes([section[32], section[33], section[34], section[35], section[36], section[37], section[38], section[39]])
+                        }
+                    };
+                    let link = match endianness
+                    {
+                        Endianness::Little => u32::from_le_bytes([section[24], section[25], section[26], section[27]]),
+                        Endianness::Big => u32::from_be_bytes([section[24], section[25], section[26], section[27]])
+                    };
+                    let info = match endianness
+                    {
+                        Endianness::Little => u32::from_le_bytes([section[28], section[29], section[30], section[31]]),
+                        Endianness::Big => u32::from_be_bytes([section[28], section[29], section[30], section[31]])
+                    };
+                    let address_alignment = match bitness
+                    {
+                        Bitness::Bit32 => match endianness
+                        {
+                            Endianness::Little => u32::from_le_bytes([section[32], section[33], section[34], section[35]]) as u64,
+                            Endianness::Big => u32::from_be_bytes([section[32], section[33], section[34], section[35]]) as u64
+                        },
+                        Bitness::Bit64 => match endianness
+                        {
+                            Endianness::Little => u64::from_le_bytes([section[40], section[41], section[42], section[43], section[44], section[45], section[46], section[47]]),
+                            Endianness::Big => u64::from_be_bytes([section[40], section[41], section[42], section[43], section[44], section[45], section[46], section[47]])
+                        }
+                    };
+                    let entry_size = match bitness
+                    {
+                        Bitness::Bit32 => match endianness
+                        {
+                            Endianness::Little => u32::from_le_bytes([section[36], section[37], section[38], section[39]]) as u64,
+                            Endianness::Big => u32::from_be_bytes([section[36], section[37], section[38], section[39]]) as u64
+                        },
+                        Bitness::Bit64 => match endianness
+                        {
+                            Endianness::Little => u64::from_le_bytes([section[48], section[49], section[50], section[51], section[52], section[53], section[54], section[55]]),
+                            Endianness::Big => u64::from_be_bytes([section[48], section[49], section[50], section[51], section[52], section[53], section[54], section[55]])
+                        }
+                    };
+                    sections.push(
+                        Section{
+                            name,
+                            section_type,
+                            flags,
+                            address,
+                            offset,
+                            size,
+                            link,
+                            info,
+                            address_alignment,
+                            entry_size
+                        }
+                    );
+                }
+
                 Some(ElfHeader {
                     bitness,
                     endianness,
@@ -510,7 +691,8 @@ impl ElfHeader
                     program_header_entry_count,
                     section_header_entry_size,
                     section_header_entry_count,
-                    section_header_string_table_index
+                    section_header_string_table_index,
+                    section_table: sections
                 })
             }
             else 
@@ -557,7 +739,8 @@ impl Default for ElfHeader
             program_header_entry_count: 0,
             section_header_entry_size: 0,
             section_header_entry_count: 0,
-            section_header_string_table_index: 0
+            section_header_string_table_index: 0,
+            section_table: Vec::new(),
         }
     }
 }

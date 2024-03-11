@@ -205,11 +205,11 @@ impl <'a> App<'a>
 
         for i in from_instruction..to_instruction
         {
-            self.log("Debug", &format!("Removing instruction \"{}\" at {}", self.assembly_instructions[i], self.assembly_instructions[i].ip()));
+            self.log("Debug", &format!("Removing instruction \"{}\" at {:X}", self.assembly_instructions[i], self.assembly_instructions[i].ip()));
         }
         for i in 0..instructions.len()
         {
-            self.log("Debug", &format!("Adding instruction \"{}\" at {}", instructions[i], instructions[i].ip()));
+            self.log("Debug", &format!("Adding instruction \"{}\" at {:X}", instructions[i], instructions[i].ip()));
         }
 
         self.assembly_instructions.splice(from_instruction..to_instruction, instructions);
