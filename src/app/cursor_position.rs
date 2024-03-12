@@ -190,7 +190,7 @@ impl <'a> App<'a>
     {
         if self.scroll == self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize
         {
-            self.cursor.1 = (self.hex_view.lines.len() % self.screen_size.1 as usize - 3) as u16;
+            self.cursor.1 = ((self.hex_view.lines.len() - 1) % (self.screen_size.1 as usize - 3)) as u16;
         }
         self.scroll = (self.scroll + (self.screen_size.1 - 3) as usize).min(self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize);
         self.update_cursors();
