@@ -40,7 +40,9 @@ pub fn assemble(asm: &str, bitness: u32) -> Result<Vec<u8>, Box<dyn Error>> {
         .wait_with_output()?;
     
     if !out.status.success() || out.stderr.len() > 0 || out.stdout.len() > 0 {
-        return Err(format!("Assembler failed: {}", String::from_utf8_lossy(&out.stdout)).into());
+        let error_str = String::from_utf8_lossy(&out.stdout);
+        let error = error_str.split(':').last().unwrap_or("Unknown error").trim();
+        return Err(format!("Assembler failed: {}", error).into());
     }
     else {
         let mut output = Vec::new();
