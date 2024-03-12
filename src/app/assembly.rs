@@ -191,13 +191,13 @@ impl <'a> App<'a>
 
     pub(super) fn patch_bytes(&mut self, bytes: &[u8])
     {
-        let current_instruction = self.get_current_instruction();
+        let current_instruction = self.get_current_instruction().clone();
         let current_ip = current_instruction.ip();
         for (i, byte) in bytes.iter().enumerate()
         {
             self.data[current_ip as usize + i] = *byte;
         }
-        //self.color_instruction_bytes(&current_instruction, true);
+        self.color_instruction_bytes(&current_instruction, true);
         for (i, byte) in bytes.iter().enumerate()
         {
             let style = Self::get_style_for_byte(&self.color_settings, *byte);
@@ -231,12 +231,11 @@ impl <'a> App<'a>
 
     pub(super) fn update_assembly_scroll(&mut self)
     {
+        // TODO: remove this function because it's useless
         let cursor_position = self.get_cursor_position();
         let current_ip = cursor_position.global_byte_index.min(self.assembly_offsets.len() - 1);
         let current_scroll = self.assembly_offsets[current_ip];
         
-        //self.assembly_view.lines[self.assembly_scroll].spans[0].style = self.color_settings.assembly_address;
-        //self.assembly_view.lines[current_scroll].spans[0].style = self.color_settings.assembly_selected;
         self.assembly_scroll = current_scroll;
     }
 
