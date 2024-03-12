@@ -46,6 +46,8 @@ pub struct ColorSettings
     pub status_debug: Style,
     pub status_warning: Style,
     pub status_error: Style,
+
+    pub scrollbar: Style,
 }
 
 impl Default for ColorSettings
@@ -93,10 +95,12 @@ impl Default for ColorSettings
             log_message: Style::default().fg(Color::White),
 
             status_bar: Style::default().fg(Color::Black).bg(status_bar_bg),
-            status_info: Style::default().fg(Color::Blue).bg(status_bar_bg).add_modifier(Modifier::BOLD),
-            status_debug: Style::default().fg(Color::Green).bg(status_bar_bg).add_modifier(Modifier::BOLD),
-            status_warning: Style::default().fg(Color::Yellow).bg(status_bar_bg).add_modifier(Modifier::BOLD),
-            status_error: Style::default().fg(Color::Red).bg(status_bar_bg).add_modifier(Modifier::BOLD),
+            status_info: Style::default().fg(Color::Blue).bg(status_bar_bg),
+            status_debug: Style::default().fg(Color::Green).bg(status_bar_bg),
+            status_warning: Style::default().fg(Color::Yellow).bg(status_bar_bg),
+            status_error: Style::default().fg(Color::Red).bg(status_bar_bg),
+
+            scrollbar: Style::default().fg(status_bar_bg).bg(Color::DarkGray),
         }
     }
 }

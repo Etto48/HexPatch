@@ -184,7 +184,7 @@ impl <'a> App<'a>
                 
                 let scrolled_amount = self.get_cursor_position().global_byte_index;
                 let total_amount = self.data.len();
-                let scrollbar = Scrollbar::new(scrolled_amount, total_amount);
+                let scrollbar = Scrollbar::new(scrolled_amount, total_amount, self.color_settings.scrollbar);
 
                 f.render_widget(output_block, output_rect);
                 f.render_widget(address_block, address_rect);

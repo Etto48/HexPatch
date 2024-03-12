@@ -1,19 +1,21 @@
-use ratatui::widgets::Widget;
+use ratatui::{style::Style, widgets::Widget};
 
 pub struct Scrollbar
 {
     pub scrolled_amount: usize,
     pub total_amount: usize,
+    pub style: Style,
 }
 
 impl Scrollbar
 {
-    pub fn new(scrolled_amount: usize, total_amount: usize) -> Self
+    pub fn new(scrolled_amount: usize, total_amount: usize, style: Style) -> Self
     {
         Self
         {
             scrolled_amount,
             total_amount,
+            style,
         }
     }
 }
@@ -36,10 +38,12 @@ impl Widget for Scrollbar
             if (y as usize) >= handle_start && (y as usize) < handle_start + handle_size
             {
                 buf.get_mut(area.left(), y).set_char('█');
+                buf.get_mut(area.left(), y).set_style(self.style);
             }
             else
             {
-                buf.get_mut(area.left(), y).set_char('░');
+                buf.get_mut(area.left(), y).set_char(' ');
+                buf.get_mut(area.left(), y).set_style(self.style);
             }
         }
     }

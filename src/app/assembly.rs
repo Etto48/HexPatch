@@ -110,7 +110,7 @@ impl <'a> App<'a>
         let mut current_byte = 0;
         for section in sections
         {
-            while section.address > current_byte as u64
+            if section.address > current_byte as u64
             {
                 lines.push(AssemblyLine::NotExecutableSection(
                     NotExecutableSection {
@@ -125,10 +125,8 @@ impl <'a> App<'a>
                     current_byte += 1;
                 }
             }
-            if section.size == 0
-            {
-                continue;
-            }
+            // if there are any overlapping sections, this should fix it
+            current_byte = section.address as usize;
             match section.name.as_str()
             {
                 ".text" => {
@@ -151,6 +149,21 @@ impl <'a> App<'a>
                         current_byte += 1;
                     }
                 }
+            }
+        }
+        if current_byte < bytes.len()
+        {
+            lines.push(AssemblyLine::NotExecutableSection(
+                NotExecutableSection {
+                    name: "Unknown".to_string(),
+                    ip: current_byte as u64,
+                    size: bytes.len() - current_byte
+                }
+            ));
+            for _ in current_byte..bytes.len()
+            {
+                line_offsets[current_byte] = lines.len() - 1;
+                current_byte += 1;
             }
         }
 

@@ -106,7 +106,7 @@ impl <'a> App<'a>
         let view_size_y = self.screen_size.1 - self.vertical_margin;
 
         let viewed_block_size = (self.block_size * 3 + 1) as isize;
-        let viewed_line_size = viewed_block_size * self.blocks_per_row as isize + self.blocks_per_row as isize - self.vertical_margin as isize;
+        let viewed_line_size = viewed_block_size * self.blocks_per_row as isize + self.blocks_per_row as isize - 3;
 
         let block_count = x / viewed_block_size;
         let local_x = x - block_count * viewed_block_size;
@@ -192,8 +192,8 @@ impl <'a> App<'a>
 
     pub(super) fn move_cursor_to_end(&mut self)
     {
-        self.scroll = (self.hex_view.lines.len() as isize- (self.screen_size.1 - self.vertical_margin) as isize).max(0) as usize;
-        let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - self.vertical_margin;
+        self.scroll = (self.hex_view.lines.len() as isize - (self.screen_size.1 as isize - self.vertical_margin as isize)).max(0) as usize;
+        let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - 3;
         let y = (self.screen_size.1 - self.vertical_margin - 1).min(self.hex_view.lines.len() as u16 - 1);
         self.cursor = (x, y);
         self.update_cursors();
