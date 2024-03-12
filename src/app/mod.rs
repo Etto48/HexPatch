@@ -1,4 +1,6 @@
 pub mod app;
+pub mod status_bar;
+pub mod notification;
 pub mod log;
 pub mod assembly;
 pub mod address;

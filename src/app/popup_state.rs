@@ -56,13 +56,29 @@ impl <'a> App<'a>
             PopupState::Log(scroll) =>
             {
                 *popup_title = "Log";
-                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 5, 60, 10);
+                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 6, 60, 12);
                 if self.log.len() > 0
                 {
+                    if self.log.len() as isize - *scroll as isize > 8
+                    {
+                        popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.ok)]));
+                    }
+                    else
+                    {
+                        popup_text.lines.push(Line::raw(""));
+                    }
                     // take the last 8 lines skipping "scroll" lines from the bottom
                     for line in self.log.iter().rev().skip(*scroll).take(8).rev()
                     {
                         popup_text.lines.push(line.to_line(color_settings));
+                    }
+                    if *scroll > 0
+                    {
+                        popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.ok)]));
+                    }
+                    else
+                    {
+                        popup_text.lines.push(Line::raw(""));
                     }
                 }
             }

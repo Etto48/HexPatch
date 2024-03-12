@@ -84,14 +84,14 @@ impl <'a> App<'a>
             self.scroll = line_index;
             self.cursor = (local_x as u16, 0);
         }
-        else if y < self.screen_size.1 as isize - 3
+        else if y < self.screen_size.1 as isize - self.vertical_margin as isize
         {
             self.cursor = (local_x as u16, y as u16);
         }
         else
         {
-            self.scroll = line_index - (self.screen_size.1 - 4) as usize;
-            self.cursor = (local_x as u16, (self.screen_size.1 - 4) as u16);
+            self.scroll = line_index - (self.screen_size.1 - self.vertical_margin - 1) as usize;
+            self.cursor = (local_x as u16, (self.screen_size.1 - self.vertical_margin - 1) as u16);
         }
         self.update_cursors();
     }
@@ -103,10 +103,10 @@ impl <'a> App<'a>
         let mut x = x as isize + dx;
         let mut y = y as isize + dy;
         
-        let view_size_y = self.screen_size.1 - 3;
+        let view_size_y = self.screen_size.1 - self.vertical_margin;
 
         let viewed_block_size = (self.block_size * 3 + 1) as isize;
-        let viewed_line_size = viewed_block_size * self.blocks_per_row as isize + self.blocks_per_row as isize - 3;
+        let viewed_line_size = viewed_block_size * self.blocks_per_row as isize + self.blocks_per_row as isize - self.vertical_margin as isize;
 
         let block_count = x / viewed_block_size;
         let local_x = x - block_count * viewed_block_size;
@@ -170,37 +170,31 @@ impl <'a> App<'a>
         self.update_cursors();
     }
 
-    pub(super) fn print_cursor_position(&mut self)
-    {
-        let cursor_position = self.get_cursor_position();
-        self.output = format!("{:16X} {}", cursor_position.global_byte_index, if cursor_position.high_byte { "H" } else { "L" });
-    }
-
     pub(super) fn move_cursor_page_up(&mut self)
     {
         if self.scroll == 0
         {
             self.cursor.1 = 0;
         }
-        self.scroll = self.scroll.saturating_sub((self.screen_size.1 - 3) as usize);
+        self.scroll = self.scroll.saturating_sub((self.screen_size.1 - self.vertical_margin) as usize);
         self.update_cursors();
     }
 
     pub(super) fn move_cursor_page_down(&mut self)
     {
-        if self.scroll == self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize
+        if self.scroll == self.hex_view.lines.len() - (self.screen_size.1 - self.vertical_margin) as usize
         {
-            self.cursor.1 = ((self.hex_view.lines.len() - 1) % (self.screen_size.1 as usize - 3)) as u16;
+            self.cursor.1 = self.screen_size.1 - self.vertical_margin - 1;
         }
-        self.scroll = (self.scroll + (self.screen_size.1 - 3) as usize).min(self.hex_view.lines.len() - (self.screen_size.1 - 3) as usize);
+        self.scroll = (self.scroll + (self.screen_size.1 - self.vertical_margin) as usize).min(self.hex_view.lines.len() - (self.screen_size.1 - self.vertical_margin) as usize);
         self.update_cursors();
     }
 
     pub(super) fn move_cursor_to_end(&mut self)
     {
-        self.scroll = (self.hex_view.lines.len() as isize- (self.screen_size.1 - 3) as isize).max(0) as usize;
-        let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - 3;
-        let y = (self.screen_size.1 - 4).min(self.hex_view.lines.len() as u16 - 1);
+        self.scroll = (self.hex_view.lines.len() as isize- (self.screen_size.1 - self.vertical_margin) as isize).max(0) as usize;
+        let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - self.vertical_margin;
+        let y = (self.screen_size.1 - self.vertical_margin - 1).min(self.hex_view.lines.len() as u16 - 1);
         self.cursor = (x, y);
         self.update_cursors();
     }
@@ -214,7 +208,6 @@ impl <'a> App<'a>
 
     pub(super) fn update_cursors(&mut self)
     {
-        self.print_cursor_position();
         self.update_address_cursor();
         self.update_hex_cursor();
         self.update_text_cursor();

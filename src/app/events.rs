@@ -76,6 +76,7 @@ impl <'a> App<'a>
                                 self.popup = Some(PopupState::Help);
                             },
                             'l' => {
+                                self.notificaiton.reset();
                                 self.popup = Some(PopupState::Log(0));
                             },
                             'p' => {

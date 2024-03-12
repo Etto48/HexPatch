@@ -40,12 +40,19 @@ pub struct ColorSettings
     pub log_warning: Style,
     pub log_error: Style,
     pub log_message: Style,
+
+    pub status_bar: Style,
+    pub status_info: Style,
+    pub status_debug: Style,
+    pub status_warning: Style,
+    pub status_error: Style,
 }
 
 impl Default for ColorSettings
 {
     fn default() -> Self
     {
+        let status_bar_bg = Color::Rgb(255, 223, 168);
         Self
         {
             address_selected: Style::default().fg(Color::Black).bg(Color::White),
@@ -84,6 +91,12 @@ impl Default for ColorSettings
             log_warning: Style::default().fg(Color::Yellow),
             log_error: Style::default().fg(Color::Red),
             log_message: Style::default().fg(Color::White),
+
+            status_bar: Style::default().fg(Color::Black).bg(status_bar_bg),
+            status_info: Style::default().fg(Color::Blue).bg(status_bar_bg).add_modifier(Modifier::BOLD),
+            status_debug: Style::default().fg(Color::Green).bg(status_bar_bg).add_modifier(Modifier::BOLD),
+            status_warning: Style::default().fg(Color::Yellow).bg(status_bar_bg).add_modifier(Modifier::BOLD),
+            status_error: Style::default().fg(Color::Red).bg(status_bar_bg).add_modifier(Modifier::BOLD),
         }
     }
 }

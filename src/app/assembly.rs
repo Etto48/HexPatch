@@ -3,7 +3,7 @@ use ratatui::text::{Line, Span};
 
 use crate::asm::assembler::assemble;
 
-use super::{app::App, color_settings::ColorSettings, header::{Header, Section}};
+use super::{app::App, color_settings::ColorSettings, header::{Header, Section}, notification::NotificationLevel};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NotExecutableSection
@@ -224,7 +224,7 @@ impl <'a> App<'a>
         {
             Ok(bytes) => self.patch_bytes(&bytes),
             Err(e) => {
-                self.log("Error", &e);
+                self.log(NotificationLevel::Error, &e);
             }
         }
     }
@@ -241,7 +241,7 @@ impl <'a> App<'a>
 
     pub(super) fn get_assembly_view_scroll(&self) -> usize
     {
-        let visible_lines = self.screen_size.1 - 3;
+        let visible_lines = self.screen_size.1 - self.vertical_margin;
         let center_of_view = visible_lines / 2;
         let view_scroll = (self.assembly_scroll as isize - center_of_view as isize).clamp(0, (self.assembly_instructions.len() as isize - visible_lines as isize).max(0));
         
@@ -335,14 +335,14 @@ impl <'a> App<'a>
         {
             if let AssemblyLine::Instruction(instruction) = &self.assembly_instructions[i]
             {
-                self.log("Debug", &format!("Removing instruction \"{}\" at {:X}", instruction, self.assembly_instructions[i].ip()));    
+                self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction, self.assembly_instructions[i].ip()));    
             }
         }
         for i in 0..instructions.len()
         {
             if let AssemblyLine::Instruction(instruction) = &instructions[i]
             {
-                self.log("Debug", &format!("Adding instruction \"{}\" at {:X}", instruction, instructions[i].ip()));
+                self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction, instructions[i].ip()));
             }
         }
 

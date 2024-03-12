@@ -1,16 +1,16 @@
 use ratatui::text::{Line, Span};
 
-use super::{color_settings::ColorSettings, App};
+use super::{color_settings::ColorSettings, notification::NotificationLevel, App};
 
 pub struct LogLine
 {
-    pub(super) level: String,
+    pub(super) level: NotificationLevel,
     pub(super) message: String,
 }
 
 impl LogLine
 {
-    pub(super) fn new(level: String, message: String) -> Self
+    pub(super) fn new(level: NotificationLevel, message: String) -> Self
     {
         LogLine
         {
@@ -22,12 +22,12 @@ impl LogLine
     pub(super) fn to_line(&self, color_settings: &ColorSettings) -> Line
     {
         let mut line = Line::default();
-        let style = match self.level.as_str()
+        let style = match self.level
         {
-            "Info" => color_settings.log_info,
-            "Debug" => color_settings.log_debug,
-            "Warning" => color_settings.log_warning,
-            "Error" => color_settings.log_error,
+            NotificationLevel::Debug => color_settings.log_debug,
+            NotificationLevel::Info => color_settings.log_info,
+            NotificationLevel::Warning => color_settings.log_warning,
+            NotificationLevel::Error => color_settings.log_error,
             _ => color_settings.log_info,
         };
         line.spans.push(Span::styled(format!("{:7}", self.level), style));
@@ -39,8 +39,9 @@ impl LogLine
 
 impl <'a> App<'a>
 {
-    pub(super) fn log(&mut self, level: &str, message: &str)
+    pub(super) fn log(&mut self, level: NotificationLevel, message: &str)
     {
-        self.log.push(LogLine::new(level.to_string(), message.to_string()));
+        self.notificaiton.bump_notification_level(level);
+        self.log.push(LogLine::new(level, message.to_string()));
     }
 }

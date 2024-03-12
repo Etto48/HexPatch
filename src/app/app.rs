@@ -3,14 +3,14 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::Text, widgets::{Block, Borders, ScrollbarState}};
 
-use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, popup_state::PopupState};
+use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState};
 
 pub struct App<'a> 
 {
     pub(super) path: PathBuf,
     pub(super) header: Header,
     pub(super) log: Vec<LogLine>,
-    pub(super) output: String,
+    pub(super) notificaiton: NotificationLevel,
     pub(super) dirty: bool,
     pub(super) data: Vec<u8>,
     pub(super) address_view: Text<'a>,
@@ -35,6 +35,7 @@ pub struct App<'a>
 
     pub(super) popup: Option<PopupState>,
 
+    pub(super) vertical_margin: u16,
     pub(super) block_size: usize,
     pub(super) blocks_per_row: usize,
 }
@@ -49,6 +50,7 @@ impl <'a> App<'a>
         let color_settings = color_settings::ColorSettings::default();
         let block_size = 8;
         let blocks_per_row = 3;
+        let vertical_margin = 2;
         let address_view = Self::addresses(&color_settings, data.len(), block_size, blocks_per_row);
         let hex_view = Self::bytes_to_styled_hex(&color_settings, &data, block_size, blocks_per_row);
         let text_view = Self::bytes_to_styled_text(&color_settings, &data, block_size, blocks_per_row);
@@ -58,8 +60,8 @@ impl <'a> App<'a>
             path: canonical_path,
             header,
             log: Vec::new(),
+            notificaiton: NotificationLevel::None,
             data,
-            output: "Press H to view a help page.".to_string(),
             dirty: false,
             address_view,
             hex_view,
@@ -83,6 +85,7 @@ impl <'a> App<'a>
 
             popup: None,
 
+            vertical_margin,
             block_size,
             blocks_per_row,
         })
@@ -94,20 +97,20 @@ impl <'a> App<'a>
         {
             match &self.header
             {
-                Header::Elf(_) => self.log("Info","Loaded ELF file."),
-                Header::PE(_) => self.log("Info","Loaded PE file."),
+                Header::Elf(_) => self.log(NotificationLevel::Info,"Loaded ELF file."),
+                Header::PE(_) => self.log(NotificationLevel::Info,"Loaded PE file."),
                 Header::None => unreachable!(),
             }
-            self.log("Info", &format!("Bitness: {}", self.header.bitness()));
-            self.log("Info", &format!("Entry point: 0x{:X}", self.header.entry_point()));
+            self.log(NotificationLevel::Info, &format!("Bitness: {}", self.header.bitness()));
+            self.log(NotificationLevel::Info, &format!("Entry point: 0x{:X}", self.header.entry_point()));
             for section in self.header.get_sections()
             {
-                self.log("Info", &format!("Section: {}", section));
+                self.log(NotificationLevel::Info, &format!("Section: {}", section));
             }
         }
         else
         {
-            self.log("Info", "No header found. Assuming 64-bit.");
+            self.log(NotificationLevel::Info, "No header found. Assuming 64-bit.");
         }
         
 
@@ -130,10 +133,11 @@ impl <'a> App<'a>
                 let output_rect = Rect::new(0, f.size().height - 1, f.size().width, 1);
                 let address_rect = Rect::new(0, 0, 17, f.size().height - output_rect.height);
                 let hex_editor_rect = Rect::new(address_rect.width, 0, (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16, f.size().height - output_rect.height);
-                let mut info_view_rect = Rect::new(address_rect.width + hex_editor_rect.width, 0, (self.block_size * 2 * self.blocks_per_row + self.blocks_per_row) as u16 - 1, f.size().height - output_rect.height);
+                let info_view_rect = Rect::new(address_rect.width + hex_editor_rect.width, 0, f.size().width - hex_editor_rect.width - address_rect.width - 2, f.size().height - output_rect.height);
+                let scrollbar_rect = Rect::new(f.size().width - 1, 0, 1, f.size().height);
 
-                let output_block = ratatui::widgets::Paragraph::new(Text::raw(&self.output))
-                    .block(Block::default().borders(Borders::LEFT));
+                let output_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
+                    .block(Block::default().borders(Borders::NONE));
                 
                 let line_start_index = self.scroll;
                 let line_end_index = (self.scroll + f.size().height as usize - 2).min(self.hex_view.lines.len());
@@ -147,12 +151,12 @@ impl <'a> App<'a>
                 hex_subview.lines.extend(hex_subview_lines.iter().cloned());
 
                 let address_block = ratatui::widgets::Paragraph::new(address_subview)
-                    .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM));
+                    .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP));
                 
                 let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
 
                 let hex_editor_block = ratatui::widgets::Paragraph::new(hex_subview)
-                    .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT | Borders::BOTTOM));
+                    .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT));
                 
                 let info_view_block = 
                 match &self.info_mode 
@@ -163,7 +167,7 @@ impl <'a> App<'a>
                         let mut text_subview = Text::default();
                         text_subview.lines.extend(text_subview_lines.iter().cloned());
                         ratatui::widgets::Paragraph::new(text_subview)
-                            .block(Block::default().title("Text View").borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
+                            .block(Block::default().title("Text View").borders(Borders::TOP | Borders::RIGHT))
                     },
                     InfoMode::Assembly =>
                     {
@@ -172,9 +176,8 @@ impl <'a> App<'a>
                         let assembly_subview_lines = &self.assembly_instructions[assembly_start_index..assembly_end_index];
                         let mut assembly_subview = Text::default();
                         assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.color_settings, self.get_cursor_position().global_byte_index)));
-                        info_view_rect.width = f.size().width - address_rect.width - hex_editor_rect.width - 2;
                         ratatui::widgets::Paragraph::new(assembly_subview)
-                            .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM))
+                            .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT))
                     }
                 };
 
