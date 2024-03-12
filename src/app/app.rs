@@ -2,9 +2,8 @@ use std::{path::PathBuf, time::Duration};
 
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::Text, widgets::{Block, Borders, ScrollbarState}};
-use iced_x86::Instruction;
 
-use super::{color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, popup_state::PopupState};
+use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, popup_state::PopupState};
 
 pub struct App<'a> 
 {
@@ -17,9 +16,8 @@ pub struct App<'a>
     pub(super) address_view: Text<'a>,
     pub(super) hex_view: Text<'a>,
     pub(super) text_view: Text<'a>,
-    pub(super) assembly_view: Text<'a>,
     pub(super) assembly_offsets: Vec<usize>,
-    pub(super) assembly_instructions: Vec<Instruction>,
+    pub(super) assembly_instructions: Vec<AssemblyLine>,
     pub(super) address_last_row: usize,
     pub(super) hex_last_byte_index: usize,
     pub(super) hex_cursor: (usize, usize),
@@ -55,7 +53,7 @@ impl <'a> App<'a>
         let hex_view = Self::bytes_to_styled_hex(&color_settings, &data, block_size, blocks_per_row);
         let text_view = Self::bytes_to_styled_text(&color_settings, &data, block_size, blocks_per_row);
         let header = Header::parse_header(&data);
-        let (assembly_view, assembly_offsets, assembly_instructions) = Self::assembly_from_bytes(&color_settings, &data, &header);
+        let (assembly_offsets, assembly_instructions) = Self::sections_from_bytes(&data, &header);
         Ok(App{
             path: canonical_path,
             header,
@@ -65,8 +63,7 @@ impl <'a> App<'a>
             dirty: false,
             address_view,
             hex_view,
-            text_view, 
-            assembly_view,
+            text_view,
             assembly_offsets,
             assembly_instructions,
             address_last_row: 0,
@@ -171,10 +168,10 @@ impl <'a> App<'a>
                     InfoMode::Assembly =>
                     {
                         let assembly_start_index = self.get_assembly_view_scroll();
-                        let assembly_end_index = (assembly_start_index + f.size().height as usize - 2).min(self.assembly_view.lines.len());
-                        let assembly_subview_lines = &self.assembly_view.lines[assembly_start_index..assembly_end_index];
+                        let assembly_end_index = (assembly_start_index + f.size().height as usize - 2).min(self.assembly_instructions.len());
+                        let assembly_subview_lines = &self.assembly_instructions[assembly_start_index..assembly_end_index];
                         let mut assembly_subview = Text::default();
-                        assembly_subview.lines.extend(assembly_subview_lines.iter().cloned());
+                        assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.color_settings, self.get_cursor_position().global_byte_index)));
                         info_view_rect.width = f.size().width - address_rect.width - hex_editor_rect.width - 2;
                         ratatui::widgets::Paragraph::new(assembly_subview)
                             .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT | Borders::BOTTOM))

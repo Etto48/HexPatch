@@ -104,4 +104,46 @@ impl Header
             Header::None => Vec::new(),
         }
     }
+
+    pub fn get_text_section(&self) -> Option<Section>
+    {
+        match self
+        {
+            Header::Elf(header) => 
+            {
+                for section in &header.section_table
+                {
+                    if section.name == ".text"
+                    {
+                        return Some(Section
+                        {
+                            name: section.name.clone(),
+                            virtual_address: section.address as u64,
+                            address: section.offset as u64,
+                            size: section.size as u64,
+                        });
+                    }
+                }
+                None
+            },
+            Header::PE(header) => 
+            {
+                for section in &header.section_table
+                {
+                    if section.name == ".text"
+                    {
+                        return Some(Section
+                        {
+                            name: section.name.clone(),
+                            virtual_address: section.virtual_address as u64,
+                            address: section.pointer_to_raw_data as u64,
+                            size: section.size_of_raw_data as u64,
+                        });
+                    }
+                }
+                None
+            },
+            Header::None => None,
+        }
+    }
 }

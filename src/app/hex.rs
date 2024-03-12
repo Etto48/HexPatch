@@ -1,7 +1,6 @@
-use iced_x86::Instruction;
 use ratatui::text::{Line, Span, Text};
 
-use super::{color_settings::ColorSettings, info_mode::InfoMode, App};
+use super::{assembly::AssemblyLine, color_settings::ColorSettings, info_mode::InfoMode, App};
 
 impl <'a> App<'a>
 {
@@ -112,7 +111,7 @@ impl <'a> App<'a>
         if value >= '0' && value <= '9' || value >= 'A' && value <= 'F'
         {   
             let cursor_position = self.get_cursor_position();
-            let old_instruction = self.get_current_instruction();
+            let old_instruction = self.get_current_instruction().clone();
             self.color_instruction_bytes(&old_instruction, true);
             
             let hex = if cursor_position.high_byte
@@ -160,11 +159,11 @@ impl <'a> App<'a>
     pub(super) fn update_hex_cursor(&mut self)
     {
         let cursor_position = self.get_cursor_position();
-        let instruction = self.get_current_instruction();
+        let instruction = self.get_current_instruction().clone();
         if self.hex_last_byte_index < self.data.len()
         {
             let old_byte = self.data[self.hex_last_byte_index];
-            let old_instruction = self.get_instruction_at(self.hex_last_byte_index);
+            let old_instruction = self.get_instruction_at(self.hex_last_byte_index).clone();
             let style = Self::get_style_for_byte(&self.color_settings, old_byte);
             self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = style;
             self.color_instruction_bytes(&old_instruction, true);
@@ -183,22 +182,25 @@ impl <'a> App<'a>
         }
     }
 
-    pub(super) fn color_instruction_bytes(&mut self, instruction: &Instruction, original_color: bool)
+    pub(super) fn color_instruction_bytes(&mut self, instruction: &AssemblyLine, original_color: bool)
     {
-        for i in instruction.ip() as usize..instruction.ip() as usize + instruction.len() {
-            let gui_pos = self.get_expected_cursor_position(i, true);
-            let style = if original_color
-            {
-                Self::get_style_for_byte(&self.color_settings, self.data[i])
-            }
-            else 
-            {
-                self.color_settings.hex_current_instruction   
-            };
-            self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3].style = style;
-            self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+1].style = style;
-            if i != instruction.ip() as usize + instruction.len()-1 {
-                self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+2].style = style;
+        if let AssemblyLine::Instruction(instruction) = instruction
+        {
+            for i in instruction.ip() as usize..instruction.ip() as usize + instruction.len() {
+                let gui_pos = self.get_expected_cursor_position(i, true);
+                let style = if original_color
+                {
+                    Self::get_style_for_byte(&self.color_settings, self.data[i])
+                }
+                else 
+                {
+                    self.color_settings.hex_current_instruction   
+                };
+                self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3].style = style;
+                self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+1].style = style;
+                if i != instruction.ip() as usize + instruction.len()-1 {
+                    self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+2].style = style;
+                }
             }
         }
     }

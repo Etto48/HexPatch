@@ -202,7 +202,7 @@ impl PEHeader
             {
                 return None;
             }
-            let name = String::from_utf8_lossy(&section[0..8]).to_string();
+            let name = String::from_utf8_lossy(&section[0..8]).trim_end_matches('\0').to_string();
             let virtual_size = u32::from_le_bytes([section[8], section[9], section[10], section[11]]);
             let virtual_address = u32::from_le_bytes([section[12], section[13], section[14], section[15]]);
             let size_of_raw_data = u32::from_le_bytes([section[16], section[17], section[18], section[19]]);
