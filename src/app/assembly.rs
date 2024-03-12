@@ -6,7 +6,7 @@ use crate::asm::assembler::assemble;
 use super::{app::App, color_settings::ColorSettings, header::{Header, Section}, notification::NotificationLevel};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NotExecutableSection
+pub struct SectionTag
 {
     pub name: String,
     pub ip: u64,
@@ -16,7 +16,7 @@ pub struct NotExecutableSection
 pub enum AssemblyLine
 {
     Instruction(Instruction),
-    NotExecutableSection(NotExecutableSection)
+    SectionTag(SectionTag)
 }
 
 impl AssemblyLine
@@ -26,7 +26,7 @@ impl AssemblyLine
         match self
         {
             AssemblyLine::Instruction(instruction) => instruction.ip(),
-            AssemblyLine::NotExecutableSection(section) => section.ip,
+            AssemblyLine::SectionTag(section) => section.ip,
         }
     }
 
@@ -38,7 +38,7 @@ impl AssemblyLine
                 let selected = current_byte_index >= instruction.ip() as usize && current_byte_index < instruction.ip() as usize + instruction.len();
                 App::instruction_to_line(color_settings, instruction, selected)
             },
-            AssemblyLine::NotExecutableSection(section) => 
+            AssemblyLine::SectionTag(section) => 
             {
                 let selected = current_byte_index >= section.ip as usize && current_byte_index < section.ip as usize + section.size;
                 let mut line = Line::default();
@@ -112,8 +112,8 @@ impl <'a> App<'a>
         {
             if section.address > current_byte as u64
             {
-                lines.push(AssemblyLine::NotExecutableSection(
-                    NotExecutableSection {
+                lines.push(AssemblyLine::SectionTag(
+                    SectionTag {
                         name: "Unknown".to_string(),
                         ip: current_byte as u64,
                         size: section.address as usize - current_byte
@@ -130,14 +130,23 @@ impl <'a> App<'a>
             match section.name.as_str()
             {
                 ".text" => {
+                    lines.push(
+                        AssemblyLine::SectionTag(
+                            SectionTag {
+                                name: ".text".to_string(),
+                                ip: section.address,
+                                size: section.size as usize
+                            }
+                        )
+                    );
                     let (offsets, instructions) = Self::assembly_from_section(bytes, header, section.address as usize, section.size as usize, lines.len());
                     line_offsets.splice(section.address as usize..section.address as usize + section.size as usize, offsets);
                     lines.extend(instructions);
                     current_byte += section.size as usize;
                 },
                 name => {
-                    lines.push(AssemblyLine::NotExecutableSection(
-                        NotExecutableSection {
+                    lines.push(AssemblyLine::SectionTag(
+                        SectionTag {
                             name: name.to_string(),
                             ip: section.address,
                             size: section.size as usize,
@@ -153,8 +162,8 @@ impl <'a> App<'a>
         }
         if current_byte < bytes.len()
         {
-            lines.push(AssemblyLine::NotExecutableSection(
-                NotExecutableSection {
+            lines.push(AssemblyLine::SectionTag(
+                SectionTag {
                     name: "Unknown".to_string(),
                     ip: current_byte as u64,
                     size: bytes.len() - current_byte
