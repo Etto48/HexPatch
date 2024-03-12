@@ -1,9 +1,9 @@
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event;
-use ratatui::{backend::Backend, layout::Rect, style::{Color, Style}, text::Text, widgets::{Block, Borders, ScrollbarState}};
+use ratatui::{backend::Backend, layout::Rect, text::Text, widgets::{Block, Borders}};
 
-use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState};
+use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, scrollbar::Scrollbar};
 
 pub struct App<'a> 
 {
@@ -181,18 +181,16 @@ impl <'a> App<'a>
                     }
                 };
 
-                let scrollbar = ratatui::widgets::Scrollbar::new(ratatui::widgets::ScrollbarOrientation::VerticalRight)
-                    .track_symbol(Some("█"))
-                    .track_style(Style::default().fg(Color::DarkGray))
-                    .begin_symbol(None)
-                    .end_symbol(None);
-                let mut scrollbar_state = ScrollbarState::new(self.hex_view.lines.len()).position(self.scroll as usize + self.cursor.1 as usize);
+                
+                let scrolled_amount = self.get_cursor_position().global_byte_index;
+                let total_amount = self.data.len();
+                let scrollbar = Scrollbar::new(scrolled_amount, total_amount);
 
                 f.render_widget(output_block, output_rect);
                 f.render_widget(address_block, address_rect);
                 f.render_widget(hex_editor_block, hex_editor_rect);
                 f.render_widget(info_view_block, info_view_rect);
-                f.render_stateful_widget(scrollbar, f.size(), &mut scrollbar_state);
+                f.render_widget(scrollbar, scrollbar_rect);
 
                 if let Some(popup_state) = &self.popup 
                 {
