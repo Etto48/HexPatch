@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{collections::HashMap, fmt::Display, rc::Rc};
 
 use super::{elf::ElfHeader, pe::PEHeader};
 
@@ -144,6 +144,24 @@ impl Header
                 None
             },
             Header::None => None,
+        }
+    }
+
+    pub fn get_symbols(&self) -> Option<Rc<HashMap<u64,String>>>
+    {
+        match self
+        {
+            Header::Elf(header) => 
+            {
+                Some(header.get_symbols())
+            },
+            Header::PE(_header) => 
+            {
+                // TODO: implement this
+                None
+            },
+            Header::None => None,
+            
         }
     }
 }

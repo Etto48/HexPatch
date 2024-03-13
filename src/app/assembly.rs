@@ -1,4 +1,6 @@
-use iced_x86::Instruction;
+use std::{collections::HashMap, rc::Rc};
+
+use iced_x86::{Formatter, Instruction, SymbolResolver};
 use ratatui::text::{Line, Span};
 
 use crate::asm::assembler::assemble;
@@ -19,6 +21,29 @@ pub enum AssemblyLine
     SectionTag(SectionTag)
 }
 
+pub struct CustomSymbolResolver
+{
+    symbol_table: Rc<HashMap<u64, String>>
+}
+
+impl CustomSymbolResolver
+{
+    pub fn new(symbol_table: Rc<HashMap<u64, String>>) -> Self
+    {
+        Self { symbol_table }
+    }
+}
+
+impl SymbolResolver for CustomSymbolResolver
+{
+    fn symbol(
+            &mut self, _instruction: &Instruction, _operand: u32, _instruction_operand: Option<u32>, address: u64, _address_size: u32,
+        ) -> Option<iced_x86::SymbolResult<'_>> {
+        self.symbol_table.get(&address).map(|symbol| iced_x86::SymbolResult::with_string(address, symbol.clone()))
+    }
+}
+
+
 impl AssemblyLine
 {
     pub fn ip(&self) -> u64
@@ -30,13 +55,13 @@ impl AssemblyLine
         }
     }
 
-    pub fn to_line(&self, color_settings: &ColorSettings, current_byte_index: usize) -> Line
+    pub fn to_line(&self, color_settings: &ColorSettings, current_byte_index: usize, header: &Header) -> Line
     {
         match self
         {
             AssemblyLine::Instruction(instruction) => {
                 let selected = current_byte_index >= instruction.ip() as usize && current_byte_index < instruction.ip() as usize + instruction.len();
-                App::instruction_to_line(color_settings, instruction, selected)
+                App::instruction_to_line(color_settings, instruction, selected, header)
             },
             AssemblyLine::SectionTag(section) => 
             {
@@ -61,8 +86,9 @@ impl AssemblyLine
 
 impl <'a> App<'a>
 {
-    fn instruction_to_line(color_settings: &ColorSettings, instruction: &Instruction, selected: bool) -> Line<'a>
+    fn instruction_to_line (color_settings: &ColorSettings, instruction: &Instruction, selected: bool, header: &Header) -> Line<'a>
     {
+        let symbol_table = header.get_symbols();
         let mut line = Line::default();
         line.spans.push(Span::styled(format!("{:16X}",instruction.ip()), 
             if selected
@@ -75,7 +101,21 @@ impl <'a> App<'a>
             }
         ));
         line.spans.push(Span::raw(" "));
-        let instruction_string = instruction.to_string();
+        
+
+        let instruction_string = if let Some(symbol_table) = &symbol_table
+        {
+            let symbol_resolver = CustomSymbolResolver::new(symbol_table.clone());
+        let symbol_resolver_box = Box::new(symbol_resolver);
+            let mut formatter = iced_x86::NasmFormatter::with_options(Some(symbol_resolver_box),None);
+            let mut output = String::new();
+            formatter.format(&instruction, &mut output);
+            output
+        } 
+        else
+        {
+            instruction.to_string()
+        };
         let mut instruction_pieces = instruction_string.split_whitespace();
         let mnemonic = instruction_pieces.next().unwrap().to_string();
         let args = instruction_pieces.collect::<Vec<&str>>().join(" ");
@@ -85,10 +125,20 @@ impl <'a> App<'a>
             iced_x86::Mnemonic::INVALID => color_settings.assembly_bad,
             _ => color_settings.assembly_default,
         };
+        
 
         line.spans.push(Span::styled(mnemonic, mnemonic_style));
         line.spans.push(Span::raw(" "));
         line.spans.push(Span::raw(args));
+        if let Some(symbol_table) = symbol_table
+        {
+            if let Some(symbol) = symbol_table.get(&instruction.ip())
+            {
+                line.spans.push(Span::raw(" "));
+                line.spans.push(Span::styled(format!("<{}>", symbol), color_settings.assembly_symbol));
+            }
+        }
+
         line
     }
 
@@ -323,7 +373,7 @@ impl <'a> App<'a>
                 break;
             }
             instructions.push(AssemblyLine::Instruction(instruction));
-            instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction, false));
+            instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction, false, &self.header));
             for _ in 0..instruction.len()
             {
                 offsets.push(from_instruction + instructions.len() - 1);

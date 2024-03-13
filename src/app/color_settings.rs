@@ -18,6 +18,7 @@ pub struct ColorSettings
 
     pub text_selected: Style,
 
+    pub assembly_symbol: Style,
     pub assembly_selected: Style,
     pub assembly_address: Style,
     pub assembly_nop: Style,
@@ -71,6 +72,7 @@ impl Default for ColorSettings
 
             text_selected: Style::default().fg(Color::Black).bg(Color::White),
 
+            assembly_symbol: Style::default().fg(Color::LightGreen),
             assembly_selected: Style::default().fg(Color::Black).bg(Color::White),
             assembly_address: Style::default().fg(Color::DarkGray),
             assembly_nop: Style::default().fg(Color::DarkGray),

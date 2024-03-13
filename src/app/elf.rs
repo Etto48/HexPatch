@@ -1,3 +1,5 @@
+use std::{collections::HashMap, rc::Rc};
+
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Bitness
 {
@@ -186,6 +188,7 @@ pub struct ElfHeader
     pub section_header_entry_count: u16,
     pub section_header_string_table_index: u16,
     pub section_table: Vec<Section>,
+    pub symbol_table: Rc<HashMap<u64, String>>,
 }
 
 impl ElfHeader
@@ -193,6 +196,60 @@ impl ElfHeader
     fn is_elf(bytes: &[u8]) -> bool
     {
         bytes.len() >= 4 && bytes[0] == 0x7F && bytes[1] == 'E' as u8 && bytes[2] == 'L' as u8 && bytes[3] == 'F' as u8
+    }
+
+    fn parse_symbols(symbol_table: Option<&Section>, string_table: Option<&Section>, bytes: &[u8], bitness: Bitness, endianness: Endianness) -> HashMap<u64, String>
+    {
+        let mut symbols = HashMap::new();
+        if symbol_table.is_some() && string_table.is_some()
+        {
+            let symbol_table = symbol_table.unwrap();
+            let string_table = string_table.unwrap();
+            let symbol_table_bytes = &bytes[symbol_table.offset as usize..symbol_table.offset as usize + symbol_table.size as usize];
+            let string_table_bytes = &bytes[string_table.offset as usize..string_table.offset as usize + string_table.size as usize];
+            let symbol_entry_size = match bitness
+            {
+                Bitness::Bit32 => 16,
+                Bitness::Bit64 => 24
+            };
+            for symbol in symbol_table_bytes.chunks_exact(symbol_entry_size)
+            {
+                let name_offset = match endianness
+                {
+                    Endianness::Little => u32::from_le_bytes([symbol[0], symbol[1], symbol[2], symbol[3]]),
+                    Endianness::Big => u32::from_be_bytes([symbol[0], symbol[1], symbol[2], symbol[3]])
+                };
+                let name = match string_table_bytes.get(name_offset as usize..)
+                {
+                    Some(name) => 
+                    {
+                        let max_name_size = 0x40;
+                        let name: String = name.iter().take_while(|&&c| c != 0).take(max_name_size).map(|&c| c as char).collect();
+                        name
+                    },
+                    None => 
+                    {
+                        continue;
+                    }
+                };
+
+                let value = match bitness
+                {
+                    Bitness::Bit32 => match endianness
+                    {
+                        Endianness::Little => u32::from_le_bytes([symbol[4], symbol[5], symbol[6], symbol[7]]) as u64,
+                        Endianness::Big => u32::from_be_bytes([symbol[4], symbol[5], symbol[6], symbol[7]]) as u64
+                    },
+                    Bitness::Bit64 => match endianness
+                    {
+                        Endianness::Little => u64::from_le_bytes([symbol[8], symbol[9], symbol[10], symbol[11], symbol[12], symbol[13], symbol[14], symbol[15]]),
+                        Endianness::Big => u64::from_be_bytes([symbol[8], symbol[9], symbol[10], symbol[11], symbol[12], symbol[13], symbol[14], symbol[15]])
+                    }
+                };
+                symbols.insert(value, name);
+            }
+        }
+        symbols
     }
 
     pub fn parse_header(bytes: &[u8]) -> Option<Self>
@@ -515,7 +572,7 @@ impl ElfHeader
                 }
                 let section_table = &bytes[section_header_table as usize .. section_header_table as usize + section_header_entry_count as usize * section_header_entry_size as usize];
                 let mut sections = Vec::new();
-                let section_table = section_table.chunks(section_header_entry_size as usize);
+                let section_table = section_table.chunks_exact(section_header_entry_size as usize);
                 if section_table.len() != section_header_entry_count as usize
                 {
                     return None;
@@ -543,10 +600,6 @@ impl ElfHeader
                 let string_table = &bytes[string_table_offset as usize..];
                 for section in section_table
                 {
-                    if section.len() < section_header_entry_size as usize
-                    {
-                        return None;
-                    }
                     let name_offset = match endianness
                     {
                         Endianness::Little => u32::from_le_bytes([section[0], section[1], section[2], section[3]]),
@@ -658,6 +711,11 @@ impl ElfHeader
                             Endianness::Big => u64::from_be_bytes([section[48], section[49], section[50], section[51], section[52], section[53], section[54], section[55]])
                         }
                     };
+                    if section_type & 0x8 != 0
+                    {
+                        // this is a SHT_NOBITS section
+                        continue;
+                    }
                     sections.push(
                         Section{
                             name,
@@ -673,6 +731,37 @@ impl ElfHeader
                         }
                     );
                 }
+
+                let mut symbols = HashMap::new();
+                let mut symbol_table = None;
+                let mut dynamic_symbol_table = None;
+                let mut string_table = None;
+                for section in &sections
+                {
+                    if section.name == ".symtab"
+                    {
+                        symbol_table = Some(section);
+                    }
+                    else if section.name == ".strtab"
+                    {
+                        string_table = Some(section);
+                    }
+                    else if section.name == ".dynsym"
+                    {
+                        dynamic_symbol_table = Some(section);
+                    }
+                }
+
+                if dynamic_symbol_table.is_some()
+                {
+                    symbols.extend(Self::parse_symbols(dynamic_symbol_table, string_table, bytes, bitness, endianness).into_iter());
+                }
+                if symbol_table.is_some()
+                {
+                    symbols.extend(Self::parse_symbols(symbol_table, string_table, bytes, bitness, endianness).into_iter());
+                }
+
+                
 
                 Some(ElfHeader {
                     bitness,
@@ -692,7 +781,8 @@ impl ElfHeader
                     section_header_entry_size,
                     section_header_entry_count,
                     section_header_string_table_index,
-                    section_table: sections
+                    section_table: sections,
+                    symbol_table: Rc::new(symbols)
                 })
             }
             else 
@@ -716,31 +806,9 @@ impl ElfHeader
         let header = ElfHeader::parse_header(data).expect("File is not ELF");
         dbg!(header);
     }
-}
 
-impl Default for ElfHeader
-{
-    fn default() -> Self {
-        ElfHeader
-        {
-            bitness: Bitness::Bit64,
-            endianness: Endianness::Little,
-            abi: ABI::SystemV,
-            dynamic_linker_version: 0,
-            file_type: FileType::EtNone,
-            instruction_set: InstructionSet::AMDx86_64,
-            elf_version: 1,
-            entry_point: 0,
-            program_header_offset: 0,
-            section_header_table: 0,
-            flags: 0,
-            header_size: 0,
-            program_header_entry_size: 0,
-            program_header_entry_count: 0,
-            section_header_entry_size: 0,
-            section_header_entry_count: 0,
-            section_header_string_table_index: 0,
-            section_table: Vec::new(),
-        }
+    pub fn get_symbols(&self) -> Rc<HashMap<u64,String>>
+    {
+        self.symbol_table.clone()
     }
 }
