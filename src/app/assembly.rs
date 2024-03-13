@@ -258,7 +258,7 @@ impl <'a> App<'a>
         let mut line_offsets = vec![0; section_size];
         let mut instructions = Vec::new();
         let mut current_byte = 0;
-        let mut decoder = iced_x86::Decoder::new(header.bitness(), &bytes[starting_ip..starting_ip + section_size], iced_x86::DecoderOptions::NONE);
+        let mut decoder = iced_x86::Decoder::new(header.bitness(), &bytes[starting_file_address..starting_file_address + section_size], iced_x86::DecoderOptions::NONE);
         decoder.set_ip(starting_ip as u64);
         for instruction in decoder
         {
@@ -396,13 +396,13 @@ impl <'a> App<'a>
         let mut current_byte = from_byte;
         for instruction in decoder
         {   
-            let old_instruction = self.get_instruction_at(instruction.ip() as usize);
+            let old_instruction = self.get_instruction_at(current_byte);
             let instruction_tag = InstructionTag
             {
                 instruction,
                 file_address: current_byte as u64
             };
-            if old_instruction == &AssemblyLine::Instruction(instruction_tag) && old_instruction.ip() == instruction.ip()
+            if old_instruction == &AssemblyLine::Instruction(instruction_tag)
             {
                 to_byte = old_instruction.ip() as usize;
                 break;
