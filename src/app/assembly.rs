@@ -157,6 +157,11 @@ impl <'a> App<'a>
                 line.spans.push(Span::styled(format!("<{}>", symbol), color_settings.assembly_symbol));
             }
         }
+        if instruction.instruction.ip() == header.entry_point()
+        {
+            line.spans.push(Span::raw(" "));
+            line.spans.push(Span::styled("EntryPoint", color_settings.assembly_entry_point));
+        }
         line.spans.push(Span::styled(format!(" @{:X}", instruction.instruction.ip()), color_settings.assembly_virtual_address));
 
         line

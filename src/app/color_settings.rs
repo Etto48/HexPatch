@@ -25,6 +25,7 @@ pub struct ColorSettings
     pub assembly_nop: Style,
     pub assembly_bad: Style,
     pub assembly_section: Style,
+    pub assembly_entry_point: Style,
     pub assembly_default: Style,
 
     pub help_command: Style,
@@ -81,6 +82,7 @@ impl Default for ColorSettings
             assembly_nop: Style::default().fg(Color::DarkGray),
             assembly_bad: Style::default().fg(Color::LightRed),
             assembly_section: Style::default().fg(Color::LightBlue),
+            assembly_entry_point: Style::default().fg(Color::Yellow),
             assembly_default: Style::default().fg(Color::Rgb(204, 152, 113)),
 
             help_command: Style::default().fg(Color::LightGreen),
