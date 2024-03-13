@@ -83,7 +83,7 @@ impl <'a> App<'a>
                                 self.popup = Some(PopupState::Patch { assembly: String::new(), cursor: 0});
                             },
                             'j' => {
-                                self.popup = Some(PopupState::JumpToAddress { address: String::new(), cursor: 0});
+                                self.popup = Some(PopupState::JumpToAddress { location: String::new(), cursor: 0});
                             },
                             'v' => {
                                 match self.info_mode {
@@ -197,9 +197,9 @@ impl <'a> App<'a>
             {
                 Self::handle_string_edit(assembly, cursor, &event, None, false, None)?;
             }
-            Some(PopupState::JumpToAddress {address, cursor}) =>
+            Some(PopupState::JumpToAddress {location: address, cursor}) =>
             {
-                Self::handle_string_edit(address, cursor, &event, Some("0123456789ABCDEF"), true, Some(16))?;
+                Self::handle_string_edit(address, cursor, &event, None, false, None)?;
             }
             _ => {}
         }
@@ -241,12 +241,9 @@ impl <'a> App<'a>
                                 self.patch(&assembly);
                                 self.popup = None;
                             }
-                            Some(PopupState::JumpToAddress {address, cursor: _cursor}) =>
+                            Some(PopupState::JumpToAddress {location, cursor: _cursor}) =>
                             {
-                                if let Ok(address) = usize::from_str_radix(&address, 16)
-                                {
-                                    self.jump_to(address);
-                                }
+                                self.jump_to_symbol(&location);
                                 self.popup = None;
                             }
                             Some(PopupState::Save(yes_selected)) =>

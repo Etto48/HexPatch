@@ -113,6 +113,7 @@ impl <'a> App<'a>
             self.log(NotificationLevel::Info, "No header found. Assuming 64-bit.");
         }
         
+        self.log(NotificationLevel::Info, "Press H for a list of commands.");
 
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_if_needed(self.screen_size.0);

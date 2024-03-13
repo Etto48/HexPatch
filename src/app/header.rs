@@ -163,4 +163,20 @@ impl Header
             
         }
     }
+
+    pub fn symbol_to_address(&self, symbol: &str) -> Option<u64>
+    {
+        match self
+        {
+            Header::Elf(header) => 
+            {
+                header.inverse_symbol_table.get(symbol).map(|x| *x)
+            },
+            Header::PE(header) => 
+            {
+                header.inverse_symbol_table.get(symbol).map(|x| *x)
+            },
+            Header::None => None,
+        }
+    }
 }

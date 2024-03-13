@@ -24,7 +24,8 @@ pub struct PEHeader
     pub entry_point: u64,
     pub bitness: u32,
     pub section_table: Vec<Section>,
-    pub symbol_table: Rc<HashMap<u64, String>>
+    pub symbol_table: Rc<HashMap<u64, String>>,
+    pub inverse_symbol_table: HashMap<String, u64>
 }
 
 impl PEHeader
@@ -115,8 +116,17 @@ impl PEHeader
                                                 let address = public_symbol.offset.to_rva(&address_map);
                                                 if let Some(address) = address
                                                 {
-                                                    let name = public_symbol.name.to_string().to_string();
-                                                    symbols.insert(address.0 as u64, name);
+                                                    let mangled_name = public_symbol.name.to_string().to_string();
+                                                    let name = cpp_demangle::Symbol::new(&mangled_name);
+                                                    if let Ok(name) = name
+                                                    {
+                                                        symbols.insert(address.0 as u64, name.to_string());
+                                                    }
+                                                    else 
+                                                    {
+                                                        symbols.insert(address.0 as u64, mangled_name);    
+                                                    }
+                                                    
                                                 }
                                             },
                                             _ => {}
@@ -129,12 +139,15 @@ impl PEHeader
                     }
                 }
 
+                let inverse_symbol_table = symbols.iter().map(|(k, v)| (v.clone(), *k)).collect();
+
                 Some(PEHeader
                 {
                     entry_point,
                     bitness,
                     section_table,
                     symbol_table: Rc::new(symbols),
+                    inverse_symbol_table
                 })
             },
             Err(_) => None,

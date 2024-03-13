@@ -13,7 +13,7 @@ pub enum PopupState
     },
     JumpToAddress
     {
-        address: String,
+        location: String,
         cursor: usize
     },
     QuitDirtySave(bool),
@@ -97,14 +97,14 @@ impl <'a> App<'a>
                     ]
                 );
             }
-            PopupState::JumpToAddress {address, cursor} =>
+            PopupState::JumpToAddress {location: address, cursor} =>
             {
                 *popup_title = "Jump";
                 *popup_rect = Rect::new(f.size().width / 2 - 16, f.size().height / 2 - 3, 32, 7);
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor);
                 popup_text.lines.extend(
                     vec![
-                        Line::raw("Enter the address to jump to:"),
+                        Line::raw("Enter where to jump to:"),
                         Line::raw("──────────────────────────────"),
                         editable_string.right_aligned(),
                         Line::raw("──────────────────────────────"),
@@ -214,7 +214,7 @@ impl <'a> App<'a>
                         Line::from(
                             vec![
                                 Span::styled(" J", color_settings.help_command),
-                                Span::raw(": Jump to address")
+                                Span::raw(": Jump to location")
                             ]
                         ).left_aligned(),
                         Line::from(

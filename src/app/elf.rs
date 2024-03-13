@@ -189,6 +189,7 @@ pub struct ElfHeader
     pub section_header_string_table_index: u16,
     pub section_table: Vec<Section>,
     pub symbol_table: Rc<HashMap<u64, String>>,
+    pub inverse_symbol_table: HashMap<String, u64>
 }
 
 impl ElfHeader
@@ -761,7 +762,7 @@ impl ElfHeader
                     symbols.extend(Self::parse_symbols(symbol_table, string_table, bytes, bitness, endianness).into_iter());
                 }
 
-                
+                let inverse_symbol_table = symbols.iter().map(|(k,v)| (v.clone(), *k)).collect();
 
                 Some(ElfHeader {
                     bitness,
@@ -782,7 +783,8 @@ impl ElfHeader
                     section_header_entry_count,
                     section_header_string_table_index,
                     section_table: sections,
-                    symbol_table: Rc::new(symbols)
+                    symbol_table: Rc::new(symbols),
+                    inverse_symbol_table
                 })
             }
             else 
