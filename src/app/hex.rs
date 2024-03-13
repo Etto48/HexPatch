@@ -186,7 +186,7 @@ impl <'a> App<'a>
     {
         if let AssemblyLine::Instruction(instruction) = instruction
         {
-            for i in instruction.ip() as usize..instruction.ip() as usize + instruction.len() {
+            for i in instruction.file_address as usize..instruction.file_address as usize + instruction.instruction.len() {
                 let gui_pos = self.get_expected_cursor_position(i, true);
                 let style = if original_color
                 {
@@ -198,7 +198,7 @@ impl <'a> App<'a>
                 };
                 self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3].style = style;
                 self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+1].style = style;
-                if i != instruction.ip() as usize + instruction.len()-1 {
+                if i != instruction.file_address as usize + instruction.instruction.len()-1 {
                     self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+2].style = style;
                 }
             }

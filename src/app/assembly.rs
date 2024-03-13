@@ -11,13 +11,22 @@ use super::{app::App, color_settings::ColorSettings, header::{Header, Section}, 
 pub struct SectionTag
 {
     pub name: String,
-    pub ip: u64,
+    pub file_address: u64,
+    pub virtual_address: u64,
     pub size: usize
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct InstructionTag
+{
+    pub instruction: Instruction,
+    pub file_address: u64,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AssemblyLine
 {
-    Instruction(Instruction),
+    Instruction(InstructionTag),
     SectionTag(SectionTag)
 }
 
@@ -50,8 +59,17 @@ impl AssemblyLine
     {
         match self
         {
-            AssemblyLine::Instruction(instruction) => instruction.ip(),
-            AssemblyLine::SectionTag(section) => section.ip,
+            AssemblyLine::Instruction(instruction) => instruction.file_address,
+            AssemblyLine::SectionTag(section) => section.file_address,
+        }
+    }
+
+    pub fn virtual_ip(&self) -> u64
+    {
+        match self
+        {
+            AssemblyLine::Instruction(instruction) => instruction.instruction.ip(),
+            AssemblyLine::SectionTag(section) => section.virtual_address
         }
     }
 
@@ -60,12 +78,12 @@ impl AssemblyLine
         match self
         {
             AssemblyLine::Instruction(instruction) => {
-                let selected = current_byte_index >= instruction.ip() as usize && current_byte_index < instruction.ip() as usize + instruction.len();
+                let selected = current_byte_index >= instruction.file_address as usize && current_byte_index < instruction.file_address as usize + instruction.instruction.len();
                 App::instruction_to_line(color_settings, instruction, selected, header)
             },
             AssemblyLine::SectionTag(section) => 
             {
-                let selected = current_byte_index >= section.ip as usize && current_byte_index < section.ip as usize + section.size;
+                let selected = current_byte_index >= section.file_address as usize && current_byte_index < section.file_address as usize + section.size;
                 let mut line = Line::default();
                 let address_style = if selected
                 {
@@ -75,9 +93,10 @@ impl AssemblyLine
                 {
                     color_settings.assembly_address
                 };
-                line.spans.push(Span::styled(format!("{:16X}", section.ip), address_style));
+                line.spans.push(Span::styled(format!("{:16X}", section.file_address), address_style));
                 line.spans.push(Span::raw(" "));
-                line.spans.push(Span::styled(format!("[{} ({} bytes)]", section.name, section.size), color_settings.assembly_section));
+                line.spans.push(Span::styled(format!("[{} ({}B)]", section.name, section.size), color_settings.assembly_section));
+                line.spans.push(Span::styled(format!(" @{:X}", section.virtual_address), color_settings.assembly_virtual_address));
                 line
             }
         }
@@ -86,11 +105,11 @@ impl AssemblyLine
 
 impl <'a> App<'a>
 {
-    fn instruction_to_line (color_settings: &ColorSettings, instruction: &Instruction, selected: bool, header: &Header) -> Line<'a>
+    fn instruction_to_line (color_settings: &ColorSettings, instruction: &InstructionTag, selected: bool, header: &Header) -> Line<'a>
     {
         let symbol_table = header.get_symbols();
         let mut line = Line::default();
-        line.spans.push(Span::styled(format!("{:16X}",instruction.ip()), 
+        line.spans.push(Span::styled(format!("{:16X}",instruction.file_address), 
             if selected
             {
                 color_settings.assembly_selected
@@ -109,18 +128,18 @@ impl <'a> App<'a>
         let symbol_resolver_box = Box::new(symbol_resolver);
             let mut formatter = iced_x86::NasmFormatter::with_options(Some(symbol_resolver_box),None);
             let mut output = String::new();
-            formatter.format(&instruction, &mut output);
+            formatter.format(&instruction.instruction, &mut output);
             output
         } 
         else
         {
-            instruction.to_string()
+            instruction.instruction.to_string()
         };
         let mut instruction_pieces = instruction_string.split_whitespace();
         let mnemonic = instruction_pieces.next().unwrap().to_string();
         let args = instruction_pieces.collect::<Vec<&str>>().join(" ");
         let mnemonic_style = 
-        match instruction.mnemonic() {
+        match instruction.instruction.mnemonic() {
             iced_x86::Mnemonic::Nop => color_settings.assembly_nop,
             iced_x86::Mnemonic::INVALID => color_settings.assembly_bad,
             _ => color_settings.assembly_default,
@@ -132,12 +151,13 @@ impl <'a> App<'a>
         line.spans.push(Span::raw(args));
         if let Some(symbol_table) = symbol_table
         {
-            if let Some(symbol) = symbol_table.get(&instruction.ip())
+            if let Some(symbol) = symbol_table.get(&instruction.instruction.ip())
             {
                 line.spans.push(Span::raw(" "));
                 line.spans.push(Span::styled(format!("<{}>", symbol), color_settings.assembly_symbol));
             }
         }
+        line.spans.push(Span::styled(format!(" @{:X}", instruction.instruction.ip()), color_settings.assembly_virtual_address));
 
         line
     }
@@ -165,7 +185,8 @@ impl <'a> App<'a>
                 lines.push(AssemblyLine::SectionTag(
                     SectionTag {
                         name: "Unknown".to_string(),
-                        ip: current_byte as u64,
+                        file_address: current_byte as u64,
+                        virtual_address: 0,
                         size: section.address as usize - current_byte
                     }
                 ));
@@ -184,12 +205,13 @@ impl <'a> App<'a>
                         AssemblyLine::SectionTag(
                             SectionTag {
                                 name: ".text".to_string(),
-                                ip: section.address,
+                                file_address: section.address,
+                                virtual_address: section.virtual_address,
                                 size: section.size as usize
                             }
                         )
                     );
-                    let (offsets, instructions) = Self::assembly_from_section(bytes, header, section.address as usize, section.size as usize, lines.len());
+                    let (offsets, instructions) = Self::assembly_from_section(bytes, header, section.virtual_address as usize, current_byte, section.size as usize, lines.len());
                     line_offsets.splice(section.address as usize..section.address as usize + section.size as usize, offsets);
                     lines.extend(instructions);
                     current_byte += section.size as usize;
@@ -198,7 +220,8 @@ impl <'a> App<'a>
                     lines.push(AssemblyLine::SectionTag(
                         SectionTag {
                             name: name.to_string(),
-                            ip: section.address,
+                            file_address: section.address,
+                            virtual_address: section.virtual_address,
                             size: section.size as usize,
                         }
                     ));
@@ -215,7 +238,8 @@ impl <'a> App<'a>
             lines.push(AssemblyLine::SectionTag(
                 SectionTag {
                     name: "Unknown".to_string(),
-                    ip: current_byte as u64,
+                    file_address: current_byte as u64,
+                    virtual_address: 0,
                     size: bytes.len() - current_byte
                 }
             ));
@@ -229,7 +253,7 @@ impl <'a> App<'a>
         (line_offsets, lines)
     }
 
-    pub(super) fn assembly_from_section(bytes: &[u8], header: &Header, starting_ip: usize, section_size: usize, starting_sections: usize) -> (Vec<usize>, Vec<AssemblyLine>)
+    pub(super) fn assembly_from_section(bytes: &[u8], header: &Header, starting_ip: usize, starting_file_address: usize, section_size: usize, starting_sections: usize) -> (Vec<usize>, Vec<AssemblyLine>)
     {
         let mut line_offsets = vec![0; section_size];
         let mut instructions = Vec::new();
@@ -238,7 +262,12 @@ impl <'a> App<'a>
         decoder.set_ip(starting_ip as u64);
         for instruction in decoder
         {
-            instructions.push(AssemblyLine::Instruction(instruction));
+            let instruction_tag = InstructionTag
+            {
+                instruction,
+                file_address: current_byte as u64 + starting_file_address as u64
+            };
+            instructions.push(AssemblyLine::Instruction(instruction_tag));
             for _ in 0..instruction.len()
             {
                 line_offsets[current_byte] = starting_sections + instructions.len() - 1;
@@ -266,7 +295,7 @@ impl <'a> App<'a>
         let current_instruction = self.get_current_instruction().clone();
         let current_ip = match current_instruction
         {
-            AssemblyLine::Instruction(instruction) => instruction.ip(),
+            AssemblyLine::Instruction(instruction) => instruction.file_address,
             AssemblyLine::SectionTag(_) => self.get_cursor_position().global_byte_index as u64
         };
         for (i, byte) in bytes.iter().enumerate()
@@ -339,6 +368,7 @@ impl <'a> App<'a>
     pub(super) fn edit_assembly(&mut self)
     {
         let from_byte = self.get_current_instruction().ip() as usize;
+        let virtual_address = self.get_current_instruction().virtual_ip();
         let text_section = self.header.get_text_section();
         let (is_inside_text_section, maximum_code_byte) = 
         if let Some(text_section) = text_section 
@@ -356,27 +386,33 @@ impl <'a> App<'a>
             return;
         }
         let mut decoder = iced_x86::Decoder::new(self.header.bitness(), &self.data[from_byte..maximum_code_byte], iced_x86::DecoderOptions::NONE);
-        decoder.set_ip(from_byte as u64);
+        decoder.set_ip(virtual_address as u64);
         let mut offsets = Vec::new();
         let mut instructions = Vec::new();
         let mut instruction_lines = Vec::new();
         let mut to_byte = self.data.len();
 
         let from_instruction = self.assembly_offsets[from_byte];
-
+        let mut current_byte = from_byte;
         for instruction in decoder
         {   
             let old_instruction = self.get_instruction_at(instruction.ip() as usize);
-            if old_instruction == &AssemblyLine::Instruction(instruction) && old_instruction.ip() == instruction.ip()
+            let instruction_tag = InstructionTag
+            {
+                instruction,
+                file_address: current_byte as u64
+            };
+            if old_instruction == &AssemblyLine::Instruction(instruction_tag) && old_instruction.ip() == instruction.ip()
             {
                 to_byte = old_instruction.ip() as usize;
                 break;
             }
-            instructions.push(AssemblyLine::Instruction(instruction));
-            instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction, false, &self.header));
+            instructions.push(AssemblyLine::Instruction(instruction_tag));
+            instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction_tag, false, &self.header));
             for _ in 0..instruction.len()
             {
                 offsets.push(from_instruction + instructions.len() - 1);
+                current_byte += 1;
             }
         }
         if from_byte == to_byte
@@ -411,14 +447,14 @@ impl <'a> App<'a>
         {
             if let AssemblyLine::Instruction(instruction) = &self.assembly_instructions[i]
             {
-                self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction, self.assembly_instructions[i].ip()));    
+                self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction.instruction, self.assembly_instructions[i].ip()));    
             }
         }
         for i in 0..instructions.len()
         {
             if let AssemblyLine::Instruction(instruction) = &instructions[i]
             {
-                self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction, instructions[i].ip()));
+                self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction.instruction, instructions[i].ip()));
             }
         }
 

@@ -179,4 +179,12 @@ impl Header
             Header::None => None,
         }
     }
+
+    pub fn virtual_to_physical_address(&self, virtual_address: u64) -> Option<u64>
+    {
+        self.get_sections()
+            .iter()
+            .find(|x| virtual_address >= x.virtual_address && virtual_address < x.virtual_address + x.size)
+            .map(|x| x.address + virtual_address - x.virtual_address)
+    }
 }

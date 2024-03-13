@@ -77,7 +77,7 @@ impl <'a> App<'a>
             if let Some((address, name)) = find_iter.clone().next()
             {
                 self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", name, address));
-                self.jump_to(*address as usize);
+                self.jump_to(*address as usize, true);
             }
             else 
             {
@@ -97,11 +97,23 @@ impl <'a> App<'a>
             if let Ok(address) = usize::from_str_radix(&symbol[2..], 16)
             {
                 self.log(NotificationLevel::Debug, &format!("Jumping to address: 0x{:X}", address));
-                self.jump_to(address);
+                self.jump_to(address, false);
             }
             else 
             {
                 self.log(NotificationLevel::Error, &format!("Invalid address: {}", symbol));
+            }
+        }
+        if symbol.starts_with("v0x")
+        {
+            if let Ok(address) = usize::from_str_radix(&symbol[3..], 16)
+            {
+                self.log(NotificationLevel::Debug, &format!("Jumping to virtual address: 0x{:X}", address));
+                self.jump_to(address, true);
+            }
+            else 
+            {
+                self.log(NotificationLevel::Error, &format!("Invalid virtual address: {}", symbol));
             }
         }
         else
@@ -109,12 +121,12 @@ impl <'a> App<'a>
             if let Some(address) = self.header.symbol_to_address(symbol)
             {
                 self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", symbol, address));
-                self.jump_to(address as usize);
+                self.jump_to(address as usize, true);
             }
             else if let Some(address) = self.header.get_sections().iter().find(|x|x.name == symbol).map(|x|x.address)
             {
                 self.log(NotificationLevel::Debug, &format!("Jumping to section {} at 0x{:X}", symbol, address));
-                self.jump_to(address as usize);
+                self.jump_to(address as usize, false);
             }
             else 
             {
@@ -123,8 +135,20 @@ impl <'a> App<'a>
         }
     }
 
-    pub(super) fn jump_to(&mut self, mut address: usize)
+    pub(super) fn jump_to(&mut self, mut address: usize, is_virtual: bool)
     {
+        if is_virtual
+        {
+            if let Some(physical_address) = self.header.virtual_to_physical_address(address as u64)
+            {
+                address = physical_address as usize;
+            }
+            else 
+            {
+                self.log(NotificationLevel::Error, &format!("Virtual address 0x{:X} not found", address));
+                return;
+            }
+        }
         if address >= self.data.len()
         {
             address = self.data.len() - 1;
