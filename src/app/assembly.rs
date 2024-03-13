@@ -214,7 +214,11 @@ impl <'a> App<'a>
     pub(super) fn patch_bytes(&mut self, bytes: &[u8])
     {
         let current_instruction = self.get_current_instruction().clone();
-        let current_ip = current_instruction.ip();
+        let current_ip = match current_instruction
+        {
+            AssemblyLine::Instruction(instruction) => instruction.ip(),
+            AssemblyLine::SectionTag(_) => self.get_cursor_position().global_byte_index as u64
+        };
         for (i, byte) in bytes.iter().enumerate()
         {
             self.data[current_ip as usize + i] = *byte;
