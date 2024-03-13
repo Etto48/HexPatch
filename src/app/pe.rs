@@ -37,7 +37,7 @@ impl PEHeader
         {
             Ok(header) => 
             {
-                let entry_point = header.entry();
+                let entry_point = header.nt_headers().optional_header.address_of_entry_point.get(LittleEndian::default()) as u64;
                 let bitness = if header.is_64() { 64 } else { 32 };
 
                 let mut section_table = Vec::new();
