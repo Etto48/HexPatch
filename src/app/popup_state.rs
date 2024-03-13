@@ -281,6 +281,12 @@ impl <'a> App<'a>
                         ).left_aligned(),
                         Line::from(
                             vec![
+                                Span::styled(" S", color_settings.help_command),
+                                Span::raw(": Symbol search")
+                            ]
+                        ).left_aligned(),
+                        Line::from(
+                            vec![
                                 Span::styled(" P", color_settings.help_command),
                                 Span::raw(": Patch assembly")
                             ]
@@ -296,12 +302,7 @@ impl <'a> App<'a>
                                 Span::styled(" H", color_settings.help_command),
                                 Span::raw(": Help")
                             ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled("Ok", color_settings.ok_selected),
-                            ]
-                        )
+                        ).left_aligned()
                     ]
                 );
             }
