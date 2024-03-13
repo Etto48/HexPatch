@@ -76,7 +76,7 @@ impl <'a> App<'a>
             let find_iter = symbols.iter().filter(|(_addr, name)| name.contains(symbol)).skip(scroll);
             if let Some((address, name)) = find_iter.clone().next()
             {
-                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {}", name, address));
+                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", name, address));
                 self.jump_to(*address as usize);
             }
             else 
@@ -96,6 +96,7 @@ impl <'a> App<'a>
         {
             if let Ok(address) = usize::from_str_radix(&symbol[2..], 16)
             {
+                self.log(NotificationLevel::Debug, &format!("Jumping to address: 0x{:X}", address));
                 self.jump_to(address);
             }
             else 
@@ -107,12 +108,12 @@ impl <'a> App<'a>
         {
             if let Some(address) = self.header.symbol_to_address(symbol)
             {
-                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {}", symbol, address));
+                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", symbol, address));
                 self.jump_to(address as usize);
             }
             else if let Some(address) = self.header.get_sections().iter().find(|x|x.name == symbol).map(|x|x.address)
             {
-                self.log(NotificationLevel::Debug, &format!("Jumping to section {} at {}", symbol, address));
+                self.log(NotificationLevel::Debug, &format!("Jumping to section {} at 0x{:X}", symbol, address));
                 self.jump_to(address as usize);
             }
             else 

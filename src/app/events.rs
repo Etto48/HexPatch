@@ -333,7 +333,9 @@ impl <'a> App<'a>
                     KeyCode::Esc => {
                         self.popup = None;
                     },
-                    KeyCode::Char(_c) => {
+                    KeyCode::Char(_) | 
+                    KeyCode::Backspace | 
+                    KeyCode::Delete => {
                         match &self.popup
                         {
                             Some(PopupState::FindSymbol { filter, cursor, scroll: _scroll }) => 

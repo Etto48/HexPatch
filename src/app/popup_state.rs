@@ -31,9 +31,13 @@ pub enum PopupState
 impl <'a> App<'a>
 {
 
-    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize) -> Line<'a>
+    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str) -> Line<'a>
     {
         let string = s.to_string();
+        if string.len() == 0
+        {
+            return Line::from(vec![Span::raw(" "), Span::styled(placeholder.to_string(), color_settings.placeholder), Span::raw(" ")]);
+        }
         let mut spans = vec![Span::raw(" ")];
         for (i, c) in string.chars().enumerate()
         {
@@ -62,16 +66,21 @@ impl <'a> App<'a>
             PopupState::FindSymbol{ filter, cursor, scroll } =>
             {
                 *popup_title = "Find Symbol";
-                *popup_rect = Rect::new(f.size().width / 2 - 20, f.size().height / 2 - 6, 40, 12);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor);
+                let width = 60;
+                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - 6, width as u16, 12);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter");
                 let symbol_table = self.header.get_symbols();
                 if let Some(symbol_table) = symbol_table
                 {
                     let symbol_iter = symbol_table.iter().filter(|(_address, name)| name.contains(filter));
-                    let symbol_line_iter = symbol_iter.map(|(address, name)| Line::from(vec![
-                        Span::styled(name.clone(), color_settings.assembly_symbol), 
-                        Span::raw(" "), 
-                        Span::raw(format!("{:X}", address))]));
+                    let symbol_line_iter = symbol_iter.map(|(address, name)| {
+                        let short_name = name.chars().take(width-19).collect::<String>();
+                        let space_count = (width - short_name.len() - 19 + 1).clamp(0, width);
+                        Line::from(vec![
+                        Span::styled(short_name, color_settings.assembly_symbol), 
+                        Span::raw(" ".repeat(space_count)), 
+                        Span::raw(format!("{:16X}", address))]).left_aligned()
+                    });
                     let has_something = symbol_line_iter.clone().next().is_some();
                     let mut symbols_as_lines = symbol_line_iter.skip(*scroll).take(8).collect::<Vec<_>>();
                     if symbols_as_lines.len() != 0
@@ -97,13 +106,13 @@ impl <'a> App<'a>
                     {
                         symbols_as_lines.extend(vec![Line::raw(""); 8 - symbols_as_lines.len()]);
                     }
-                    popup_text.lines.extend(symbols_as_lines);
                     popup_text.lines.extend(
                         vec![
                             editable_string.left_aligned(),
-                            Line::from(vec![Span::styled("Jump", color_settings.ok_selected)])
+                            Line::raw("─".repeat(width)),
                         ]
                     );
+                    popup_text.lines.extend(symbols_as_lines);
                 }
                 else 
                 {
@@ -147,31 +156,19 @@ impl <'a> App<'a>
             PopupState::Patch {assembly, cursor} =>
             {
                 *popup_title = "Patch";
-                *popup_rect = Rect::new(f.size().width / 2 - 16, f.size().height / 2 - 3, 32, 7);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, assembly, *cursor);
+                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 3, 60, 3);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly");
                 popup_text.lines.extend(
-                    vec![
-                        Line::raw("Enter the assembly to patch:"),
-                        Line::raw("──────────────────────────────"),
-                        editable_string.left_aligned(),
-                        Line::raw("──────────────────────────────"),
-                        Line::from(vec![Span::styled("Ok", color_settings.ok_selected)])
-                    ]
+                    vec![editable_string.left_aligned()]
                 );
             }
             PopupState::JumpToAddress {location: address, cursor} =>
             {
                 *popup_title = "Jump";
-                *popup_rect = Rect::new(f.size().width / 2 - 16, f.size().height / 2 - 3, 32, 7);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor);
+                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 3, 60, 3);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location");
                 popup_text.lines.extend(
-                    vec![
-                        Line::raw("Enter where to jump to:"),
-                        Line::raw("──────────────────────────────"),
-                        editable_string.right_aligned(),
-                        Line::raw("──────────────────────────────"),
-                        Line::from(vec![Span::styled("Ok", color_settings.ok_selected)])
-                    ]
+                    vec![editable_string.left_aligned()]
                 );
             }
             PopupState::SaveAndQuit(yes_selected) =>

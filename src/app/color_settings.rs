@@ -49,6 +49,7 @@ pub struct ColorSettings
     pub status_error: Style,
 
     pub scrollbar: Style,
+    pub placeholder: Style,
 }
 
 impl Default for ColorSettings
@@ -103,6 +104,7 @@ impl Default for ColorSettings
             status_error: Style::default().fg(Color::Red).bg(status_bar_bg),
 
             scrollbar: Style::default().fg(status_bar_bg).bg(Color::DarkGray),
+            placeholder: Style::default().fg(Color::DarkGray),
         }
     }
 }
