@@ -1,56 +1,7 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum MachineType
-{
-    Unknown = 0x0,
-    Alpha = 0x184,
-    Alpha64AndAxp64 = 0x284,
-    Am33 = 0x1d3,
-    Amd64 = 0x8664,
-    Arm = 0x1c0,
-    Arm64 = 0xaa64,
-    ArmNT = 0x1c4,
-    Ebc = 0xebc,
-    I386 = 0x14c,
-    Ia64 = 0x200,
-    LoongArch32 = 0x6232,
-    LoongArch64 = 0x6264,
-    M32R = 0x9041,
-    Mips16 = 0x266,
-    MipsFpu = 0x366,
-    MipsFpu16 = 0x466,
-    PowerPC = 0x1f0,
-    PowerPCFP = 0x1f1,
-    R4000 = 0x166,
-    RiscV32 = 0x5032,
-    RiscV64 = 0x5064,
-    RiscV128 = 0x5128,
-    Sh3 = 0x1a2,
-    Sh3Dsp = 0x1a3,
-    Sh4 = 0x1a6,
-    Sh5 = 0x1a8,
-    Thumb = 0x1c2,
-    WceMipsV2 = 0x169,
-}
+use std::{collections::HashMap, fs::File, rc::Rc};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OptionalHeaderMagic
-{
-    PE32 = 0x10B,
-    PE32Plus = 0x20B,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct OptionalHeader
-{
-    pub magic: OptionalHeaderMagic,
-    pub major_linker_version: u8,
-    pub minor_linker_version: u8,
-    pub size_of_code: u32,
-    pub size_of_initialized_data: u32,
-    pub size_of_uninitialized_data: u32,
-    pub address_of_entry_point: u32,
-    pub base_of_code: u32,
-}
+use object::{pe::ImageNtHeaders64, read::pe::PeFile, LittleEndian, Object, ObjectSymbol};
+use pdb::FallibleIterator;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Section
@@ -70,212 +21,133 @@ pub struct Section
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PEHeader
 {
-    pub signature_offset: usize,
-    pub machine: MachineType,
-    pub number_of_sections: u16,
-    pub time_date_stamp: u32,
-    pub pointer_to_symbol_table: u32,
-    pub number_of_symbols: u32,
-    pub size_of_optional_header: u16,
-    pub characteristics: u16,
-
-    pub optional_header: OptionalHeader,
+    pub entry_point: u64,
+    pub bitness: u32,
     pub section_table: Vec<Section>,
+    pub symbol_table: Rc<HashMap<u64, String>>
 }
 
 impl PEHeader
 {
     pub fn parse_header(bytes: &[u8]) -> Option<PEHeader>
     {
-        if bytes.len() <= 0x3C
+        let header = PeFile::<ImageNtHeaders64>::parse(bytes);
+        match header
         {
-            return None;
-        }
-        let signature_offset = bytes[0x3c];
-        if bytes.len() <= signature_offset as usize + 4
-        {
-            return None;
-        }
-        if &bytes[signature_offset as usize..signature_offset as usize + 4] != ['P' as u8, 'E' as u8, 0x00, 0x00]
-        {
-            return None;
-        }
-        let header_size = 20;
-        let signature_size = 4;
-        if bytes.len() <= signature_offset as usize + header_size + signature_size
-        {
-            return None;
-        }
-        let machine = u16::from_le_bytes([bytes[signature_offset as usize + 4], bytes[signature_offset as usize + 5]]);
-
-        let machine = match machine {
-            0x0 => MachineType::Unknown,
-            0x184 => MachineType::Alpha,
-            0x284 => MachineType::Alpha64AndAxp64,
-            0x1d3 => MachineType::Am33,
-            0x8664 => MachineType::Amd64,
-            0x1c0 => MachineType::Arm,
-            0xaa64 => MachineType::Arm64,
-            0x1c4 => MachineType::ArmNT,
-            0xebc => MachineType::Ebc,
-            0x14c => MachineType::I386,
-            0x200 => MachineType::Ia64,
-            0x6232 => MachineType::LoongArch32,
-            0x6264 => MachineType::LoongArch64,
-            0x9041 => MachineType::M32R,
-            0x266 => MachineType::Mips16,
-            0x366 => MachineType::MipsFpu,
-            0x466 => MachineType::MipsFpu16,
-            0x1f0 => MachineType::PowerPC,
-            0x1f1 => MachineType::PowerPCFP,
-            0x166 => MachineType::R4000,
-            0x5032 => MachineType::RiscV32,
-            0x5064 => MachineType::RiscV64,
-            0x5128 => MachineType::RiscV128,
-            0x1a2 => MachineType::Sh3,
-            0x1a3 => MachineType::Sh3Dsp,
-            0x1a6 => MachineType::Sh4,
-            0x1a8 => MachineType::Sh5,
-            0x1c2 => MachineType::Thumb,
-            0x169 => MachineType::WceMipsV2,
-            _ => MachineType::Unknown,
-        };
-
-        let number_of_sections = u16::from_le_bytes([bytes[signature_offset as usize + 6], bytes[signature_offset as usize + 7]]);
-        let time_date_stamp = u32::from_le_bytes([bytes[signature_offset as usize + 8], bytes[signature_offset as usize + 9], bytes[signature_offset as usize + 10], bytes[signature_offset as usize + 11]]);
-        let pointer_to_symbol_table = u32::from_le_bytes([bytes[signature_offset as usize + 12], bytes[signature_offset as usize + 13], bytes[signature_offset as usize + 14], bytes[signature_offset as usize + 15]]);
-        let number_of_symbols = u32::from_le_bytes([bytes[signature_offset as usize + 16], bytes[signature_offset as usize + 17], bytes[signature_offset as usize + 18], bytes[signature_offset as usize + 19]]);
-        let size_of_optional_header = u16::from_le_bytes([bytes[signature_offset as usize + 20], bytes[signature_offset as usize + 21]]);
-        let characteristics = u16::from_le_bytes([bytes[signature_offset as usize + 22], bytes[signature_offset as usize + 23]]);
-
-        let size_of_header = 24;
-        let optional_header = if size_of_optional_header != 0
-        {
-            
-            let magic = u16::from_le_bytes([bytes[signature_offset as usize + 24], bytes[signature_offset as usize + 25]]);
-            let magic = match magic
+            Ok(header) => 
             {
-                0x10B => Some(OptionalHeaderMagic::PE32),
-                0x20B => Some(OptionalHeaderMagic::PE32Plus),
-                _ => None,
-            };
-            if let Some(magic) = magic
-            {
-                let major_linker_version = bytes[signature_offset as usize + 26];
-                let minor_linker_version = bytes[signature_offset as usize + 27];
-                let size_of_code = u32::from_le_bytes([bytes[signature_offset as usize + 28], bytes[signature_offset as usize + 29], bytes[signature_offset as usize + 30], bytes[signature_offset as usize + 31]]);
-                let size_of_initialized_data = u32::from_le_bytes([bytes[signature_offset as usize + 32], bytes[signature_offset as usize + 33], bytes[signature_offset as usize + 34], bytes[signature_offset as usize + 35]]);
-                let size_of_uninitialized_data = u32::from_le_bytes([bytes[signature_offset as usize + 36], bytes[signature_offset as usize + 37], bytes[signature_offset as usize + 38], bytes[signature_offset as usize + 39]]);
-                let address_of_entry_point = u32::from_le_bytes([bytes[signature_offset as usize + 40], bytes[signature_offset as usize + 41], bytes[signature_offset as usize + 42], bytes[signature_offset as usize + 43]]);
-                let base_of_code = u32::from_le_bytes([bytes[signature_offset as usize + 44], bytes[signature_offset as usize + 45], bytes[signature_offset as usize + 46], bytes[signature_offset as usize + 47]]);
-                
-                OptionalHeader{
-                    magic,
-                    major_linker_version,
-                    minor_linker_version,
-                    size_of_code,
-                    size_of_initialized_data,
-                    size_of_uninitialized_data,
-                    address_of_entry_point,
-                    base_of_code,
+                let entry_point = header.entry();
+                let bitness = if header.is_64() { 64 } else { 32 };
+
+                let mut section_table = Vec::new();
+                let section_table_in_header = header.section_table();
+                for section in section_table_in_header.iter()
+                {
+                    let name = String::from_utf8_lossy(&section.name).trim_end_matches('\0').to_string();
+                    section_table.push(Section
+                    {
+                        name,
+                        virtual_size: section.virtual_size.get(LittleEndian::default()),
+                        virtual_address: section.virtual_address.get(LittleEndian::default()),
+                        size_of_raw_data: section.size_of_raw_data.get(LittleEndian::default()),
+                        pointer_to_raw_data: section.pointer_to_raw_data.get(LittleEndian::default()),
+                        pointer_to_relocations: section.pointer_to_relocations.get(LittleEndian::default()),
+                        pointer_to_linenumbers: section.pointer_to_linenumbers.get(LittleEndian::default()),
+                        number_of_relocations: section.number_of_relocations.get(LittleEndian::default()),
+                        number_of_linenumbers: section.number_of_linenumbers.get(LittleEndian::default()),
+                        characteristics: section.characteristics.get(LittleEndian::default()),
+                    });
                 }
-            }
-            else 
-            {
-                return None;
-            }
-        }
-        else
-        {
-            return None;
-        };
 
-        if bytes.len() <= signature_offset as usize + size_of_header + size_of_optional_header as usize
-        {
-            return None;
-        }
-        let sections = bytes[signature_offset as usize + size_of_header + size_of_optional_header as usize ..].chunks(40).take(number_of_sections as usize);
-        let mut section_table = Vec::new();
-        for section in sections
-        {
-            if section.len() < 40
-            {
-                return None;
-            }
-            let name = String::from_utf8_lossy(&section[0..8]).trim_end_matches('\0').to_string();
-            let virtual_size = u32::from_le_bytes([section[8], section[9], section[10], section[11]]);
-            let virtual_address = u32::from_le_bytes([section[12], section[13], section[14], section[15]]);
-            let size_of_raw_data = u32::from_le_bytes([section[16], section[17], section[18], section[19]]);
-            let pointer_to_raw_data = u32::from_le_bytes([section[20], section[21], section[22], section[23]]);
-            let pointer_to_relocations = u32::from_le_bytes([section[24], section[25], section[26], section[27]]);
-            let pointer_to_linenumbers = u32::from_le_bytes([section[28], section[29], section[30], section[31]]);
-            let number_of_relocations = u16::from_le_bytes([section[32], section[33]]);
-            let number_of_linenumbers = u16::from_le_bytes([section[34], section[35]]);
-            let characteristics = u32::from_le_bytes([section[36], section[37], section[38], section[39]]);
-            section_table.push(Section {
-                name,
-                virtual_size,
-                virtual_address,
-                size_of_raw_data,
-                pointer_to_raw_data,
-                pointer_to_relocations,
-                pointer_to_linenumbers,
-                number_of_relocations,
-                number_of_linenumbers,
-                characteristics,
-            });
-        }
+                let mut symbols = HashMap::new();
+                for symbol in header.symbols()
+                {
+                    symbols.insert(symbol.address(), symbol.name().map(|s|s.to_string()).unwrap_or(format!("s_0x{:x}", symbol.address())));
+                }
+                let mut pdb_file_path = None;
+                if let Some(data_dir) = header.data_directory(6)
+                {
+                    let debug_dir = data_dir.data(bytes, &section_table_in_header);
+                    if let Ok(debug_dir) = debug_dir
+                    {
+                        for entry in debug_dir.chunks_exact(28)
+                        {
+                            let _characteristics = u32::from_le_bytes([entry[0], entry[1], entry[2], entry[3]]);
+                            let _time_date_stamp = u32::from_le_bytes([entry[4], entry[5], entry[6], entry[7]]);
+                            let _major_version = u16::from_le_bytes([entry[8], entry[9]]);
+                            let _minor_version = u16::from_le_bytes([entry[10], entry[11]]);
+                            let ty = u32::from_le_bytes([entry[12], entry[13], entry[14], entry[15]]);
+                            let size_of_data = u32::from_le_bytes([entry[16], entry[17], entry[18], entry[19]]);
+                            let _address_of_raw_data = u32::from_le_bytes([entry[20], entry[21], entry[22], entry[23]]);
+                            let pointer_to_raw_data = u32::from_le_bytes([entry[24], entry[25], entry[26], entry[27]]);
 
+                            if ty == 2
+                            {
+                                let data_header_size = 24;
+                                let path = String::from_utf8_lossy(&bytes[data_header_size+pointer_to_raw_data as usize..(pointer_to_raw_data + size_of_data) as usize]).trim_end_matches('\0').to_string();
+                                pdb_file_path = Some(path);
+                                break;
+                            }
+                        }
+                    }
+                }
+                if let Some(pdb_file_path) = pdb_file_path
+                {
+                    let file = File::open(pdb_file_path);
+                    if let Ok(file) = file
+                    {
+                        let pdb = pdb::PDB::open(file);
+                        if let Ok(mut pdb) = pdb
+                        {
+                            let symbol_table = pdb.global_symbols();
+                            let address_map = pdb.address_map();
+                            match (symbol_table, address_map)
+                            {
+                                (Ok(symbol_table), Ok(address_map)) =>
+                                {
+                                    let mut iter = symbol_table.iter();
+                                    while let Ok(Some(symbol)) = iter.next()
+                                    {
+                                        match symbol.parse()
+                                        {
+                                            Ok(pdb::SymbolData::Public(public_symbol)) =>
+                                            {
+                                                let address = public_symbol.offset.to_rva(&address_map);
+                                                if let Some(address) = address
+                                                {
+                                                    let name = public_symbol.name.to_string().to_string();
+                                                    symbols.insert(address.0 as u64, name);
+                                                }
+                                            },
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                }
 
-        Some(PEHeader {
-            signature_offset: signature_offset as usize,
-            machine,
-            number_of_sections,
-            time_date_stamp,
-            pointer_to_symbol_table,
-            number_of_symbols,
-            size_of_optional_header,
-            characteristics,
-            optional_header,
-            section_table,
-        })    
-        
+                Some(PEHeader
+                {
+                    entry_point,
+                    bitness,
+                    section_table,
+                    symbol_table: Rc::new(symbols),
+                })
+            },
+            Err(_) => None,
+        }
+    }
+
+    pub fn get_symbols(&self) -> Rc<HashMap<u64, String>>
+    {
+        self.symbol_table.clone()
     }
 
     pub fn bitness(&self) -> u32
     {
-        // TODO: check if this is correct
-        match self.machine
-        {
-            MachineType::Unknown => 64,
-            MachineType::Alpha => 32,
-            MachineType::Alpha64AndAxp64 => 64,
-            MachineType::Am33 => 32,
-            MachineType::Amd64 => 64,
-            MachineType::Arm => 32,
-            MachineType::Arm64 => 64,
-            MachineType::ArmNT => 32,
-            MachineType::Ebc => 64,
-            MachineType::I386 => 32,
-            MachineType::Ia64 => 64,
-            MachineType::LoongArch32 => 32,
-            MachineType::LoongArch64 => 64,
-            MachineType::M32R => 32,
-            MachineType::Mips16 => 16,
-            MachineType::MipsFpu => 32,
-            MachineType::MipsFpu16 => 16,
-            MachineType::PowerPC => 32,
-            MachineType::PowerPCFP => 32,
-            MachineType::R4000 => 32,
-            MachineType::RiscV32 => 32,
-            MachineType::RiscV64 => 64,
-            MachineType::RiscV128 => 128,
-            MachineType::Sh3 => 32,
-            MachineType::Sh3Dsp => 32,
-            MachineType::Sh4 => 32,
-            MachineType::Sh5 => 32,
-            MachineType::Thumb => 32,
-            MachineType::WceMipsV2 => 32,
-        }
+        self.bitness
     }
 }
