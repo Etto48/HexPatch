@@ -68,6 +68,28 @@ impl <'a> App<'a>
         }
     }
 
+    pub(super) fn jump_to_fuzzy_symbol(&mut self, symbol: &str, scroll: usize)
+    {
+        let symbols = self.header.get_symbols();
+        if let Some(symbols) = symbols
+        {
+            let find_iter = symbols.iter().filter(|(_addr, name)| name.contains(symbol)).skip(scroll);
+            if let Some((address, name)) = find_iter.clone().next()
+            {
+                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {}", name, address));
+                self.jump_to(*address as usize);
+            }
+            else 
+            {
+                self.log(NotificationLevel::Error, &format!("Symbol not found: {}", symbol));
+            }
+        }
+        else 
+        {
+            self.log(NotificationLevel::Error, "No symbols found in the file");
+        }
+    }
+
     pub(super) fn jump_to_symbol(&mut self, symbol: &str)
     {
         if symbol.starts_with("0x")

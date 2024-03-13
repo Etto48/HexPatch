@@ -79,6 +79,9 @@ impl <'a> App<'a>
                                 self.notificaiton.reset();
                                 self.popup = Some(PopupState::Log(0));
                             },
+                            's' => {
+                                self.popup = Some(PopupState::FindSymbol { filter: String::new(), cursor: 0, scroll: 0 });
+                            },
                             'p' => {
                                 self.popup = Some(PopupState::Patch { assembly: String::new(), cursor: 0});
                             },
@@ -193,6 +196,10 @@ impl <'a> App<'a>
     {
         match &mut self.popup
         {
+            Some(PopupState::FindSymbol {filter, cursor, scroll: _scroll}) =>
+            {
+                Self::handle_string_edit(filter, cursor, &event, None, false, None)?;
+            }
             Some(PopupState::Patch {assembly, cursor}) =>
             {
                 Self::handle_string_edit(assembly, cursor, &event, None, false, None)?;
@@ -232,6 +239,11 @@ impl <'a> App<'a>
                         let popup = self.popup.clone();
                         match popup
                         {
+                            Some(PopupState::FindSymbol {filter, cursor: _cursor, scroll}) =>
+                            {
+                                self.jump_to_fuzzy_symbol(&filter, scroll);
+                                self.popup = None;
+                            }
                             Some(PopupState::Log(_)) =>
                             {
                                 self.popup = None;
@@ -286,6 +298,10 @@ impl <'a> App<'a>
                     KeyCode::Down => {
                         match &mut self.popup
                         {
+                            Some(PopupState::FindSymbol { filter: _filter, cursor: _cursor, scroll }) =>
+                            {
+                                *scroll += 1;
+                            },
                             Some(PopupState::Log(scroll)) =>
                             {
                                 *scroll = scroll.saturating_sub(1);
@@ -297,6 +313,10 @@ impl <'a> App<'a>
                     KeyCode::Up => {
                         match &mut self.popup
                         {
+                            Some(PopupState::FindSymbol { filter: _filter, cursor: _cursor, scroll }) =>
+                            {
+                                *scroll = scroll.saturating_sub(1);
+                            },
                             Some(PopupState::Log(scroll)) =>
                             {
                                 *scroll += 1;
@@ -313,6 +333,17 @@ impl <'a> App<'a>
                     KeyCode::Esc => {
                         self.popup = None;
                     },
+                    KeyCode::Char(_c) => {
+                        match &self.popup
+                        {
+                            Some(PopupState::FindSymbol { filter, cursor, scroll: _scroll }) => 
+                            {
+                                self.popup = Some(PopupState::FindSymbol { filter: filter.clone(), cursor: *cursor, scroll: 0});
+                            }
+                            _ => {}
+                        
+                        }
+                    }
                     _ => {}
                 }
             },

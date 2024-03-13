@@ -5,6 +5,12 @@ use super::{color_settings::ColorSettings, App};
 #[derive(Clone, Debug)]
 pub enum PopupState
 {
+    FindSymbol
+    {
+        filter: String,
+        cursor: usize,
+        scroll: usize
+    },
     Log(usize),
     Patch
     {
@@ -53,6 +59,62 @@ impl <'a> App<'a>
     {
         match &popup_state
         {
+            PopupState::FindSymbol{ filter, cursor, scroll } =>
+            {
+                *popup_title = "Find Symbol";
+                *popup_rect = Rect::new(f.size().width / 2 - 20, f.size().height / 2 - 6, 40, 12);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor);
+                let symbol_table = self.header.get_symbols();
+                if let Some(symbol_table) = symbol_table
+                {
+                    let symbol_iter = symbol_table.iter().filter(|(_address, name)| name.contains(filter));
+                    let symbol_line_iter = symbol_iter.map(|(address, name)| Line::from(vec![
+                        Span::styled(name.clone(), color_settings.assembly_symbol), 
+                        Span::raw(" "), 
+                        Span::raw(format!("{:X}", address))]));
+                    let has_something = symbol_line_iter.clone().next().is_some();
+                    let mut symbols_as_lines = symbol_line_iter.skip(*scroll).take(8).collect::<Vec<_>>();
+                    if symbols_as_lines.len() != 0
+                    {
+                        for span in symbols_as_lines[0].spans.iter_mut()
+                        {
+                            span.style = color_settings.yes_selected;
+                        }
+                    }
+                    else
+                    {
+                        if has_something
+                        {
+                            symbols_as_lines.push(Line::raw("▲"));
+                        }
+                        else
+                        {
+                            symbols_as_lines.push(Line::raw("No symbols found."));
+                        }
+                        
+                    }
+                    if symbols_as_lines.len() < 8
+                    {
+                        symbols_as_lines.extend(vec![Line::raw(""); 8 - symbols_as_lines.len()]);
+                    }
+                    popup_text.lines.extend(symbols_as_lines);
+                    popup_text.lines.extend(
+                        vec![
+                            editable_string.left_aligned(),
+                            Line::from(vec![Span::styled("Jump", color_settings.ok_selected)])
+                        ]
+                    );
+                }
+                else 
+                {
+                    popup_text.lines.extend(
+                        vec![
+                            Line::raw("No symbol table found.").left_aligned(),
+                        ]
+                    );    
+                }
+                
+            }
             PopupState::Log(scroll) =>
             {
                 *popup_title = "Log";
