@@ -1,7 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event;
-use ratatui::{backend::Backend, layout::Rect, text::Text, widgets::{Block, Borders}};
+use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
 
 use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, scrollbar::Scrollbar};
 
@@ -42,28 +42,46 @@ pub struct App<'a>
 
 impl <'a> App<'a>
 {
-    pub fn new<B: Backend>(file_path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
+    pub(super) fn print_loading_status<B: Backend>(color_settings: &ColorSettings, status: &str, terminal: &mut ratatui::Terminal<B>) -> Result<(), String>
     {
-        let color_settings = color_settings::ColorSettings::default();
         terminal.draw(|f|{
             let size = f.size();
-            let text = Text::styled(format!("Loading {}...", file_path.to_string_lossy()), color_settings.ok);
+            let mut text = Text::default();
+            for _ in 0..(size.height.saturating_sub(3))
+            {
+                text.lines.push(ratatui::text::Line::default());
+            }
+            text.lines.push(Line::styled(status.to_string(), color_settings.ok));
             let paragraph = ratatui::widgets::Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL));
             f.render_widget(paragraph, size);
         }).map_err(|e| e.to_string())?;
-        let canonical_path = file_path.canonicalize().map_err(|e| e.to_string())?;
+        Ok(())
+    }
 
+    pub(super) fn get_size<B: Backend>(terminal: &mut ratatui::Terminal<B>) -> Result<(u16, u16), String>
+    {
+        terminal.size().map_err(|e| e.to_string()).map(|s| (s.width, s.height))
+    }
+
+    pub fn new<B: Backend>(file_path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
+    {
+        let color_settings = color_settings::ColorSettings::default();
+        Self::print_loading_status(&color_settings, &format!("Opening {}...", file_path.to_string_lossy()), terminal)?;
+        let canonical_path = file_path.canonicalize().map_err(|e| e.to_string())?;
         let data = std::fs::read(&canonical_path).map_err(|e| e.to_string())?;
-        
+        let screen_size = Self::get_size(terminal)?;
         let block_size = 8;
-        let blocks_per_row = 3;
         let vertical_margin = 2;
+        let blocks_per_row = Self::calc_blocks_per_row(block_size, screen_size.0);
         let address_view = Self::addresses(&color_settings, data.len(), block_size, blocks_per_row);
+        Self::print_loading_status(&color_settings, "Decoding binary data...", terminal)?;
         let hex_view = Self::bytes_to_styled_hex(&color_settings, &data, block_size, blocks_per_row);
         let text_view = Self::bytes_to_styled_text(&color_settings, &data, block_size, blocks_per_row);
         let header = Header::parse_header(&data);
+        Self::print_loading_status(&color_settings, "Disassembling executable...", terminal)?;
         let (assembly_offsets, assembly_instructions) = Self::sections_from_bytes(&data, &header);
+        Self::print_loading_status(&color_settings, "Opening ui...", terminal)?;
         Ok(App{
             path: canonical_path,
             header,
@@ -87,7 +105,7 @@ impl <'a> App<'a>
             cursor: (0,0),
             poll_time: Duration::from_millis(1000),
             needs_to_exit: false,
-            screen_size: (1,1),
+            screen_size,
 
             color_settings,
 

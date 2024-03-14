@@ -66,7 +66,7 @@ impl <'a> App<'a>
 
     pub(super) fn resize_if_needed(&mut self, width: u16)
     {
-        let blocks_per_row = self.calc_blocks_per_row(width);
+        let blocks_per_row = Self::calc_blocks_per_row(self.block_size, width);
         if self.blocks_per_row != blocks_per_row
         {
             self.resize(blocks_per_row);
@@ -89,10 +89,10 @@ impl <'a> App<'a>
         self.jump_to(old_cursor.global_byte_index, false);
     }
 
-    pub(super) fn calc_blocks_per_row(&self, width: u16) -> usize
+    pub(super) fn calc_blocks_per_row(block_size: usize, width: u16) -> usize
     {
-        let block_characters_hex = self.block_size * 3 + 1;
-        let block_characters_text = self.block_size * 2 + 1;
+        let block_characters_hex = block_size * 3 + 1;
+        let block_characters_text = block_size * 2 + 1;
         let available_width = width - 18 - 2 - 2;
         let complessive_chars_per_block = block_characters_hex + block_characters_text;
         let blocks_per_row = (available_width + 2) / complessive_chars_per_block as u16;
