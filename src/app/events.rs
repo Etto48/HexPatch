@@ -302,9 +302,26 @@ impl <'a> App<'a>
                             Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
                             {
                                 *scroll += 1;
-                                if *scroll as isize >= symbols.len() as isize
+                                if symbols.is_empty()
                                 {
-                                    *scroll = symbols.len().saturating_sub(1);
+                                    if let Some(symbols) = self.header.get_symbols()
+                                    {
+                                        if *scroll as isize >= symbols.len() as isize
+                                        {
+                                            *scroll = symbols.len().saturating_sub(1);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        *scroll = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    if *scroll as isize >= symbols.len() as isize
+                                    {
+                                        *scroll = symbols.len().saturating_sub(1);
+                                    }
                                 }
                             },
                             Some(PopupState::Log(scroll)) =>

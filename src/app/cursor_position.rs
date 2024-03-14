@@ -72,7 +72,23 @@ impl <'a> App<'a>
     {
         if symbol.is_empty()
         {
-            self.log(NotificationLevel::Error, "No symbol specified");
+            if let Some(symbols) = self.header.get_symbols()
+            {
+                if let Some(symbol) = symbols.iter().skip(scroll).next()
+                {
+                    let (address, name) = symbol;
+                    self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", name, address));
+                    self.jump_to(*address as usize, true);
+                }
+                else
+                {
+                    unreachable!("The scroll should not be greater than the number of symbols")
+                }
+            }
+            else 
+            {
+                self.log(NotificationLevel::Error, "No symbols found");
+            }
             return;
         }
         else if symbols.is_empty()

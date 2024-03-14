@@ -89,9 +89,24 @@ impl <'a> App<'a>
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter");
                 if self.header.get_symbols().is_some()
                 {
-                    let symbols_as_lines = if symbols.len() > 0
+                    let symbols_as_lines = if symbols.len() > 0 || filter.len() == 0
                     {
-                        let symbol_line_iter = symbols.iter().skip(scroll).take(8).enumerate().map(|(i, (address, name))| {
+                        let additional_vector = if filter.len() == 0
+                        {
+                            if let Some(symbol_table) = self.header.get_symbols()
+                            {
+                                symbol_table.iter().skip(scroll).take(max_symbols + 1).map(|(k,v)|(*k, v.clone())).collect()
+                            }
+                            else 
+                            {
+                                Vec::new()
+                            }
+                        }
+                        else
+                        {
+                            Vec::new()
+                        };
+                        let symbol_to_line_lambda = |(i, (address, name)): (usize, &(u64, String))| {
                             let short_name = name.chars().take(width-19).collect::<String>();
                             let space_count = (width - short_name.len() - 19 + 1).clamp(0, width);
                             let (style_sym, sytle_empty, style_addr) = if i == selection
@@ -106,7 +121,8 @@ impl <'a> App<'a>
                             Span::styled(short_name, style_sym), 
                             Span::styled(" ".repeat(space_count), sytle_empty), 
                             Span::styled(format!("{:16X}", address), style_addr)]).left_aligned()
-                        });
+                        };
+                        let symbol_line_iter = symbols.iter().enumerate().map(symbol_to_line_lambda);
                         let mut symbols_as_lines = if scroll > 0
                         {
                             vec![Line::from(vec![Span::styled("▲", color_settings.ok)])]
@@ -117,12 +133,13 @@ impl <'a> App<'a>
                         };
 
                         symbols_as_lines.extend(symbol_line_iter);
+                        symbols_as_lines.extend(additional_vector.iter().take(max_symbols).enumerate().map(symbol_to_line_lambda));
                         if symbols_as_lines.len() < max_symbols
                         {
                             symbols_as_lines.extend(vec![Line::raw(""); max_symbols - symbols_as_lines.len()]);
                         }
 
-                        if symbols.len() as isize - scroll as isize > max_symbols as isize
+                        if symbols.len() as isize - scroll as isize > max_symbols as isize || additional_vector.len() > 8
                         {
                             symbols_as_lines.push(Line::from(vec![Span::styled("▼", color_settings.ok)]));
                         }
@@ -132,15 +149,9 @@ impl <'a> App<'a>
                         }
                         symbols_as_lines
                     }
-                    else if filter.len() > 0
-                    {
-                        let mut lines = vec![Line::raw("No symbols found.").left_aligned()];
-                        lines.extend(vec![Line::raw(""); 7]);
-                        lines
-                    }
                     else
                     {
-                        let mut lines = vec![Line::raw("Type to search.").left_aligned()];
+                        let mut lines = vec![Line::raw("No symbols found.").left_aligned()];
                         lines.extend(vec![Line::raw(""); 7]);
                         lines
                     };
