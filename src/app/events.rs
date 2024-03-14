@@ -362,6 +362,11 @@ impl <'a> App<'a>
                             {
                                 *scroll = 0;
                             }
+                            Some(PopupState::Log(scroll)) =>
+                            {
+                                *scroll = 0;
+                                self.log.clear();
+                            }
                             _ => {}
                         
                         }
