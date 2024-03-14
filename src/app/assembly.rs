@@ -105,6 +105,23 @@ impl AssemblyLine
 
 impl <'a> App<'a>
 {
+    pub(super) fn find_symbols(&self, filter: &str) -> Vec<(u64, String)>
+    {
+        if filter.len() == 0
+        {
+            return Vec::new();
+        }
+        let symbol_table = self.header.get_symbols();
+        if let Some(symbol_table) = symbol_table
+        {
+            return symbol_table.iter().filter(|(_, symbol)| symbol.contains(filter)).map(|(address, symbol)| (*address, symbol.clone())).collect()
+        }
+        else 
+        {
+            return Vec::new();    
+        }
+    }
+
     fn instruction_to_line (color_settings: &ColorSettings, instruction: &InstructionTag, selected: bool, header: &Header) -> Line<'a>
     {
         let symbol_table = header.get_symbols();

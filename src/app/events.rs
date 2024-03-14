@@ -80,7 +80,7 @@ impl <'a> App<'a>
                                 self.popup = Some(PopupState::Log(0));
                             },
                             's' => {
-                                self.popup = Some(PopupState::FindSymbol { filter: String::new(), cursor: 0, scroll: 0 });
+                                self.popup = Some(PopupState::FindSymbol { filter: String::new(), symbols: Vec::new(), cursor: 0, scroll: 0 });
                             },
                             'p' => {
                                 self.popup = Some(PopupState::Patch { assembly: String::new(), cursor: 0});
@@ -194,11 +194,13 @@ impl <'a> App<'a>
 
     fn handle_event_popup(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
     {
-        match &mut self.popup
+        let mut popup = self.popup.clone();
+        match &mut popup
         {
-            Some(PopupState::FindSymbol {filter, cursor, scroll: _scroll}) =>
+            Some(PopupState::FindSymbol {filter, symbols, cursor, scroll: _scroll}) =>
             {
                 Self::handle_string_edit(filter, cursor, &event, None, false, None)?;
+                *symbols = self.find_symbols(filter);
             }
             Some(PopupState::Patch {assembly, cursor}) =>
             {
@@ -218,49 +220,48 @@ impl <'a> App<'a>
                 {
                     KeyCode::Left |
                     KeyCode::Right => {
-                        match &self.popup
+                        match &mut popup
                         {
                             Some(PopupState::Save(yes_selected)) =>
                             {
-                                self.popup = Some(PopupState::Save(!yes_selected));
+                                *yes_selected = !*yes_selected;
                             }
                             Some(PopupState::SaveAndQuit(yes_selected)) =>
                             {
-                                self.popup = Some(PopupState::SaveAndQuit(!yes_selected));
+                                *yes_selected = !*yes_selected;
                             }
                             Some(PopupState::QuitDirtySave(yes_selected)) =>
                             {
-                                self.popup = Some(PopupState::QuitDirtySave(!yes_selected));
+                                *yes_selected = !*yes_selected;
                             },
                             _ => {}
                         }
                     },
                     KeyCode::Enter => {
-                        let popup = self.popup.clone();
-                        match popup
+                        match &mut popup
                         {
-                            Some(PopupState::FindSymbol {filter, cursor: _cursor, scroll}) =>
+                            Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
                             {
-                                self.jump_to_fuzzy_symbol(&filter, scroll);
-                                self.popup = None;
+                                self.jump_to_fuzzy_symbol(&filter, &symbols, *scroll);
+                                popup = None;
                             }
                             Some(PopupState::Log(_)) =>
                             {
-                                self.popup = None;
+                                popup = None;
                             }
                             Some(PopupState::Patch {assembly, cursor: _cursor}) =>
                             {
                                 self.patch(&assembly);
-                                self.popup = None;
+                                popup = None;
                             }
                             Some(PopupState::JumpToAddress {location, cursor: _cursor}) =>
                             {
                                 self.jump_to_symbol(&location);
-                                self.popup = None;
+                                popup = None;
                             }
                             Some(PopupState::Save(yes_selected)) =>
                             {
-                                if yes_selected
+                                if *yes_selected
                                 {
                                     self.save_data();
                                 }
@@ -268,16 +269,16 @@ impl <'a> App<'a>
                             },
                             Some(PopupState::SaveAndQuit(yes_selected)) =>
                             {
-                                if yes_selected
+                                if *yes_selected
                                 {
                                     self.save_data();
                                     self.needs_to_exit = true;
                                 }
-                                self.popup = None;
+                                popup = None;
                             },
                             Some(PopupState::QuitDirtySave(yes_selected)) =>
                             {
-                                if yes_selected
+                                if *yes_selected
                                 {
                                     self.save_data();
                                     self.needs_to_exit = true;
@@ -286,34 +287,37 @@ impl <'a> App<'a>
                                 {
                                     self.needs_to_exit = true;
                                 }
-                                self.popup = None;
+                                popup = None;
                             },
                             Some(PopupState::Help) => 
                             {
-                                self.popup = None;
+                                popup = None;
                             }
                             None => {}
                         }
                     },
                     KeyCode::Down => {
-                        match &mut self.popup
+                        match &mut popup
                         {
-                            Some(PopupState::FindSymbol { filter: _filter, cursor: _cursor, scroll }) =>
+                            Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
                             {
                                 *scroll += 1;
+                                if *scroll as isize >= symbols.len() as isize
+                                {
+                                    *scroll = symbols.len().saturating_sub(1);
+                                }
                             },
                             Some(PopupState::Log(scroll)) =>
                             {
                                 *scroll = scroll.saturating_sub(1);
-                                self.popup = Some(PopupState::Log(*scroll));
                             }
                             _ => {}
                         }
                     },
                     KeyCode::Up => {
-                        match &mut self.popup
+                        match &mut popup
                         {
-                            Some(PopupState::FindSymbol { filter: _filter, cursor: _cursor, scroll }) =>
+                            Some(PopupState::FindSymbol { filter: _filter, symbols: _symbols, cursor: _cursor, scroll }) =>
                             {
                                 *scroll = scroll.saturating_sub(1);
                             },
@@ -325,22 +329,21 @@ impl <'a> App<'a>
                                 {
                                     *scroll = self.log.len().saturating_sub(lines);
                                 }
-                                self.popup = Some(PopupState::Log(*scroll));
                             }
                             _ => {}
                         }
                     },
                     KeyCode::Esc => {
-                        self.popup = None;
+                        popup = None;
                     },
                     KeyCode::Char(_) | 
                     KeyCode::Backspace | 
                     KeyCode::Delete => {
-                        match &self.popup
+                        match &mut popup
                         {
-                            Some(PopupState::FindSymbol { filter, cursor, scroll: _scroll }) => 
+                            Some(PopupState::FindSymbol { filter: _, symbols: _, cursor: _, scroll }) => 
                             {
-                                self.popup = Some(PopupState::FindSymbol { filter: filter.clone(), cursor: *cursor, scroll: 0});
+                                *scroll = 0;
                             }
                             _ => {}
                         
@@ -355,6 +358,7 @@ impl <'a> App<'a>
             },
             _ => {}
         }
+        self.popup = popup;
         Ok(())
     }
 

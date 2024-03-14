@@ -9,6 +9,7 @@ pub enum PopupState
     {
         filter: String,
         cursor: usize,
+        symbols: Vec<(u64, String)>,
         scroll: usize
     },
     Log(usize),
@@ -63,49 +64,86 @@ impl <'a> App<'a>
     {
         match &popup_state
         {
-            PopupState::FindSymbol{ filter, cursor, scroll } =>
+            PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
             {
                 *popup_title = "Find Symbol";
                 let width = 60;
-                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - 6, width as u16, 12);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter");
-                let symbol_table = self.header.get_symbols();
-                if let Some(symbol_table) = symbol_table
+                let max_symbols = 8;
+                let mut selection = *scroll;
+                let scroll = if *scroll > symbols.len() - max_symbols/2
                 {
-                    let symbol_iter = symbol_table.iter().filter(|(_address, name)| name.contains(filter));
-                    let symbol_line_iter = symbol_iter.map(|(address, name)| {
-                        let short_name = name.chars().take(width-19).collect::<String>();
-                        let space_count = (width - short_name.len() - 19 + 1).clamp(0, width);
-                        Line::from(vec![
-                        Span::styled(short_name, color_settings.assembly_symbol), 
-                        Span::raw(" ".repeat(space_count)), 
-                        Span::raw(format!("{:16X}", address))]).left_aligned()
-                    });
-                    let has_something = symbol_line_iter.clone().next().is_some();
-                    let mut symbols_as_lines = symbol_line_iter.skip(*scroll).take(8).collect::<Vec<_>>();
-                    if symbols_as_lines.len() != 0
+                    symbols.len().saturating_sub(max_symbols)
+                }
+                else if *scroll < max_symbols/2
+                {
+                    0
+                }
+                else
+                {
+                    *scroll - max_symbols/2
+                };
+                selection = selection.saturating_sub(scroll);
+                
+
+                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - 7, width as u16, 14);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter");
+                if self.header.get_symbols().is_some()
+                {
+                    let symbols_as_lines = if symbols.len() > 0
                     {
-                        for span in symbols_as_lines[0].spans.iter_mut()
+                        let symbol_line_iter = symbols.iter().skip(scroll).take(8).enumerate().map(|(i, (address, name))| {
+                            let short_name = name.chars().take(width-19).collect::<String>();
+                            let space_count = (width - short_name.len() - 19 + 1).clamp(0, width);
+                            let (style_sym, sytle_empty, style_addr) = if i == selection
+                            {
+                                (color_settings.assembly_selected, color_settings.assembly_selected, color_settings.assembly_selected)
+                            }
+                            else
+                            {
+                                (color_settings.assembly_symbol, color_settings.assembly_symbol, color_settings.assembly_address)
+                            };
+                            Line::from(vec![
+                            Span::styled(short_name, style_sym), 
+                            Span::styled(" ".repeat(space_count), sytle_empty), 
+                            Span::styled(format!("{:16X}", address), style_addr)]).left_aligned()
+                        });
+                        let mut symbols_as_lines = if scroll > 0
                         {
-                            span.style = color_settings.yes_selected;
-                        }
-                    }
-                    else
-                    {
-                        if has_something
-                        {
-                            symbols_as_lines.push(Line::raw("▲"));
+                            vec![Line::from(vec![Span::styled("▲", color_settings.ok)])]
                         }
                         else
                         {
-                            symbols_as_lines.push(Line::raw("No symbols found."));
+                            vec![Line::raw("")]
+                        };
+
+                        symbols_as_lines.extend(symbol_line_iter);
+                        if symbols_as_lines.len() < max_symbols
+                        {
+                            symbols_as_lines.extend(vec![Line::raw(""); max_symbols - symbols_as_lines.len()]);
                         }
-                        
+
+                        if symbols.len() as isize - scroll as isize > max_symbols as isize
+                        {
+                            symbols_as_lines.push(Line::from(vec![Span::styled("▼", color_settings.ok)]));
+                        }
+                        else
+                        {
+                            symbols_as_lines.push(Line::raw(""));
+                        }
+                        symbols_as_lines
                     }
-                    if symbols_as_lines.len() < 8
+                    else if filter.len() > 0
                     {
-                        symbols_as_lines.extend(vec![Line::raw(""); 8 - symbols_as_lines.len()]);
+                        let mut lines = vec![Line::raw("No symbols found.").left_aligned()];
+                        lines.extend(vec![Line::raw(""); 7]);
+                        lines
                     }
+                    else
+                    {
+                        let mut lines = vec![Line::raw("Type to search.").left_aligned()];
+                        lines.extend(vec![Line::raw(""); 7]);
+                        lines
+                    };
                     popup_text.lines.extend(
                         vec![
                             editable_string.left_aligned(),
