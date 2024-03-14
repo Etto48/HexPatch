@@ -124,7 +124,7 @@ impl <'a> App<'a>
                 self.log(NotificationLevel::Error, &format!("Invalid address: {}", symbol));
             }
         }
-        if symbol.starts_with("v0x")
+        else if symbol.starts_with("v0x")
         {
             if let Ok(address) = usize::from_str_radix(&symbol[3..], 16)
             {

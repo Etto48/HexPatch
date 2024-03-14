@@ -75,15 +75,18 @@ impl <'a> App<'a>
 
     pub(super) fn resize(&mut self, blocks_per_row: usize)
     {
+        let old_cursor = self.get_cursor_position();
         self.blocks_per_row = blocks_per_row;
         self.address_view = Self::addresses(&&self.color_settings, self.data.len(), self.block_size, self.blocks_per_row);
         self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
+        self.hex_cursor = (0, 0);
+        self.hex_last_byte_index = 0;
+        self.text_cursor = (0, 0);
+        self.text_last_byte_index = 0;
+        self.address_last_row = 0;
 
-        // TODO: this is still buggy
-
-        self.update_hex_cursor();
-        self.update_text_cursor();
+        self.jump_to(old_cursor.global_byte_index, false);
     }
 
     pub(super) fn calc_blocks_per_row(&self, width: u16) -> usize
