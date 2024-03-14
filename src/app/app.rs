@@ -42,12 +42,20 @@ pub struct App<'a>
 
 impl <'a> App<'a>
 {
-    pub fn new(file_path: PathBuf) -> Result<Self,String>
+    pub fn new<B: Backend>(file_path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
+        let color_settings = color_settings::ColorSettings::default();
+        terminal.draw(|f|{
+            let size = f.size();
+            let text = Text::styled(format!("Loading {}...", file_path.to_string_lossy()), color_settings.ok);
+            let paragraph = ratatui::widgets::Paragraph::new(text)
+                .block(Block::default().borders(Borders::ALL));
+            f.render_widget(paragraph, size);
+        }).map_err(|e| e.to_string())?;
         let canonical_path = file_path.canonicalize().map_err(|e| e.to_string())?;
 
         let data = std::fs::read(&canonical_path).map_err(|e| e.to_string())?;
-        let color_settings = color_settings::ColorSettings::default();
+        
         let block_size = 8;
         let blocks_per_row = 3;
         let vertical_margin = 2;
