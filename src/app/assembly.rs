@@ -5,7 +5,9 @@ use ratatui::text::{Line, Span};
 
 use crate::asm::assembler::assemble;
 
-use super::{app::App, color_settings::ColorSettings, header::{Header, Section}, notification::NotificationLevel};
+use super::{app::App, color_settings::ColorSettings, notification::NotificationLevel};
+
+use crate::headers::header::{Header, Section};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SectionTag
