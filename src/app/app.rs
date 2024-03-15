@@ -1,4 +1,4 @@
-use std::{path::PathBuf, thread, time::Duration};
+use std::{path::PathBuf, time::Duration};
 
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
@@ -62,7 +62,6 @@ impl <'a> App<'a>
                 f.render_widget(logo, Rect::new( size.width / 2 - logo_size.0 / 2, size.height / 2 - logo_size.1 / 2, logo_size.0, logo_size.1));
             }
         }).map_err(|e| e.to_string())?;
-        thread::sleep(Duration::from_millis(1000));
         Ok(())
     }
 
