@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
 
-use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, info_mode::InfoMode, log::LogLine, logo::Logo, notification::NotificationLevel, popup_state::PopupState, scrollbar::Scrollbar};
+use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, widgets::{scrollbar::Scrollbar, logo::Logo}};
 
 use crate::headers::header::Header;
 
