@@ -14,13 +14,17 @@ fn discover_assembler() -> Option<String> {
     None
 }
 
-pub fn assemble(asm: &str, bitness: u32) -> Result<Vec<u8>, Box<dyn Error>> {
+pub fn assemble(asm: &str, bitness: u32, starting_virtual_address: u64) -> Result<Vec<u8>, Box<dyn Error>> {
     let mut input_file = tempfile::NamedTempFile::new()?;
     let output_file = tempfile::NamedTempFile::new()?;
 
     if bitness != 16
     {
         input_file.write_all(format!("bits {}\n", bitness).as_bytes())?;
+    }
+    if starting_virtual_address != 0
+    {
+        input_file.write_all(format!("org 0x{:x}\n", starting_virtual_address).as_bytes())?;
     }
 
     input_file.write_all(asm.as_bytes())?;

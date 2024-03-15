@@ -301,9 +301,9 @@ impl <'a> App<'a>
         (line_offsets, instructions)
     }
 
-    pub(super) fn bytes_from_assembly(&self, assembly: &str) -> Result<Vec<u8>, String>
+    pub(super) fn bytes_from_assembly(&self, assembly: &str, starting_virtual_address: u64) -> Result<Vec<u8>, String>
     {        
-        let bytes = assemble(assembly, self.header.bitness());
+        let bytes = assemble(assembly, self.header.bitness(), starting_virtual_address);
         match bytes
         {
             Ok(bytes) => Ok(bytes),
@@ -348,7 +348,16 @@ impl <'a> App<'a>
 
     pub(super) fn patch(&mut self, assembly: &str)
     {
-        let bytes = self.bytes_from_assembly(assembly);
+        let current_instruction = self.get_current_instruction();
+        let current_virtual_address = if let AssemblyLine::Instruction(instruction) = current_instruction
+        {
+            instruction.instruction.ip()
+        }
+        else
+        {
+            self.get_cursor_position().global_byte_index as u64
+        };
+        let bytes = self.bytes_from_assembly(assembly,current_virtual_address);
         match bytes
         {
             Ok(bytes) => self.patch_bytes(&bytes),
