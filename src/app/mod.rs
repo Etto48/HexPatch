@@ -1,4 +1,5 @@
 pub mod app;
+pub mod logo;
 pub mod scrollbar;
 pub mod status_bar;
 pub mod notification;

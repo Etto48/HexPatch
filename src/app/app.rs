@@ -1,9 +1,9 @@
-use std::{path::PathBuf, time::Duration};
+use std::{path::PathBuf, thread, time::Duration};
 
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
 
-use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, scrollbar::Scrollbar};
+use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, header::Header, info_mode::InfoMode, log::LogLine, logo::Logo, notification::NotificationLevel, popup_state::PopupState, scrollbar::Scrollbar};
 
 pub struct App<'a> 
 {
@@ -54,8 +54,15 @@ impl <'a> App<'a>
             text.lines.push(Line::styled(status.to_string(), color_settings.ok));
             let paragraph = ratatui::widgets::Paragraph::new(text)
                 .block(Block::default().borders(Borders::ALL));
+            let logo = Logo::new();
+            let logo_size = logo.get_size();
             f.render_widget(paragraph, size);
+            if logo_size.0 < size.width && logo_size.1 < size.height
+            {
+                f.render_widget(logo, Rect::new( size.width / 2 - logo_size.0 / 2, size.height / 2 - logo_size.1 / 2, logo_size.0, logo_size.1));
+            }
         }).map_err(|e| e.to_string())?;
+        thread::sleep(Duration::from_millis(1000));
         Ok(())
     }
 
