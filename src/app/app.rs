@@ -49,13 +49,13 @@ impl <'a> App<'a>
         terminal.draw(|f|{
             let size = f.size();
             let mut text = Text::default();
-            for _ in 0..(size.height.saturating_sub(3))
+            for _ in 0..(size.height.saturating_sub(1))
             {
                 text.lines.push(ratatui::text::Line::default());
             }
             text.lines.push(Line::styled(status.to_string(), color_settings.ok));
             let paragraph = ratatui::widgets::Paragraph::new(text)
-                .block(Block::default().borders(Borders::ALL));
+                .block(Block::default().borders(Borders::NONE));
             let logo = Logo::new();
             let logo_size = logo.get_size();
             f.render_widget(paragraph, size);
