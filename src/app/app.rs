@@ -161,7 +161,11 @@ impl <'a> App<'a>
                 while event::poll(Duration::from_millis(0))?
                 {
                     let event = event::read()?;
-                    self.handle_event(event)?;
+                    let event_result = self.handle_event(event);
+                    if let Err(e) = event_result
+                    {
+                        self.log(NotificationLevel::Error, &e.to_string());
+                    }
                 }
             }
 

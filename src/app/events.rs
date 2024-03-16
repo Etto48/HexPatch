@@ -290,15 +290,15 @@ impl <'a> App<'a>
                             {
                                 if *yes_selected
                                 {
-                                    self.save_data();
+                                    self.save_data()?;
                                 }
-                                self.popup = None;
+                                popup = None;
                             },
                             Some(PopupState::SaveAndQuit(yes_selected)) =>
                             {
                                 if *yes_selected
                                 {
-                                    self.save_data();
+                                    self.save_data()?;
                                     self.needs_to_exit = true;
                                 }
                                 popup = None;
@@ -307,7 +307,7 @@ impl <'a> App<'a>
                             {
                                 if *yes_selected
                                 {
-                                    self.save_data();
+                                    self.save_data()?;
                                     self.needs_to_exit = true;
                                 }
                                 else

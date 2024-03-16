@@ -44,10 +44,10 @@ impl Display for NotificationLevel
     {
         match self
         {
-            NotificationLevel::None => write!(f, "None"),
+            NotificationLevel::None => write!(f, "None "),
             NotificationLevel::Debug => write!(f, "Debug"),
-            NotificationLevel::Info => write!(f, "Info"),
-            NotificationLevel::Warning => write!(f, "Warning"),
+            NotificationLevel::Info => write!(f, "Info "),
+            NotificationLevel::Warning => write!(f, "Warn "),
             NotificationLevel::Error => write!(f, "Error"),
         }
     }

@@ -208,10 +208,11 @@ impl <'a> App<'a>
         }
     }
 
-    pub(super) fn save_data(&mut self)
+    pub(super) fn save_data(&mut self) -> Result<(), std::io::Error>
     {
-        std::fs::write(&self.path, &self.data).unwrap();
+        std::fs::write(&self.path, &self.data)?;
         self.dirty = false;
-        self.log(NotificationLevel::Info, &format!("Saved to {}", self.path.to_str().unwrap()));
+        self.log(NotificationLevel::Info, &format!("Saved to {}", self.path.to_string_lossy()));
+        Ok(())
     }
 }
