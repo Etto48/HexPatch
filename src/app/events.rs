@@ -73,7 +73,7 @@ impl <'a> App<'a>
                                 self.edit_data(c);
                             },
                             'h' => {
-                                self.popup = Some(PopupState::Help);
+                                self.popup = Some(PopupState::Help(0));
                             },
                             'l' => {
                                 self.notificaiton.reset();
@@ -192,6 +192,33 @@ impl <'a> App<'a>
         Ok(())
     }
 
+    fn handle_popup_scroll(scroll: &mut usize, len: usize, lines: Option<usize>, direction: i8)
+    {
+        if direction > 0
+        {
+            *scroll = (*scroll).saturating_add(1);
+            if let Some(lines) = lines
+            {
+                if *scroll as isize >= len as isize - lines as isize
+                {
+                    *scroll = len.saturating_sub(lines);
+                }
+            }
+            else 
+            {
+                if *scroll as isize >= len as isize
+                {
+                    *scroll = len.saturating_sub(1);
+                }    
+            }
+            
+        }
+        else
+        {
+            *scroll = (*scroll).saturating_sub(1);
+        }
+    }
+
     fn handle_event_popup(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
     {
         let mut popup = self.popup.clone();
@@ -289,7 +316,7 @@ impl <'a> App<'a>
                                 }
                                 popup = None;
                             },
-                            Some(PopupState::Help) => 
+                            Some(PopupState::Help(_)) => 
                             {
                                 popup = None;
                             }
@@ -301,15 +328,11 @@ impl <'a> App<'a>
                         {
                             Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
                             {
-                                *scroll += 1;
                                 if symbols.is_empty()
                                 {
                                     if let Some(symbols) = self.header.get_symbols()
                                     {
-                                        if *scroll as isize >= symbols.len() as isize
-                                        {
-                                            *scroll = symbols.len().saturating_sub(1);
-                                        }
+                                        Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
                                     }
                                     else
                                     {
@@ -318,15 +341,16 @@ impl <'a> App<'a>
                                 }
                                 else
                                 {
-                                    if *scroll as isize >= symbols.len() as isize
-                                    {
-                                        *scroll = symbols.len().saturating_sub(1);
-                                    }
+                                    Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
                                 }
                             },
                             Some(PopupState::Log(scroll)) =>
                             {
-                                *scroll = scroll.saturating_sub(1);
+                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()?), -1);
+                            }
+                            Some(PopupState::Help(scroll)) =>
+                            {
+                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()?), 1);
                             }
                             _ => {}
                         }
@@ -334,18 +358,17 @@ impl <'a> App<'a>
                     KeyCode::Up => {
                         match &mut popup
                         {
-                            Some(PopupState::FindSymbol { filter: _filter, symbols: _symbols, cursor: _cursor, scroll }) =>
+                            Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
                             {
-                                *scroll = scroll.saturating_sub(1);
+                                Self::handle_popup_scroll(scroll, symbols.len(), None, -1);
                             },
                             Some(PopupState::Log(scroll)) =>
                             {
-                                *scroll += 1;
-                                let lines = 8;
-                                if *scroll as isize >= self.log.len() as isize - lines as isize
-                                {
-                                    *scroll = self.log.len().saturating_sub(lines);
-                                }
+                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()?), 1);
+                            }
+                            Some(PopupState::Help(scroll)) =>
+                            {
+                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()?), -1);
                             }
                             _ => {}
                         }
@@ -362,7 +385,7 @@ impl <'a> App<'a>
                             {
                                 *scroll = 0;
                             }
-                            Some(PopupState::Log(scroll)) =>
+                            Some(PopupState::Log(scroll)) if event.code == KeyCode::Delete =>
                             {
                                 *scroll = 0;
                                 self.log.clear();
@@ -376,6 +399,7 @@ impl <'a> App<'a>
             },
             event::Event::Resize(width, _height) =>
             {
+                Self::resize_popup_if_needed(&mut popup);
                 self.resize_if_needed(width);
             },
             _ => {}

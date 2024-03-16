@@ -18,10 +18,7 @@ pub fn assemble(asm: &str, bitness: u32, starting_virtual_address: u64) -> Resul
     let mut input_file = tempfile::NamedTempFile::new()?;
     let output_file = tempfile::NamedTempFile::new()?;
 
-    if bitness != 16
-    {
-        input_file.write_all(format!("bits {}\n", bitness).as_bytes())?;
-    }
+    input_file.write_all(format!("bits {}\n", bitness).as_bytes())?;
     if starting_virtual_address != 0
     {
         input_file.write_all(format!("org 0x{:x}\n", starting_virtual_address).as_bytes())?;

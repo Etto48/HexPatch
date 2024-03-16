@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
 
-use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, widgets::{scrollbar::Scrollbar, logo::Logo}};
+use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
 use crate::headers::header::Header;
 
@@ -12,6 +12,7 @@ pub struct App<'a>
     pub(super) path: PathBuf,
     pub(super) header: Header,
     pub(super) log: Vec<LogLine>,
+    pub(super) help_list: Vec<HelpLine>,
     pub(super) notificaiton: NotificationLevel,
     pub(super) dirty: bool,
     pub(super) data: Vec<u8>,
@@ -94,6 +95,7 @@ impl <'a> App<'a>
             path: canonical_path,
             header,
             log: Vec::new(),
+            help_list: Self::help_list(),
             notificaiton: NotificationLevel::None,
             data,
             dirty: false,
@@ -236,13 +238,16 @@ impl <'a> App<'a>
 
                     let mut popup_rect = Rect::new(f.size().width / 2 - 27, f.size().height / 2 - 2, 54, 5);
 
-                    self.fill_popup(&self.color_settings, popup_state, f, &mut popup_title, &mut popup_text, &mut popup_rect);
+                    let popup_result = self.fill_popup(&self.color_settings, popup_state, f, &mut popup_title, &mut popup_text, &mut popup_rect);
 
-                    let popup = ratatui::widgets::Paragraph::new(popup_text)
-                        .block(Block::default().title(popup_title).borders(Borders::ALL))
-                        .alignment(ratatui::layout::Alignment::Center);
-                    f.render_widget(clear, popup_rect);
-                    f.render_widget(popup, popup_rect);
+                    if popup_result.is_ok()
+                    {
+                        let popup = ratatui::widgets::Paragraph::new(popup_text)
+                            .block(Block::default().title(popup_title).borders(Borders::ALL))
+                            .alignment(ratatui::layout::Alignment::Center);
+                        f.render_widget(clear, popup_rect);
+                        f.render_widget(popup, popup_rect);
+                    }
                 }
 
             })?;

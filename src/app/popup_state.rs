@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use ratatui::{layout::Rect, text::{Line, Span, Text}, Frame};
 
 use super::{color_settings::ColorSettings, App};
@@ -26,11 +28,46 @@ pub enum PopupState
     QuitDirtySave(bool),
     SaveAndQuit(bool),
     Save(bool),
-    Help
+    Help(usize)
 }
 
 impl <'a> App<'a>
 {
+
+    pub(super) fn get_scrollable_popup_line_count(&self) -> Result<usize, String>
+    {
+        let screen_height = self.screen_size.1 as isize;
+        let lines = match &self.popup
+        {
+            Some(PopupState::FindSymbol{ .. }) => screen_height - 6 - 2,
+            Some(PopupState::Log(_)) => screen_height - 4 - 2,
+            Some(PopupState::Help(_)) => screen_height - 4 - 2,
+            _ => 0
+        };
+
+        if lines <= 0
+        {
+            return Err("Screen too small".to_string());
+        }
+        else 
+        {
+            return Ok(lines as usize);
+        }
+    }
+
+    pub(super) fn resize_popup_if_needed(popup: &mut Option<PopupState>)
+    {
+        match popup
+        {
+            Some(PopupState::FindSymbol { scroll, .. }) |
+            Some(PopupState::Log(scroll)) |
+            Some(PopupState::Help(scroll)) =>
+            {
+                *scroll = 0;
+            }
+            _ => {}
+        }
+    }
 
     fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str) -> Line<'a>
     {
@@ -60,7 +97,7 @@ impl <'a> App<'a>
         Line::from(spans)
     }
 
-    pub(super) fn fill_popup(&'a self, color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'a>, popup_rect: &mut Rect)
+    pub(super) fn fill_popup(&'a self, color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'a>, popup_rect: &mut Rect) -> Result<(), Box<dyn Error>>
     {
         match &popup_state
         {
@@ -68,7 +105,8 @@ impl <'a> App<'a>
             {
                 *popup_title = "Find Symbol";
                 let width = 60;
-                let max_symbols = 8;
+                let max_symbols = self.get_scrollable_popup_line_count()?;
+                let height = max_symbols + 2 + 4;
                 let mut selection = *scroll;
                 let scroll = if *scroll > symbols.len() - max_symbols/2
                 {
@@ -85,7 +123,7 @@ impl <'a> App<'a>
                 selection = selection.saturating_sub(scroll);
 
 
-                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - 7, width as u16, 14);
+                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter");
                 if self.header.get_symbols().is_some()
                 {
@@ -140,7 +178,7 @@ impl <'a> App<'a>
                             symbols_as_lines.extend(vec![Line::raw(""); max_symbols - symbols_as_lines.len()]);
                         }
 
-                        if symbols.len() as isize - scroll as isize > max_symbols as isize || additional_vector.len() > 8
+                        if symbols.len() as isize - scroll as isize > max_symbols as isize || additional_vector.len() > max_symbols
                         {
                             symbols_as_lines.push(Line::from(vec![Span::styled("▼", color_settings.ok)]));
                         }
@@ -178,10 +216,12 @@ impl <'a> App<'a>
             PopupState::Log(scroll) =>
             {
                 *popup_title = "Log";
-                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 6, 60, 12);
+                let max_lines = self.get_scrollable_popup_line_count()?;
+                let height = max_lines + 4;
+                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - height as u16 / 2, 60, height as u16);
                 if self.log.len() > 0
                 {
-                    if self.log.len() as isize - *scroll as isize > 8
+                    if self.log.len() as isize - *scroll as isize > max_lines as isize
                     {
                         popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.ok)]));
                     }
@@ -190,7 +230,7 @@ impl <'a> App<'a>
                         popup_text.lines.push(Line::raw(""));
                     }
                     // take the last 8 lines skipping "scroll" lines from the bottom
-                    for line in self.log.iter().rev().skip(*scroll).take(8).rev()
+                    for line in self.log.iter().rev().skip(*scroll).take(max_lines).rev()
                     {
                         popup_text.lines.push(line.to_line(color_settings));
                     }
@@ -291,69 +331,38 @@ impl <'a> App<'a>
                     popup_text.lines[2].spans[2].style = color_settings.no_selected;
                 }
             },
-            PopupState::Help =>
+            PopupState::Help(scroll) =>
             {
-                *popup_rect = Rect::new(f.size().width / 2 - 15, f.size().height / 2 - 5, 30, 11);
+                let max_lines = self.get_scrollable_popup_line_count()?;
+                let height = max_lines + 4;
+                *popup_rect = Rect::new(f.size().width / 2 - 15, f.size().height / 2 - height as u16 / 2, 30, height as u16);
                 *popup_title = "Help";
+                if *scroll > 0
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.ok)]));
+                }
+                else
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
                 popup_text.lines.extend(
-                    vec![
-                        Line::from(
-                            vec![
-                                Span::styled("^S", color_settings.help_command),
-                                Span::raw(": Save")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled("^X", color_settings.help_command),
-                                Span::raw(": Save and Quit")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled("^C", color_settings.help_command),
-                                Span::raw(": Quit")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" V", color_settings.help_command),
-                                Span::raw(": Switch info view")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" J", color_settings.help_command),
-                                Span::raw(": Jump to location")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" S", color_settings.help_command),
-                                Span::raw(": Symbol search")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" P", color_settings.help_command),
-                                Span::raw(": Patch assembly")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" L", color_settings.help_command),
-                                Span::raw(": Log")
-                            ]
-                        ).left_aligned(),
-                        Line::from(
-                            vec![
-                                Span::styled(" H", color_settings.help_command),
-                                Span::raw(": Help")
-                            ]
-                        ).left_aligned()
-                    ]
+                    self.help_list
+                        .iter()
+                        .skip(*scroll)
+                        .take(max_lines)
+                        .map(|h| h.to_line(&self.color_settings)
+                    )
                 );
+                if self.help_list.len() as isize - *scroll as isize > max_lines as isize
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.ok)]));
+                }
+                else
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
             }
         }
+        Ok(())
     }
 }
