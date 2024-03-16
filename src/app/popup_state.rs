@@ -335,7 +335,8 @@ impl <'a> App<'a>
             {
                 let max_lines = self.get_scrollable_popup_line_count()?;
                 let height = max_lines + 4;
-                *popup_rect = Rect::new(f.size().width / 2 - 15, f.size().height / 2 - height as u16 / 2, 30, height as u16);
+                let width = 50;
+                *popup_rect = Rect::new(f.size().width / 2 - width / 2, f.size().height / 2 - height as u16 / 2, width, height as u16);
                 *popup_title = "Help";
                 if *scroll > 0
                 {
