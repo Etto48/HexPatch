@@ -77,7 +77,7 @@ impl <'a> App<'a>
                 if let Some(symbol) = symbols.iter().skip(scroll).next()
                 {
                     let (address, name) = symbol;
-                    self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", name, address));
+                    self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {:#X}", name, address));
                     self.jump_to(*address as usize, true);
                 }
                 else
@@ -101,7 +101,7 @@ impl <'a> App<'a>
         if let Some(symbol) = find_iter.next()
         {
             let (address, name) = symbol;
-            self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", name, address));
+            self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {:#X}", name, address));
             self.jump_to(*address as usize, true);
         }
         else 
@@ -116,7 +116,7 @@ impl <'a> App<'a>
         {
             if let Ok(address) = usize::from_str_radix(&symbol[2..], 16)
             {
-                self.log(NotificationLevel::Debug, &format!("Jumping to address: 0x{:X}", address));
+                self.log(NotificationLevel::Debug, &format!("Jumping to address: {:#X}", address));
                 self.jump_to(address, false);
             }
             else 
@@ -128,7 +128,7 @@ impl <'a> App<'a>
         {
             if let Ok(address) = usize::from_str_radix(&symbol[3..], 16)
             {
-                self.log(NotificationLevel::Debug, &format!("Jumping to virtual address: 0x{:X}", address));
+                self.log(NotificationLevel::Debug, &format!("Jumping to virtual address: {:#X}", address));
                 self.jump_to(address, true);
             }
             else 
@@ -140,12 +140,12 @@ impl <'a> App<'a>
         {
             if let Some(address) = self.header.symbol_to_address(symbol)
             {
-                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at 0x{:X}", symbol, address));
+                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {:#X}", symbol, address));
                 self.jump_to(address as usize, true);
             }
             else if let Some(address) = self.header.get_sections().iter().find(|x|x.name == symbol).map(|x|x.address)
             {
-                self.log(NotificationLevel::Debug, &format!("Jumping to section {} at 0x{:X}", symbol, address));
+                self.log(NotificationLevel::Debug, &format!("Jumping to section {} at {:#X}", symbol, address));
                 self.jump_to(address as usize, false);
             }
             else 
@@ -165,7 +165,7 @@ impl <'a> App<'a>
             }
             else 
             {
-                self.log(NotificationLevel::Error, &format!("Virtual address 0x{:X} not found", address));
+                self.log(NotificationLevel::Error, &format!("Virtual address {:#X} not found", address));
                 return;
             }
         }

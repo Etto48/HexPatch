@@ -138,7 +138,7 @@ impl <'a> App<'a>
                 Header::None => unreachable!(),
             }
             self.log(NotificationLevel::Info, &format!("Bitness: {}", self.header.bitness()));
-            self.log(NotificationLevel::Info, &format!("Entry point: 0x{:X}", self.header.entry_point()));
+            self.log(NotificationLevel::Info, &format!("Entry point: {:#X}", self.header.entry_point()));
             for section in self.header.get_sections()
             {
                 self.log(NotificationLevel::Info, &format!("Section: {}", section));

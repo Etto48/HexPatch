@@ -21,7 +21,7 @@ pub fn assemble(asm: &str, bitness: u32, starting_virtual_address: u64) -> Resul
     input_file.write_all(format!("bits {}\n", bitness).as_bytes())?;
     if starting_virtual_address != 0
     {
-        input_file.write_all(format!("org 0x{:x}\n", starting_virtual_address).as_bytes())?;
+        input_file.write_all(format!("org {:#x}\n", starting_virtual_address).as_bytes())?;
     }
 
     input_file.write_all(asm.as_bytes())?;

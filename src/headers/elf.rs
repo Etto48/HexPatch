@@ -168,13 +168,13 @@ impl ElfHeader
         let symbols: Vec<(u64, String)> = match header
         {
             ElfVariant::Elf64Little(h) => h.symbols().map(
-                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_0x{:x}", s.address())))).collect(),
+                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_{:#x}", s.address())))).collect(),
             ElfVariant::Elf64Big(h) => h.symbols().map(
-                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_0x{:x}", s.address())))).collect(),
+                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_{:#x}", s.address())))).collect(),
             ElfVariant::Elf32Little(h) => h.symbols().map(
-                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_0x{:x}", s.address())))).collect(),
+                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_{:#x}", s.address())))).collect(),
             ElfVariant::Elf32Big(h) => h.symbols().map(
-                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_0x{:x}", s.address())))).collect(),
+                |s| (s.address(), s.name().map(|n|n.to_string()).unwrap_or(format!("s_{:#x}", s.address())))).collect(),
         };
 
         let symbols: HashMap<u64, String> = symbols.into_iter().map(|(k,v)| {

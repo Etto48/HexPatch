@@ -63,7 +63,7 @@ impl PEHeader
                 let mut symbols = HashMap::new();
                 for symbol in header.symbols()
                 {
-                    symbols.insert(symbol.address(), symbol.name().map(|s|s.to_string()).unwrap_or(format!("s_0x{:x}", symbol.address())));
+                    symbols.insert(symbol.address(), symbol.name().map(|s|s.to_string()).unwrap_or(format!("s_{:#x}", symbol.address())));
                 }
                 let mut pdb_file_path = None;
                 if let Some(data_dir) = header.data_directory(6)
