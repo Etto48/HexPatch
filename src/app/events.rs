@@ -83,7 +83,7 @@ impl <'a> App<'a>
                                 self.popup = Some(PopupState::FindSymbol { filter: String::new(), symbols: Vec::new(), cursor: 0, scroll: 0 });
                             },
                             'p' => {
-                                self.popup = Some(PopupState::Patch { assembly: String::new(), cursor: 0});
+                                self.popup = Some(PopupState::Patch { assembly: String::new(), preview: Ok(Vec::new()), cursor: 0});
                             },
                             'j' => {
                                 self.popup = Some(PopupState::JumpToAddress { location: String::new(), cursor: 0});
@@ -229,9 +229,10 @@ impl <'a> App<'a>
                 Self::handle_string_edit(filter, cursor, &event, None, false, None)?;
                 *symbols = self.find_symbols(filter);
             }
-            Some(PopupState::Patch {assembly, cursor}) =>
+            Some(PopupState::Patch {assembly, preview, cursor}) =>
             {
                 Self::handle_string_edit(assembly, cursor, &event, None, false, None)?;
+                *preview = self.bytes_from_assembly(&assembly, self.get_current_instruction().virtual_ip());
             }
             Some(PopupState::JumpToAddress {location: address, cursor}) =>
             {
@@ -276,7 +277,7 @@ impl <'a> App<'a>
                             {
                                 popup = None;
                             }
-                            Some(PopupState::Patch {assembly, cursor: _cursor}) =>
+                            Some(PopupState::Patch {assembly, preview: _preview, cursor: _cursor}) =>
                             {
                                 self.patch(&assembly);
                                 popup = None;

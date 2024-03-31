@@ -28,6 +28,11 @@ pub struct ColorSettings
     pub assembly_entry_point: Style,
     pub assembly_default: Style,
 
+    pub patch_patched_less_or_equal: Style,
+    pub patch_patched_greater: Style,
+    pub patch_old_instruction: Style,
+    pub patch_old_rest: Style,
+
     pub help_command: Style,
     pub hep_description: Style,
 
@@ -84,6 +89,11 @@ impl Default for ColorSettings
             assembly_section: Style::default().fg(Color::LightBlue),
             assembly_entry_point: Style::default().fg(Color::Yellow),
             assembly_default: Style::default().fg(Color::Rgb(204, 152, 113)),
+
+            patch_patched_less_or_equal: Style::default().fg(Color::Green),
+            patch_patched_greater: Style::default().fg(Color::Yellow),
+            patch_old_instruction: Style::default().fg(Color::Red),
+            patch_old_rest: Style::default().fg(Color::DarkGray),
 
             help_command: Style::default().fg(Color::LightGreen),
             hep_description: Style::default().fg(Color::Gray),

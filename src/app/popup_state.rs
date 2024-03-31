@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::{layout::Rect, text::{Line, Span, Text}, Frame};
 
-use super::{color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
@@ -18,6 +18,7 @@ pub enum PopupState
     Patch
     {
         assembly: String,
+        preview: Result<Vec<u8>,String>,
         cursor: usize
     },
     JumpToAddress
@@ -53,6 +54,67 @@ impl <'a> App<'a>
         {
             return Ok(lines as usize);
         }
+    }
+
+    pub(super) fn get_patch_preview(&self, color_settings: &ColorSettings, preview: &Result<Vec<u8>,String>) -> Line<'a>
+    {
+        let mut preview_string = Line::from(vec![Span::raw(" ")]);
+        match preview
+        {
+            Ok(preview) =>
+            {
+                let old_instruction = self.get_current_instruction();
+                if let AssemblyLine::Instruction(instruction) = old_instruction
+                {
+                    let old_bytes_offset = instruction.file_address as usize;
+                    let old_bytes_len = instruction.instruction.len();
+                    let patch_len = preview.len();
+                    let max_instruction_length = std::cmp::min(16, self.data.len() - old_bytes_offset);
+                    let old_bytes_with_max_possible_length = &self.data[old_bytes_offset..old_bytes_offset + max_instruction_length];
+                    for (i, byte) in old_bytes_with_max_possible_length.iter().enumerate()
+                    {
+                        if i < patch_len
+                        {
+                            
+                            let style = if i >= old_bytes_len 
+                            {
+                                color_settings.patch_patched_greater
+                            }
+                            else
+                            {
+                                color_settings.patch_patched_less_or_equal
+                            };
+                            preview_string.spans.push(Span::styled(format!("{:02X} ", preview[i]), style));
+                        }
+                        else if i < old_bytes_len
+                        {
+                            let style = color_settings.patch_old_instruction;
+                            preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
+                        }
+                        else
+                        {
+                            let style = color_settings.patch_old_rest;
+                            preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
+                        };
+                        
+                    }
+
+                }
+                else 
+                {
+                    for byte in preview.iter()
+                    {
+                        let style = Self::get_style_for_byte(color_settings, *byte);
+                        preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
+                    }    
+                }
+            }
+            Err(e) =>
+            {
+                preview_string.spans.push(Span::styled(e.clone(), color_settings.log_error));
+            }
+        }
+        preview_string
     }
 
     pub(super) fn resize_popup_if_needed(popup: &mut Option<PopupState>)
@@ -244,13 +306,19 @@ impl <'a> App<'a>
                     }
                 }
             }
-            PopupState::Patch {assembly, cursor} =>
+            PopupState::Patch {assembly,preview,  cursor} =>
             {
                 *popup_title = "Patch";
-                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 3, 60, 3);
+                let height = 4;
+                let width = 60;
+                *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly");
+                let preview_line = self.get_patch_preview(color_settings, preview);
                 popup_text.lines.extend(
-                    vec![editable_string.left_aligned()]
+                    vec![
+                        preview_line.left_aligned(),
+                        editable_string.left_aligned()
+                    ]
                 );
             }
             PopupState::JumpToAddress {location: address, cursor} =>
