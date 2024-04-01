@@ -79,6 +79,9 @@ impl <'a> App<'a>
                                 self.notificaiton.reset();
                                 self.popup = Some(PopupState::Log(0));
                             },
+                            ' ' => {
+                                self.popup = Some(PopupState::Run { command: String::new(), cursor: 0 });
+                            }
                             's' => {
                                 self.popup = Some(PopupState::FindSymbol { filter: String::new(), symbols: Vec::new(), cursor: 0, scroll: 0 });
                             },
@@ -244,6 +247,10 @@ impl <'a> App<'a>
         let mut popup = self.popup.clone();
         match &mut popup
         {
+            Some(PopupState::Run {command, cursor}) => 
+            {
+                Self::handle_string_edit(command, cursor, &event, None, false, None, false)?;
+            }
             Some(PopupState::FindSymbol {filter, symbols, cursor, scroll: _scroll}) =>
             {
                 Self::handle_string_edit(filter, cursor, &event, None, false, None, false)?;
@@ -288,6 +295,11 @@ impl <'a> App<'a>
                     KeyCode::Enter if !event.modifiers.contains(KeyModifiers::SHIFT) => {
                         match &mut popup
                         {
+                            Some(PopupState::Run { command, cursor: _cursor }) =>
+                            {
+                                self.run_command(command)?;
+                                popup = None;
+                            }
                             Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
                             {
                                 self.jump_to_fuzzy_symbol(&filter, &symbols, *scroll);

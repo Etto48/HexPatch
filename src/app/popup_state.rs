@@ -7,6 +7,11 @@ use super::{assembly::AssemblyLine, color_settings::ColorSettings, App};
 #[derive(Clone, Debug)]
 pub enum PopupState
 {
+    Run
+    {
+        command: String,
+        cursor: usize
+    },
     FindSymbol
     {
         filter: String,
@@ -215,6 +220,18 @@ impl <'a> App<'a>
     {
         match &popup_state
         {
+            PopupState::Run { command, cursor } =>
+            {
+                *popup_title = "Run";
+                let width = 60;
+                let height = 3;
+                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
+                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command");
+                editable_string.spans.insert(0, Span::styled(" >", color_settings.menu_text));
+                popup_text.lines.extend(
+                    vec![editable_string.left_aligned()]
+                );
+            },
             PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
             {
                 *popup_title = "Find Symbol";
