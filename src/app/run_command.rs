@@ -21,7 +21,7 @@ impl Command
     {
         vec![
             "quit",
-            "quit!",
+            "dquit",
             "xquit",
             "write",
         ]
@@ -31,7 +31,7 @@ impl Command
         match command
         {
             "quit" => Command::Quit,
-            "quit!" => Command::QuitWithoutSave,
+            "dquit" => Command::QuitWithoutSave,
             "xquit" => Command::QuitWithSave,
             "write" => Command::Save,
             "" => Command::Empty,
@@ -49,7 +49,7 @@ impl Command
         match self
         {
             Command::Quit => Line::from(vec![Span::styled("quit", s0), Span::styled(" Quit the program.", s1)]),
-            Command::QuitWithoutSave => Line::from(vec![Span::styled("quit!", s0), Span::styled(" Quit the program without saving.", s1)]),
+            Command::QuitWithoutSave => Line::from(vec![Span::styled("dquit", s0), Span::styled(" Quit the program without saving.", s1)]),
             Command::QuitWithSave => Line::from(vec![Span::styled("xquit", s0), Span::styled(" Save and quit the program.", s1)]),
             Command::Save => Line::from(vec![Span::styled("write", s0), Span::styled(" Save the current file.", s1)]),
             Command::Empty => Line::from(vec![Span::styled("", s0), Span::styled("", s1)]),
