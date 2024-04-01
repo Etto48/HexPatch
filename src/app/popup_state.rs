@@ -43,7 +43,7 @@ impl <'a> App<'a>
             Some(PopupState::FindSymbol{ .. }) => screen_height - 6 - 2,
             Some(PopupState::Log(_)) => screen_height - 4 - 2,
             Some(PopupState::Help(_)) => screen_height - 4 - 2,
-            Some(PopupState::Patch{..}) => screen_height - 5 - 2,
+            Some(PopupState::Patch{..}) => screen_height - 6 - 2,
             _ => 0
         };
 
@@ -59,7 +59,7 @@ impl <'a> App<'a>
 
     pub(super) fn get_patch_preview(&self, color_settings: &ColorSettings, preview: &Result<Vec<u8>,String>) -> Line<'a>
     {
-        let mut preview_string = Line::from(vec![Span::raw(" ")]);
+        let mut preview_string = Line::raw(" ");
         match preview
         {
             Ok(preview) =>
@@ -103,11 +103,18 @@ impl <'a> App<'a>
                 }
                 else 
                 {
-                    for byte in preview.iter()
+                    if preview.is_empty()
                     {
-                        let style = Self::get_style_for_byte(color_settings, *byte);
-                        preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
-                    }    
+                        preview_string.spans.push(Span::styled("Preview", color_settings.placeholder));
+                    }
+                    else 
+                    {
+                        for byte in preview.iter()
+                        {
+                            let style = Self::get_style_for_byte(color_settings, *byte);
+                            preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
+                        }       
+                    }
                 }
             }
             Err(e) =>
@@ -355,7 +362,7 @@ impl <'a> App<'a>
             {
                 *popup_title = "Patch";
                 let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
-                let height = 3 + 2 + available_editable_text_lines as u16;
+                let height = 6 + available_editable_text_lines as u16;
 
                 let width = 60;
                 *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
@@ -364,6 +371,7 @@ impl <'a> App<'a>
                 popup_text.lines.extend(
                     vec![
                         preview_line.left_aligned(),
+                        Line::raw("─".repeat(width as usize)),
                     ]
                 );
                 let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
