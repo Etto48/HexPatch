@@ -23,7 +23,7 @@ impl Command
             "quit",
             "dquit",
             "xquit",
-            "write",
+            "save",
         ]
     }
     pub fn from_string(command: &str) -> Command
@@ -33,7 +33,7 @@ impl Command
             "quit" => Command::Quit,
             "dquit" => Command::QuitWithoutSave,
             "xquit" => Command::QuitWithSave,
-            "write" => Command::Save,
+            "save" => Command::Save,
             "" => Command::Empty,
             _ => Command::Unknown,
         }
@@ -51,7 +51,7 @@ impl Command
             Command::Quit => Line::from(vec![Span::styled("quit", s0), Span::styled(" Quit the program.", s1)]),
             Command::QuitWithoutSave => Line::from(vec![Span::styled("dquit", s0), Span::styled(" Quit the program without saving.", s1)]),
             Command::QuitWithSave => Line::from(vec![Span::styled("xquit", s0), Span::styled(" Save and quit the program.", s1)]),
-            Command::Save => Line::from(vec![Span::styled("write", s0), Span::styled(" Save the current file.", s1)]),
+            Command::Save => Line::from(vec![Span::styled("save", s0), Span::styled(" Save the current file.", s1)]),
             Command::Empty => Line::from(vec![Span::styled("", s0), Span::styled("", s1)]),
             Command::Unknown => Line::from(vec![Span::styled("Unknown command", s0), Span::styled(" Unknown command", s1)]),
         }.left_aligned()
