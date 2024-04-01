@@ -2,11 +2,18 @@ use std::error::Error;
 
 use ratatui::{layout::Rect, text::{Line, Span, Text}, Frame};
 
-use super::{assembly::AssemblyLine, color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, color_settings::ColorSettings, run_command::Command, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
 {
+    Run
+    {
+        command: String,
+        cursor: usize,
+        results: Vec<Command>,
+        scroll: usize
+    },
     FindSymbol
     {
         filter: String,
@@ -40,6 +47,7 @@ impl <'a> App<'a>
         let screen_height = self.screen_size.1 as isize;
         let lines = match &self.popup
         {
+            Some(PopupState::Run{..}) => screen_height - 6 - 2,
             Some(PopupState::FindSymbol{ .. }) => screen_height - 6 - 2,
             Some(PopupState::Log(_)) => screen_height - 4 - 2,
             Some(PopupState::Help(_)) => screen_height - 4 - 2,
@@ -215,6 +223,44 @@ impl <'a> App<'a>
     {
         match &popup_state
         {
+            PopupState::Run { command, cursor, results, scroll } =>
+            {
+                *popup_title = "Run";
+                let width = 60;
+                let max_results = self.get_scrollable_popup_line_count()?;
+                let height = max_results + 2 + 4;
+                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
+                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command");
+                editable_string.spans.insert(0, Span::styled(" >", color_settings.menu_text));
+                popup_text.lines.extend(
+                    vec![
+                        editable_string.left_aligned(),
+                        Line::raw("─".repeat(width)),
+                    ]
+                );
+                let skip = 0.max(*scroll as isize - max_results as isize / 2) as usize;
+                let skip = skip.min(results.len().saturating_sub(max_results));
+                let relative_scroll = *scroll - skip;
+                let results_iter = results.iter().skip(skip).take(max_results).enumerate().map(|(i,c)| c.to_line(color_settings, relative_scroll == i));
+                if skip > 0
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                }
+                else
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
+                popup_text.lines.extend(results_iter);
+                if results.len() as isize - skip as isize > max_results as isize
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                }
+                else
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
+
+            },
             PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
             {
                 *popup_title = "Find Symbol";
