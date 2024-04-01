@@ -3,13 +3,14 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
 
-use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
-use crate::headers::header::Header;
+use crate::{fuzzer::fuzzer::Fuzzer, headers::header::Header};
 
 pub struct App<'a> 
 {
     pub(super) path: PathBuf,
+    pub(super) commands: Fuzzer,
     pub(super) header: Header,
     pub(super) log: Vec<LogLine>,
     pub(super) help_list: Vec<HelpLine>,
@@ -90,9 +91,11 @@ impl <'a> App<'a>
         let header = Header::parse_header(&data);
         Self::print_loading_status(&color_settings, "Disassembling executable...", terminal)?;
         let (assembly_offsets, assembly_instructions) = Self::sections_from_bytes(&data, &header);
+        let commands = Fuzzer::new(Command::get_commands().as_slice());
         Self::print_loading_status(&color_settings, "Opening ui...", terminal)?;
         Ok(App{
             path: canonical_path,
+            commands,
             header,
             log: Vec::new(),
             help_list: Self::help_list(),

@@ -1,7 +1,10 @@
 use std::error::Error;
 
-use super::{notification::NotificationLevel, App};
+use ratatui::text::{Line, Span};
 
+use super::{color_settings::ColorSettings, notification::NotificationLevel, App};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command
 {
     Quit,
@@ -14,27 +17,60 @@ pub enum Command
 
 impl Command
 {
+    pub fn get_commands() -> Vec<&'static str>
+    {
+        vec![
+            "quit",
+            "quit!",
+            "xquit",
+            "write",
+        ]
+    }
     pub fn from_string(command: &str) -> Command
     {
-        let args = command.split_whitespace().collect::<Vec<&str>>();
-        match args.get(0).cloned()
+        match command
         {
-            Some("quit") | Some("q") => {Command::Quit}
-            Some("quit!") | Some("q!") => {Command::QuitWithoutSave}
-            Some("quit+") | Some("x") => {Command::QuitWithSave}
-            Some("save") | Some("w") => {Command::Save}
-            Some(_) => {Command::Unknown}
-            None => {Command::Empty}
+            "quit" => Command::Quit,
+            "quit!" => Command::QuitWithoutSave,
+            "xquit" => Command::QuitWithSave,
+            "write" => Command::Save,
+            "" => Command::Empty,
+            _ => Command::Unknown,
         }
+    }
+
+    pub fn to_line(&self, color_settings: &ColorSettings, selected: bool) -> Line<'static>
+    {
+        let (s0, s1) = if selected {
+            (color_settings.command_selected, color_settings.command_selected)
+        } else {
+            (color_settings.command_name, color_settings.command_description)
+        };
+        match self
+        {
+            Command::Quit => Line::from(vec![Span::styled("quit", s0), Span::styled(" Quit the program.", s1)]),
+            Command::QuitWithoutSave => Line::from(vec![Span::styled("quit!", s0), Span::styled(" Quit the program without saving.", s1)]),
+            Command::QuitWithSave => Line::from(vec![Span::styled("xquit", s0), Span::styled(" Save and quit the program.", s1)]),
+            Command::Save => Line::from(vec![Span::styled("write", s0), Span::styled(" Save the current file.", s1)]),
+            Command::Empty => Line::from(vec![Span::styled("", s0), Span::styled("", s1)]),
+            Command::Unknown => Line::from(vec![Span::styled("Unknown command", s0), Span::styled(" Unknown command", s1)]),
+        }.left_aligned()
     }
 }
 
 impl <'a> App<'a>
 {
-    pub(super) fn run_command(&mut self, command: &str) -> Result<(), Box<dyn Error>>
+    pub(super) fn find_commands(&mut self, command: &str) -> Vec<Command>
     {
-        self.log(NotificationLevel::Debug, &format!("Parsing command: \"{}\"", command));
-        match Command::from_string(command)
+        let ret = self.commands.fuzzy_search_sorted(command);
+        ret.into_iter().map(|cmd| Command::from_string(&cmd)).collect()
+    }
+
+    pub(super) fn run_command(&mut self, command: &str, scroll: usize) -> Result<(), Box<dyn Error>>
+    {
+        let command_opt = self.find_commands(command).into_iter().skip(scroll).next();
+        let command_enum = command_opt.expect("Scroll out of bounds for run_command.");
+        match command_enum
         {
             Command::Quit => {
                 self.quit(None)?;
@@ -46,7 +82,10 @@ impl <'a> App<'a>
                 self.quit(Some(true))?;
             }
             Command::Save => {
-                self.save_data()?;
+                if self.dirty
+                {
+                    self.save_data()?;
+                }
             }
             Command::Empty => {}
             Command::Unknown => {
