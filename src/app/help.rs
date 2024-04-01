@@ -36,6 +36,7 @@ impl <'a> App<'a>
             HelpLine::new("←→↑↓", "Move and scroll"),
             HelpLine::new("PgUp/PgDn", "Scroll page up/down"),
             HelpLine::new("Home/End", "Scroll to start/end"),
+            HelpLine::new("Space", "Run command"),
             HelpLine::new("^S", "Save"),
             HelpLine::new("^X", "Save and quit"),
             HelpLine::new("^C", "Quit"),
