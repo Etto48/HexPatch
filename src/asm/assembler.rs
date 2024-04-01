@@ -2,7 +2,7 @@ use std::{error::Error, io::{Read, Write}, process::{Command, Stdio}};
 
 fn discover_assembler() -> Option<String> {
     // List of common assembler executables
-    let assemblers = ["nasm", "yasm", "gas", "llvm-as"];
+    let assemblers = ["nasm", "yasm", "as", "llvm-as"];
 
     // Search for each assembler in PATH
     for assembler in &assemblers {
