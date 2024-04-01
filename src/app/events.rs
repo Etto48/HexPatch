@@ -80,7 +80,7 @@ impl <'a> App<'a>
                                 self.popup = Some(PopupState::Log(0));
                             },
                             ' ' => {
-                                self.popup = Some(PopupState::Run { command: String::new(), cursor: 0 });
+                                self.popup = Some(PopupState::Run { command: String::new(), cursor: 0, results: self.find_commands(""), scroll: 0 });
                             }
                             's' => {
                                 self.popup = Some(PopupState::FindSymbol { filter: String::new(), symbols: Vec::new(), cursor: 0, scroll: 0 });
@@ -247,9 +247,10 @@ impl <'a> App<'a>
         let mut popup = self.popup.clone();
         match &mut popup
         {
-            Some(PopupState::Run {command, cursor}) => 
+            Some(PopupState::Run {command, cursor, results, scroll: _scroll}) => 
             {
                 Self::handle_string_edit(command, cursor, &event, None, false, None, false)?;
+                *results = self.find_commands(command);
             }
             Some(PopupState::FindSymbol {filter, symbols, cursor, scroll: _scroll}) =>
             {
@@ -295,9 +296,9 @@ impl <'a> App<'a>
                     KeyCode::Enter if !event.modifiers.contains(KeyModifiers::SHIFT) => {
                         match &mut popup
                         {
-                            Some(PopupState::Run { command, cursor: _cursor }) =>
+                            Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
                             {
-                                self.run_command(command)?;
+                                self.run_command(command, *scroll)?;
                                 popup = None;
                             }
                             Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
@@ -359,6 +360,17 @@ impl <'a> App<'a>
                     KeyCode::Down => {
                         match &mut popup
                         {
+                            Some(PopupState::Run { command: _command, cursor: _cursor, results, scroll }) =>
+                            {
+                                if results.is_empty()
+                                {
+                                    *scroll = 0;
+                                }
+                                else
+                                {
+                                    Self::handle_popup_scroll(scroll, results.len(), None, 1);
+                                }
+                            }
                             Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
                             {
                                 if symbols.is_empty()
@@ -391,6 +403,10 @@ impl <'a> App<'a>
                     KeyCode::Up => {
                         match &mut popup
                         {
+                            Some(PopupState::Run { command: _command, cursor: _cursor, results: _results, scroll }) =>
+                            {
+                                Self::handle_popup_scroll(scroll, _results.len(), None, -1);
+                            }
                             Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
                             {
                                 Self::handle_popup_scroll(scroll, symbols.len(), None, -1);
@@ -414,6 +430,10 @@ impl <'a> App<'a>
                     KeyCode::Delete => {
                         match &mut popup
                         {
+                            Some(PopupState::Run { command: _command, cursor: _cursor, results: _results, scroll }) => 
+                            {
+                                *scroll = 0;
+                            }
                             Some(PopupState::FindSymbol { filter: _, symbols: _, cursor: _, scroll }) => 
                             {
                                 *scroll = 0;
