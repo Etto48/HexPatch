@@ -43,6 +43,7 @@ impl <'a> App<'a>
             Some(PopupState::FindSymbol{ .. }) => screen_height - 6 - 2,
             Some(PopupState::Log(_)) => screen_height - 4 - 2,
             Some(PopupState::Help(_)) => screen_height - 4 - 2,
+            Some(PopupState::Patch{..}) => screen_height - 5 - 2,
             _ => 0
         };
 
@@ -157,6 +158,50 @@ impl <'a> App<'a>
             color_settings.ok
         }));
         Line::from(spans)
+    }
+
+    pub(super) fn get_multiline_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str) -> (Vec<Line<'a>>, usize)
+    {
+        let string = s.to_string();
+        if string.len() == 0
+        {
+            return (vec![Line::from(vec![Span::styled("   1 ", color_settings.patch_line_number), Span::styled(placeholder.to_string(), color_settings.placeholder), Span::raw(" ")]).left_aligned()], 0);
+        }
+        let mut lines = Vec::new();
+        let mut selected_line = 0;
+        let mut current_line = vec![Span::styled("   1 ", color_settings.patch_line_number)];
+        for (i, c) in string.chars().enumerate()
+        {
+            let style = if i == cursor
+            {
+                selected_line = lines.len();
+                color_settings.ok_selected
+            }
+            else
+            {
+                color_settings.ok
+            };
+            if c == '\n'
+            {
+                current_line.push(Span::styled(" ", style));
+                lines.push(Line::from(current_line).left_aligned());
+                current_line = vec![Span::styled(format!(" {:3} ", lines.len() + 1), color_settings.patch_line_number)];
+            }
+            else
+            {
+                current_line.push(Span::styled(c.to_string(), style));
+            }
+        }
+        if cursor == string.len()
+        {
+            selected_line = lines.len();
+            current_line.push(Span::styled(" ", color_settings.ok_selected));
+        }
+        if current_line.len() > 0
+        {
+            lines.push(Line::from(current_line).left_aligned());
+        }
+        (lines, selected_line)
     }
 
     pub(super) fn fill_popup(&'a self, color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'a>, popup_rect: &mut Rect) -> Result<(), Box<dyn Error>>
@@ -309,17 +354,38 @@ impl <'a> App<'a>
             PopupState::Patch {assembly,preview,  cursor} =>
             {
                 *popup_title = "Patch";
-                let height = 4;
+                let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
+                let height = 3 + 2 + available_editable_text_lines as u16;
+
                 let width = 60;
                 *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly");
+                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly");
                 let preview_line = self.get_patch_preview(color_settings, preview);
                 popup_text.lines.extend(
                     vec![
                         preview_line.left_aligned(),
-                        editable_string.left_aligned()
                     ]
                 );
+                let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
+                let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines as usize));
+                if skip_lines == 0
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
+                else 
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.ok)]));
+                }
+                let editable_lines_count = editable_lines.len();
+                popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines as usize));
+                if editable_lines_count as isize - skip_lines as isize > available_editable_text_lines as isize
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.ok)]));
+                }
+                else
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
             }
             PopupState::JumpToAddress {location: address, cursor} =>
             {

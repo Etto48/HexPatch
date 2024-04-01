@@ -1,4 +1,4 @@
-use crossterm::event::{self, KeyCode};
+use crossterm::event::{self, KeyCode, KeyModifiers};
 
 use super::{popup_state::PopupState, App};
 
@@ -134,7 +134,15 @@ impl <'a> App<'a>
         Ok(())
     }
 
-    fn handle_string_edit(string: &mut String, cursor: &mut usize, event: &event::Event, charset: Option<&str>, capitalize: bool, max_len: Option<usize>) -> Result<(), Box<dyn std::error::Error>>
+    fn handle_string_edit(
+        string: &mut String, 
+        cursor: &mut usize, 
+        event: &event::Event, 
+        charset: Option<&str>, 
+        capitalize: bool, 
+        max_len: Option<usize>, 
+        multiline: bool
+    ) -> Result<(), Box<dyn std::error::Error>>
     {
         match event
         {
@@ -184,6 +192,10 @@ impl <'a> App<'a>
                     KeyCode::Home => {
                         *cursor = 0;
                     },
+                    KeyCode::Enter if multiline && event.modifiers.contains(KeyModifiers::SHIFT) => {
+                        string.insert(*cursor, '\n');
+                        *cursor += 1;
+                    },
                     _ => {}
                 }
             },
@@ -226,17 +238,17 @@ impl <'a> App<'a>
         {
             Some(PopupState::FindSymbol {filter, symbols, cursor, scroll: _scroll}) =>
             {
-                Self::handle_string_edit(filter, cursor, &event, None, false, None)?;
+                Self::handle_string_edit(filter, cursor, &event, None, false, None, false)?;
                 *symbols = self.find_symbols(filter);
             }
             Some(PopupState::Patch {assembly, preview, cursor}) =>
             {
-                Self::handle_string_edit(assembly, cursor, &event, None, false, None)?;
+                Self::handle_string_edit(assembly, cursor, &event, None, false, None, true)?;
                 *preview = self.bytes_from_assembly(&assembly, self.get_current_instruction().virtual_ip());
             }
             Some(PopupState::JumpToAddress {location: address, cursor}) =>
             {
-                Self::handle_string_edit(address, cursor, &event, None, false, None)?;
+                Self::handle_string_edit(address, cursor, &event, None, false, None, false)?;
             }
             _ => {}
         }
@@ -265,7 +277,7 @@ impl <'a> App<'a>
                             _ => {}
                         }
                     },
-                    KeyCode::Enter => {
+                    KeyCode::Enter if !event.modifiers.contains(KeyModifiers::SHIFT) => {
                         match &mut popup
                         {
                             Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>

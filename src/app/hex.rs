@@ -154,7 +154,7 @@ impl <'a> App<'a>
             self.text_view.lines[cursor_position.line_index]
                 .spans[cursor_position.line_byte_index * 2] = Span::styled(new_str, style);
         }
-        self.edit_assembly();
+        self.edit_assembly(1);
         self.update_hex_cursor();
         self.update_text_cursor();
     }

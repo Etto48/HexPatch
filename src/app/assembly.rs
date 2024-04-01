@@ -342,7 +342,7 @@ impl <'a> App<'a>
             self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].style = style;
         }
         self.dirty = true;
-        self.edit_assembly();
+        self.edit_assembly(bytes.len());
         self.update_cursors();
     }
 
@@ -398,7 +398,7 @@ impl <'a> App<'a>
         &self.assembly_instructions[current_istruction_index as usize]
     }
 
-    pub(super) fn edit_assembly(&mut self)
+    pub(super) fn edit_assembly(&mut self, modifyied_bytes: usize)
     {
         let from_byte = self.get_current_instruction().ip() as usize;
         let virtual_address = self.get_current_instruction().virtual_ip();
@@ -435,7 +435,7 @@ impl <'a> App<'a>
                 instruction,
                 file_address: current_byte as u64
             };
-            if old_instruction == &AssemblyLine::Instruction(instruction_tag)
+            if old_instruction == &AssemblyLine::Instruction(instruction_tag) && current_byte - from_byte >= modifyied_bytes
             {
                 to_byte = old_instruction.ip() as usize;
                 break;
