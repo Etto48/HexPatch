@@ -48,3 +48,7 @@ This functionality is tested mainly with `nasm`. Please report any issues with o
 ## Known issues
 
 - Some key combinations may not work as expected, notably `SHIFT + ENTER` on VSCode terminal. Please refer to [this issue](https://github.com/crossterm-rs/crossterm/issues/685) for more information. Unfortunately, this behavior is out of my control.
+
+## Special thanks
+
+Thanks to [Lorenzo Colombini](https://github.com/Lorenzinco) for the instruction highlighting.
