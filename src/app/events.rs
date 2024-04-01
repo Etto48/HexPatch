@@ -174,6 +174,14 @@ impl <'a> App<'a>
                             *cursor += 1;
                         }
                     },
+                    KeyCode::Up if multiline => {
+                        let line = string.chars().rev().skip(string.len() - *cursor).take_while(|c| *c != '\n').count();
+                        *cursor = cursor.saturating_sub(line + 1);
+                    },
+                    KeyCode::Down if multiline => {
+                        let line = string.chars().skip(*cursor).take_while(|c| *c != '\n').count();
+                        *cursor = cursor.saturating_add(line + 1).min(string.len());
+                    },
                     KeyCode::Char(mut c) => {
                         if capitalize
                         {
