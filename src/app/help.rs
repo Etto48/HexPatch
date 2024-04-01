@@ -22,8 +22,8 @@ impl HelpLine
     {
         let mut line = Line::default();
         line.spans.push(Span::styled(format!("{:>2}",&self.command), color_settings.help_command));
-        line.spans.push(Span::styled(": ", color_settings.ok));
-        line.spans.push(Span::styled(&self.description, color_settings.ok));
+        line.spans.push(Span::styled(": ", color_settings.menu_text));
+        line.spans.push(Span::styled(&self.description, color_settings.menu_text));
         line.left_aligned()
     }
 }

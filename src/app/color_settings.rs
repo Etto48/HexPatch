@@ -41,8 +41,8 @@ pub struct ColorSettings
     pub yes_selected: Style,
     pub no: Style,
     pub no_selected: Style,
-    pub ok: Style,
-    pub ok_selected: Style,
+    pub menu_text: Style,
+    pub menu_text_selected: Style,
 
     pub log_info: Style,
     pub log_debug: Style,
@@ -104,8 +104,8 @@ impl Default for ColorSettings
             yes_selected: Style::default().fg(Color::Black).bg(Color::Green),
             no: Style::default().fg(Color::Red),
             no_selected: Style::default().fg(Color::Black).bg(Color::Red),
-            ok: Style::default().fg(Color::White),
-            ok_selected: Style::default().fg(Color::Black).bg(Color::White),
+            menu_text: Style::default().fg(Color::White),
+            menu_text_selected: Style::default().fg(Color::Black).bg(Color::White),
 
             log_info: Style::default().fg(Color::LightBlue),
             log_debug: Style::default().fg(Color::LightGreen),
