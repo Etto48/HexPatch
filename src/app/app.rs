@@ -54,7 +54,7 @@ impl <'a> App<'a>
             {
                 text.lines.push(ratatui::text::Line::default());
             }
-            text.lines.push(Line::styled(status.to_string(), color_settings.ok));
+            text.lines.push(Line::styled(status.to_string(), color_settings.menu_text));
             let paragraph = ratatui::widgets::Paragraph::new(text)
                 .block(Block::default().borders(Borders::NONE));
             let logo = Logo::new();
