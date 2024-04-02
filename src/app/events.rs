@@ -287,7 +287,7 @@ impl <'a> App<'a>
                             Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
                             {
                                 self.run_command(command, *scroll)?;
-                                popup = None;
+                                popup = self.popup.clone();
                             }
                             Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
                             {
