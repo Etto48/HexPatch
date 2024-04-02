@@ -27,6 +27,9 @@ There may be issues with i386 executables, please report any issues.
     ![Jump to address](./assets/jump.png)
     Jump to a virtual address with `v0x` or to a file offset with `0x`. You can also jump to symbols and sections.
 
+- Open file
+    ![Open file](./assets/open.png)
+
 - Run command
     ![Run command](./assets/run.png)
 
