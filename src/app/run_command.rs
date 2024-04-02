@@ -11,6 +11,15 @@ pub enum Command
     QuitWithoutSave,
     QuitWithSave,
     Save,
+    Help,
+    Open,
+    Log,
+    Run,
+    FindSymbol,
+    Patch,
+    JumpToAddress,
+    SwitchView,
+
     Empty,
     Unknown,
 }
@@ -24,6 +33,14 @@ impl Command
             "dquit",
             "xquit",
             "save",
+            "help",
+            "open",
+            "log",
+            "run",
+            "find",
+            "patch",
+            "jump",
+            "view",
         ]
     }
     pub fn from_string(command: &str) -> Command
@@ -34,6 +51,14 @@ impl Command
             "dquit" => Command::QuitWithoutSave,
             "xquit" => Command::QuitWithSave,
             "save" => Command::Save,
+            "help" => Command::Help,
+            "open" => Command::Open,
+            "log" => Command::Log,
+            "run" => Command::Run,
+            "find" => Command::FindSymbol,
+            "patch" => Command::Patch,
+            "jump" => Command::JumpToAddress,
+            "view" => Command::SwitchView,
             "" => Command::Empty,
             _ => Command::Unknown,
         }
@@ -52,6 +77,15 @@ impl Command
             Command::QuitWithoutSave => Line::from(vec![Span::styled("dquit", s0), Span::styled(" Quit the program without saving.", s1)]),
             Command::QuitWithSave => Line::from(vec![Span::styled("xquit", s0), Span::styled(" Save and quit the program.", s1)]),
             Command::Save => Line::from(vec![Span::styled("save", s0), Span::styled(" Save the current file.", s1)]),
+            Command::Help => Line::from(vec![Span::styled("help", s0), Span::styled(" Display the help page.", s1)]),
+            Command::Open => Line::from(vec![Span::styled("open", s0), Span::styled(" Open a file.", s1)]),
+            Command::Log => Line::from(vec![Span::styled("log", s0), Span::styled(" Open the log.", s1)]),
+            Command::Run => Line::from(vec![Span::styled("run", s0), Span::styled(" Run a command.", s1)]),
+            Command::FindSymbol => Line::from(vec![Span::styled("find", s0), Span::styled(" Find a symbol.", s1)]),
+            Command::Patch => Line::from(vec![Span::styled("patch", s0), Span::styled(" Patch assembly.", s1)]),
+            Command::JumpToAddress => Line::from(vec![Span::styled("jump", s0), Span::styled(" Jump to address.", s1)]),
+            Command::SwitchView => Line::from(vec![Span::styled("view", s0), Span::styled(" Switch between text and assembly.", s1)]),
+
             Command::Empty => Line::from(vec![Span::styled("", s0), Span::styled("", s1)]),
             Command::Unknown => Line::from(vec![Span::styled("Unknown command", s0), Span::styled(" Unknown command", s1)]),
         }.left_aligned()
@@ -70,6 +104,7 @@ impl <'a> App<'a>
     {
         let command_opt = self.find_commands(command).into_iter().skip(scroll).next();
         let command_enum = command_opt.expect("Scroll out of bounds for run_command.");
+        self.popup = None;
         match command_enum
         {
             Command::Quit => {
@@ -87,6 +122,31 @@ impl <'a> App<'a>
                     self.save_data()?;
                 }
             }
+            Command::Help => {
+                self.request_popup_help();
+            }
+            Command::Open => {
+                self.request_open()?;
+            }
+            Command::Log => {
+                self.request_popup_log();
+            }
+            Command::Run => {
+                self.request_popup_run();
+            }
+            Command::FindSymbol => {
+                self.request_popup_find_symbol();
+            }
+            Command::Patch => {
+                self.request_popup_patch();
+            }
+            Command::JumpToAddress => {
+                self.request_popup_jump();
+            }
+            Command::SwitchView => {
+                self.request_view_change();
+            }
+
             Command::Empty => {}
             Command::Unknown => {
                 self.log(NotificationLevel::Error, &format!("Unknown command: \"{}\"", command));
