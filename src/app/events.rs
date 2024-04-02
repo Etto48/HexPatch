@@ -1,4 +1,5 @@
 use crossterm::event::{self, KeyCode, KeyModifiers};
+use ratatui::{backend::Backend, Terminal};
 
 use super::{popup_state::PopupState, App};
 
@@ -219,7 +220,7 @@ impl <'a> App<'a>
         }
     }
 
-    fn handle_event_popup(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
+    fn handle_event_popup<B: Backend>(&mut self, event: event::Event, terminal: &mut Terminal<B>) -> Result<(), Box<dyn std::error::Error>>
     {
         let mut popup = self.popup.clone();
         match &mut popup
@@ -281,7 +282,7 @@ impl <'a> App<'a>
                             Some(PopupState::Open { currently_open_path, path, cursor: _cursor, results: _results, scroll }) =>
                             {
                                 let mut new_popup = None;
-                                self.go_to_path(&currently_open_path, &path, *scroll, &mut new_popup)?;
+                                self.go_to_path(&currently_open_path, &path, *scroll, &mut new_popup, terminal)?;
                                 popup = new_popup;
                             }
                             Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
@@ -461,11 +462,11 @@ impl <'a> App<'a>
         Ok(())
     }
 
-    pub(super) fn handle_event(&mut self, event: event::Event) -> Result<(),Box<dyn std::error::Error>>
+    pub(super) fn handle_event<B: Backend>(&mut self, event: event::Event, terminal: &mut Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
     {
         if self.popup.is_some()
         {
-            self.handle_event_popup(event)?;
+            self.handle_event_popup(event, terminal)?;
         }
         else 
         {
