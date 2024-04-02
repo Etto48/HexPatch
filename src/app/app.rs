@@ -81,7 +81,8 @@ impl <'a> App<'a>
         let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
         Self::print_loading_status(&color_settings, &format!("Opening \"{}\"...", path), terminal)?;
         let path = PathBuf::from(path.as_ref());
-        let canonical_path = path.canonicalize().map_err(|e| e.to_string())?;
+
+        let canonical_path = Self::path_canonicalize(path, None).map_err(|e| e.to_string())?;
         let data = if canonical_path.is_dir()
         {
             Vec::new()
@@ -108,7 +109,7 @@ impl <'a> App<'a>
         let mut popup = None;
         if canonical_path.is_dir()
         {
-            Self::open_dir(&mut popup, &canonical_path.to_string_lossy()).map_err(|e| e.to_string())?;
+            Self::open_dir(&mut popup, canonical_path.clone()).map_err(|e| e.to_string())?;
         }
 
         let app = 
@@ -153,27 +154,7 @@ impl <'a> App<'a>
 
     pub fn run<B: Backend>(&mut self, terminal: &mut ratatui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
     {
-        if self.header != Header::None
-        {
-            match &self.header
-            {
-                Header::Elf(_) => self.log(NotificationLevel::Info,"Loaded ELF file."),
-                Header::PE(_) => self.log(NotificationLevel::Info,"Loaded PE file."),
-                Header::None => unreachable!(),
-            }
-            self.log(NotificationLevel::Info, &format!("Bitness: {}", self.header.bitness()));
-            self.log(NotificationLevel::Info, &format!("Entry point: {:#X}", self.header.entry_point()));
-            for section in self.header.get_sections()
-            {
-                self.log(NotificationLevel::Info, &format!("Section: {}", section));
-            }
-        }
-        else
-        {
-            self.log(NotificationLevel::Info, "No header found. Assuming 64-bit.");
-        }
-        
-        self.log(NotificationLevel::Info, "Press H for a list of commands.");
+        self.log_header_info();
 
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_if_needed(self.screen_size.0);

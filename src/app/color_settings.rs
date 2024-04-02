@@ -119,7 +119,7 @@ impl Default for ColorSettings
             command_description: Style::default().fg(Color::Gray),
             command_selected: Style::default().fg(Color::Black).bg(Color::White),
 
-            path_dir: Style::default().fg(Color::Blue).add_modifier(Modifier::DIM),
+            path_dir: Style::default().fg(Color::Blue),
             path_file: Style::default().fg(Color::Yellow),
             path_selected: Style::default().fg(Color::Black).bg(Color::White),
 

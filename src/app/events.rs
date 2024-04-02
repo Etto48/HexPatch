@@ -65,7 +65,7 @@ impl <'a> App<'a>
                             },
                             'o' => {
                                 let mut new_popup = None;
-                                Self::open_dir(&mut new_popup, self.get_current_dir().to_string_lossy().as_ref())?;
+                                Self::open_dir(&mut new_popup, self.get_current_dir())?;
                                 self.popup = new_popup;
                             },
                             _ => {}
