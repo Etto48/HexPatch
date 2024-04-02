@@ -74,12 +74,22 @@ impl <'a> App<'a>
         terminal.size().map_err(|e| e.to_string()).map(|s| (s.width, s.height))
     }
 
-    pub fn new<B: Backend>(file_path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
+    pub fn new<B: Backend>(path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
         let color_settings = color_settings::ColorSettings::default();
-        Self::print_loading_status(&color_settings, &format!("Opening {}...", file_path.to_string_lossy()), terminal)?;
-        let canonical_path = file_path.canonicalize().map_err(|e| e.to_string())?;
-        let data = std::fs::read(&canonical_path).map_err(|e| e.to_string())?;
+        let path = path.to_string_lossy();
+        let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
+        Self::print_loading_status(&color_settings, &format!("Opening \"{}\"...", path), terminal)?;
+        let path = PathBuf::from(path.as_ref());
+        let canonical_path = path.canonicalize().map_err(|e| e.to_string())?;
+        let data = if canonical_path.is_dir()
+        {
+            Vec::new()
+        }
+        else
+        {
+            std::fs::read(&canonical_path).map_err(|e| e.to_string())?
+        };
         let screen_size = Self::get_size(terminal)?;
         let block_size = 8;
         let vertical_margin = 2;

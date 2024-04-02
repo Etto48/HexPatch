@@ -48,6 +48,10 @@ pub struct ColorSettings
     pub command_description: Style,
     pub command_selected: Style,
 
+    pub path_dir: Style,
+    pub path_file: Style,
+    pub path_selected: Style,
+
     pub log_info: Style,
     pub log_debug: Style,
     pub log_warning: Style,
@@ -114,6 +118,10 @@ impl Default for ColorSettings
             command_name: Style::default().fg(Color::LightGreen),
             command_description: Style::default().fg(Color::Gray),
             command_selected: Style::default().fg(Color::Black).bg(Color::White),
+
+            path_dir: Style::default().fg(Color::Blue).add_modifier(Modifier::DIM),
+            path_file: Style::default().fg(Color::Yellow),
+            path_selected: Style::default().fg(Color::Black).bg(Color::White),
 
             log_info: Style::default().fg(Color::LightBlue),
             log_debug: Style::default().fg(Color::LightGreen),
