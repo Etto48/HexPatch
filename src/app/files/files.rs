@@ -8,12 +8,12 @@ impl <'a> App<'a>
 {
     pub(in crate::app) fn go_to_path(&mut self, currently_open_path: &PathBuf, path: &str, scroll: usize, popup: &mut Option<PopupState>) -> std::io::Result<()>
     {
-        let contents = self.find_dir_contents(currently_open_path, path)?;
+        let contents = Self::find_dir_contents(currently_open_path, path)?;
         let selected = contents.into_iter().skip(scroll).next().expect("Scroll out of bounds for go_to_path.");
 
         if selected.is_dir()
         {
-            self.open_dir(popup, &selected.path().to_string_lossy())?;
+            Self::open_dir(popup, &selected.path().to_string_lossy())?;
         }
         else
         {
@@ -37,7 +37,7 @@ impl <'a> App<'a>
         }
     }
 
-    pub(in crate::app) fn find_dir_contents(&self, currently_open_path: &PathBuf, path: &str) -> std::io::Result<Vec<PathResult>>
+    pub(in crate::app) fn find_dir_contents(currently_open_path: &PathBuf, path: &str) -> std::io::Result<Vec<PathResult>>
     {
         let upper_dir_path = currently_open_path.parent();
         let mut ret = Vec::new();
@@ -73,14 +73,14 @@ impl <'a> App<'a>
         Ok(ret)
     }
 
-    pub(in crate::app) fn open_dir(&mut self, popup: &mut Option<PopupState>, path: &str) -> std::io::Result<()>
+    pub(in crate::app) fn open_dir(popup: &mut Option<PopupState>, path: &str) -> std::io::Result<()>
     {
         let path = PathBuf::from(path).canonicalize()?;
         *popup = Some(PopupState::Open { 
             currently_open_path: path.clone(), 
             path: "".into(), 
             cursor: 0, 
-            results: self.find_dir_contents(&path, "")?, 
+            results: Self::find_dir_contents(&path, "")?, 
             scroll: 0 });
         Ok(())
     }
