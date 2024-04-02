@@ -1,37 +1,38 @@
-use std::path::PathBuf;
+use std::{error::Error, path::PathBuf};
 
 use ratatui::text::{Line, Span};
 
 use crate::app::color_settings::ColorSettings;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PathResult
+pub struct PathResult
 {
-    File(String),
-    Directory(String),
+    path: PathBuf,
 }
 
 impl PathResult
 {
-    pub fn path(&self) -> PathBuf
+    pub fn new(path: &PathBuf, base_path: &PathBuf) -> Result<Self, Box<dyn Error>>
     {
-        PathBuf::from(match self
+        let path = base_path.join(path).canonicalize()?;
+
+        Ok(Self
         {
-            PathResult::File(path) => path,
-            PathResult::Directory(path) => path,
+            path,
         })
+    }
+
+    pub fn path(&self) -> &PathBuf
+    {
+        &self.path
     }
 
     pub fn is_dir(&self) -> bool
     {
-        match self
-        {
-            PathResult::File(_) => false,
-            PathResult::Directory(_) => true,
-        }
+        self.path.is_dir()
     }
 
-    pub fn to_line(&self, color_settings: &ColorSettings, is_selected: bool) -> Line<'static>
+    pub fn to_line(&self, color_settings: &ColorSettings, is_selected: bool, base_path: &PathBuf) -> Line<'static>
     {
         let mut ret = Line::raw("");
         let style = if is_selected
@@ -49,18 +50,8 @@ impl PathResult
                 color_settings.path_file
             }
         };
-        let path = match self
-        {
-            PathResult::File(path) =>
-            {
-                path
-            },
-            PathResult::Directory(path) =>
-            {
-                path
-            },
-        };
-        ret.spans.push(Span::styled(path.clone(), style));
+        let path = pathdiff::diff_paths(&self.path, base_path).unwrap_or(self.path.clone());
+        ret.spans.push(Span::styled(path.to_string_lossy().to_string(), style));
 
         ret.left_aligned()
     }

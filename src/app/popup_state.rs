@@ -55,7 +55,7 @@ impl <'a> App<'a>
         let screen_height = self.screen_size.1 as isize;
         let lines = match &self.popup
         {
-            Some(PopupState::Open{..}) => screen_height - 6 - 2,
+            Some(PopupState::Open{..}) => screen_height - 7 - 2,
             Some(PopupState::Run{..}) => screen_height - 6 - 2,
             Some(PopupState::FindSymbol{ .. }) => screen_height - 6 - 2,
             Some(PopupState::Log(_)) => screen_height - 4 - 2,
@@ -237,14 +237,32 @@ impl <'a> App<'a>
                 *popup_title = "Open";
                 let width = 60;
                 let max_results = self.get_scrollable_popup_line_count()?;
-                let height = max_results + 2 + 4;
+                let height = max_results + 2 + 5;
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
-                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path");
-                editable_string.spans.insert(0, Span::styled(
-                    format!(" {}", currently_open_path.to_string_lossy()), 
-                    color_settings.menu_text));
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path");
+
+                let (prefix, currently_open_path_text) = if let Some(parent) = currently_open_path.parent()
+                {
+                    (
+                        ".../",
+                        currently_open_path.strip_prefix(parent).expect("I just checked").to_string_lossy()
+                    )
+                }
+                else
+                {
+                    (
+                        "",
+                        currently_open_path.to_string_lossy()
+                    )
+                };
+                
+
                 popup_text.lines.extend(
                     vec![
+                        Line::styled(
+                            format!(" {}{}", prefix, currently_open_path_text), 
+                            color_settings.path_dir
+                        ).left_aligned(),
                         editable_string.left_aligned(), 
                         Line::raw("─".repeat(width))
                     ]
@@ -252,7 +270,15 @@ impl <'a> App<'a>
                 let skip = 0.max(*scroll as isize - max_results as isize / 2) as usize;
                 let skip = skip.min(results.len().saturating_sub(max_results));
                 let relative_scroll = *scroll - skip;
-                let results_iter = results.iter().skip(skip).take(max_results).enumerate().map(|(i,p)| p.to_line(color_settings, relative_scroll == i));
+                let results_iter = results
+                    .iter()
+                    .skip(skip)
+                    .take(max_results)
+                    .enumerate()
+                    .map(
+                        |(i,p)| 
+                        p.to_line(color_settings, relative_scroll == i, currently_open_path)
+                    );
                 if skip > 0
                 {
                     popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
