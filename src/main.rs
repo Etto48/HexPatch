@@ -17,7 +17,7 @@ fn main() {
     let mut terminal = ratatui::Terminal::new(backend).expect("Failed to create terminal");
 
     terminal.clear().expect("Failed to clear terminal");
-    let mut app = App::new(args.file, &mut terminal).expect("Failed to create app");
+    let mut app = App::new(args.path, &mut terminal).expect("Failed to create app");
     let res = app.run(&mut terminal);
     terminal.clear().expect("Failed to clear terminal");
     

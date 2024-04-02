@@ -30,8 +30,9 @@ impl Widget for Scrollbar
         {
             return;
         }
-        let handle_size = ((area.height as usize) / self.total_amount).clamp(1, area.height as usize);
-        let handle_start = (self.scrolled_amount as isize * area.height as isize / self.total_amount as isize - handle_size as isize / 2)
+        let total_amount = self.total_amount.max(1);
+        let handle_size = ((area.height as usize) / total_amount).clamp(1, area.height as usize);
+        let handle_start = (self.scrolled_amount as isize * area.height as isize / total_amount as isize - handle_size as isize / 2)
             .clamp(0, area.height as isize - handle_size as isize) as usize;
         for y in area.top()..area.bottom()
         {

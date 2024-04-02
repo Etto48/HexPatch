@@ -63,6 +63,11 @@ impl <'a> App<'a>
                                     self.needs_to_exit = true;
                                 }
                             },
+                            'o' => {
+                                let mut new_popup = None;
+                                self.open_dir(&mut new_popup, self.get_current_dir().to_string_lossy().as_ref())?;
+                                self.popup = new_popup;
+                            },
                             _ => {}
                         }
                     },
@@ -247,6 +252,11 @@ impl <'a> App<'a>
         let mut popup = self.popup.clone();
         match &mut popup
         {
+            Some(PopupState::Open {currently_open_path, path, cursor, results, scroll: _scroll}) => 
+            {
+                Self::handle_string_edit(path, cursor, &event, None, false, None, false)?;
+                *results = self.find_dir_contents(&currently_open_path, &path)?;
+            }
             Some(PopupState::Run {command, cursor, results, scroll: _scroll}) => 
             {
                 Self::handle_string_edit(command, cursor, &event, None, false, None, false)?;
@@ -296,6 +306,12 @@ impl <'a> App<'a>
                     KeyCode::Enter if !event.modifiers.contains(KeyModifiers::SHIFT) => {
                         match &mut popup
                         {
+                            Some(PopupState::Open { currently_open_path, path, cursor: _cursor, results: _results, scroll }) =>
+                            {
+                                let mut new_popup = None;
+                                self.go_to_path(&currently_open_path, &path, *scroll, &mut new_popup)?;
+                                popup = new_popup;
+                            }
                             Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
                             {
                                 self.run_command(command, *scroll)?;
@@ -360,16 +376,13 @@ impl <'a> App<'a>
                     KeyCode::Down => {
                         match &mut popup
                         {
+                            Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results, scroll }) =>
+                            {
+                                Self::handle_popup_scroll(scroll, results.len(), None, 1);
+                            }
                             Some(PopupState::Run { command: _command, cursor: _cursor, results, scroll }) =>
                             {
-                                if results.is_empty()
-                                {
-                                    *scroll = 0;
-                                }
-                                else
-                                {
-                                    Self::handle_popup_scroll(scroll, results.len(), None, 1);
-                                }
+                                Self::handle_popup_scroll(scroll, results.len(), None, 1);
                             }
                             Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
                             {
@@ -403,6 +416,10 @@ impl <'a> App<'a>
                     KeyCode::Up => {
                         match &mut popup
                         {
+                            Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results, scroll }) =>
+                            {
+                                Self::handle_popup_scroll(scroll, results.len(), None, -1);
+                            }
                             Some(PopupState::Run { command: _command, cursor: _cursor, results: _results, scroll }) =>
                             {
                                 Self::handle_popup_scroll(scroll, _results.len(), None, -1);
@@ -430,6 +447,10 @@ impl <'a> App<'a>
                     KeyCode::Delete => {
                         match &mut popup
                         {
+                            Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results: _results, scroll }) => 
+                            {
+                                *scroll = 0;
+                            }
                             Some(PopupState::Run { command: _command, cursor: _cursor, results: _results, scroll }) => 
                             {
                                 *scroll = 0;
