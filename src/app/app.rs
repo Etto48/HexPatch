@@ -3,7 +3,7 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
 
-use super::{assembly::AssemblyLine, color_settings::{self, ColorSettings}, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, color_settings::ColorSettings, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
 use crate::{fuzzer::fuzzer::Fuzzer, headers::header::Header};
 
@@ -75,7 +75,7 @@ impl <'a> App<'a>
 
     pub fn new<B: Backend>(path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
-        let color_settings = color_settings::ColorSettings::default();
+        let color_settings = ColorSettings::default();
         let path = path.to_string_lossy();
         let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
         Self::print_loading_status(&color_settings, &format!("Opening \"{}\"...", path), terminal)?;
