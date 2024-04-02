@@ -40,6 +40,7 @@ impl <'a> App<'a>
             HelpLine::new("^S", "Save"),
             HelpLine::new("^X", "Save and quit"),
             HelpLine::new("^C", "Quit"),
+            HelpLine::new("^O", "Open file"),
             HelpLine::new("V", "Change view"),
             HelpLine::new("J", "Jumpt to location"),
             HelpLine::new("S", "Search symbol"),

@@ -41,32 +41,16 @@ impl <'a> App<'a>
                         match c
                         {
                             'c' => {
-                                if self.dirty
-                                {
-                                    self.popup = Some(PopupState::QuitDirtySave(false));
-                                }
-                                else
-                                {
-                                    self.needs_to_exit = true;
-                                }
+                                self.request_quit();
                             },
                             's' => {
-                                self.popup = Some(PopupState::Save(false));
+                                self.request_save();
                             },
                             'x' => {
-                                if self.dirty
-                                {
-                                    self.popup = Some(PopupState::SaveAndQuit(false));
-                                }
-                                else
-                                {
-                                    self.needs_to_exit = true;
-                                }
+                                self.request_quit_without_save();
                             },
                             'o' => {
-                                let mut new_popup = None;
-                                Self::open_dir(&mut new_popup, self.get_current_dir())?;
-                                self.popup = new_popup;
+                                self.request_open()?;
                             },
                             _ => {}
                         }
@@ -78,37 +62,25 @@ impl <'a> App<'a>
                                 self.edit_data(c);
                             },
                             'h' => {
-                                self.popup = Some(PopupState::Help(0));
+                                self.request_popup_help();
                             },
                             'l' => {
-                                self.notificaiton.reset();
-                                self.popup = Some(PopupState::Log(0));
+                                self.request_popup_log();
                             },
                             ' ' => {
-                                self.popup = Some(PopupState::Run { command: String::new(), cursor: 0, results: self.find_commands(""), scroll: 0 });
+                                self.request_popup_run();
                             }
                             's' => {
-                                self.popup = Some(PopupState::FindSymbol { filter: String::new(), symbols: Vec::new(), cursor: 0, scroll: 0 });
+                                self.request_popup_find_symbol();
                             },
                             'p' => {
-                                self.popup = Some(PopupState::Patch { assembly: String::new(), preview: Ok(Vec::new()), cursor: 0});
+                                self.request_popup_patch();
                             },
                             'j' => {
-                                self.popup = Some(PopupState::JumpToAddress { location: String::new(), cursor: 0});
+                                self.request_popup_jump();
                             },
                             'v' => {
-                                match self.info_mode {
-                                    super::info_mode::InfoMode::Text => 
-                                    {
-                                        self.info_mode = super::info_mode::InfoMode::Assembly;
-                                        self.update_hex_cursor();
-                                    },
-                                    super::info_mode::InfoMode::Assembly => 
-                                    {
-                                        self.info_mode = super::info_mode::InfoMode::Text;
-                                        self.update_hex_cursor();
-                                    },
-                                }
+                                self.request_view_change();
                             }
                             _ => {}
                         }
@@ -440,7 +412,14 @@ impl <'a> App<'a>
                         }
                     },
                     KeyCode::Esc => {
-                        popup = None;
+                        if !self.path.is_dir() // Prevent closing the open file popup if no file is open
+                        {
+                            popup = None;
+                        }
+                        else 
+                        {
+                            self.needs_to_exit = true;    
+                        }
                     },
                     KeyCode::Char(_) | 
                     KeyCode::Backspace | 
