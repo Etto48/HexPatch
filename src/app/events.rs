@@ -243,7 +243,10 @@ impl <'a> App<'a>
             Some(PopupState::Patch {assembly, preview, cursor}) =>
             {
                 Self::handle_string_edit(assembly, cursor, &event, None, false, None, true)?;
-                *preview = self.bytes_from_assembly(&assembly, self.get_current_instruction().virtual_ip());
+                if let Some(current_instruction) = self.get_current_instruction()
+                {
+                    *preview = self.bytes_from_assembly(&assembly, current_instruction.virtual_ip());
+                }
             }
             Some(PopupState::JumpToAddress {location: address, cursor}) =>
             {

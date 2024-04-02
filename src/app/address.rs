@@ -24,9 +24,15 @@ impl <'a> App<'a>
 
     pub(super) fn update_address_cursor(&mut self)
     {
-        self.address_view.lines[self.address_last_row].spans[0].style = self.color_settings.address_default;
+        if self.address_last_row < self.address_view.lines.len()
+        {
+            self.address_view.lines[self.address_last_row].spans[0].style = self.color_settings.address_default;
+        }
         let current_row = self.cursor.1 as usize + self.scroll;
-        self.address_last_row = current_row;
-        self.address_view.lines[self.address_last_row].spans[0].style = self.color_settings.address_selected;
+        if current_row < self.address_view.lines.len()
+        {
+            self.address_last_row = current_row;
+            self.address_view.lines[self.address_last_row].spans[0].style = self.color_settings.address_selected;
+        }
     }
 }

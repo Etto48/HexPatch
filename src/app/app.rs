@@ -27,7 +27,6 @@ pub struct App<'a>
     pub(super) hex_cursor: (usize, usize),
     pub(super) text_last_byte_index: usize,
     pub(super) text_cursor: (usize, usize),
-    pub(super) assembly_scroll: usize,
     pub(super) info_mode: InfoMode,
     pub(super) scroll: usize,
     pub(super) cursor: (u16, u16),
@@ -83,56 +82,28 @@ impl <'a> App<'a>
         let path = PathBuf::from(path.as_ref());
 
         let canonical_path = Self::path_canonicalize(path, None).map_err(|e| e.to_string())?;
-        let data = if canonical_path.is_dir()
-        {
-            Vec::new()
-        }
-        else
-        {
-            std::fs::read(&canonical_path).map_err(|e| e.to_string())?
-        };
         let screen_size = Self::get_size(terminal)?;
-        let block_size = 8;
-        let vertical_margin = 2;
-        let blocks_per_row = Self::calc_blocks_per_row(block_size, screen_size.0);
-        
-        let address_view = Self::addresses(&color_settings, data.len(), block_size, blocks_per_row);
-        Self::print_loading_status(&color_settings, "Decoding binary data...", terminal)?;
-        let hex_view = Self::bytes_to_styled_hex(&color_settings, &data, block_size, blocks_per_row);
-        let text_view = Self::bytes_to_styled_text(&color_settings, &data, block_size, blocks_per_row);
-        let header = Header::parse_header(&data);
-        Self::print_loading_status(&color_settings, "Disassembling executable...", terminal)?;
-        let (assembly_offsets, assembly_instructions) = Self::sections_from_bytes(&data, &header);
-        let commands = Fuzzer::new(Command::get_commands().as_slice());
-        Self::print_loading_status(&color_settings, "Opening ui...", terminal)?;
 
-        let mut popup = None;
-        if canonical_path.is_dir()
-        {
-            Self::open_dir(&mut popup, canonical_path.clone()).map_err(|e| e.to_string())?;
-        }
-
-        let app = 
+        let mut app = 
         App{
             path: canonical_path,
-            commands,
-            header,
+            commands: Fuzzer::new(&Command::get_commands()),
+            header: Header::None,
             log: Vec::new(),
             help_list: Self::help_list(),
             notificaiton: NotificationLevel::None,
-            data,
+            data: Vec::new(),
             dirty: false,
-            address_view,
-            hex_view,
-            text_view,
-            assembly_offsets,
-            assembly_instructions,
+            address_view: Text::default(),
+            hex_view: Text::default(),
+            text_view: Text::default(),
+            assembly_offsets: Vec::new(),
+            assembly_instructions: Vec::new(),
             address_last_row: 0,
             hex_last_byte_index: 0,
             hex_cursor: (0,0),
             text_last_byte_index: 0,
             text_cursor: (0,0),
-            assembly_scroll: 0,
             info_mode: InfoMode::Text,
             scroll: 0,
             cursor: (0,0),
@@ -142,12 +113,21 @@ impl <'a> App<'a>
 
             color_settings,
 
-            popup,
+            popup: None,
 
-            vertical_margin,
-            block_size,
-            blocks_per_row,
+            vertical_margin: 2,
+            block_size: 8,
+            blocks_per_row: 1,
         };
+
+        if app.path.is_file()
+        {
+            app.open_file(&app.path.to_string_lossy().to_string(), terminal).map_err(|e| e.to_string())?;
+        }
+        else
+        {
+            Self::open_dir(&mut app.popup, app.path.clone()).map_err(|e| e.to_string())?;
+        }
 
         Ok(app)
     }
@@ -185,57 +165,59 @@ impl <'a> App<'a>
                 let output_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
                     .block(Block::default().borders(Borders::NONE));
                 
-                let line_start_index = self.scroll;
-                let line_end_index = (self.scroll + f.size().height as usize - 2).min(self.hex_view.lines.len());
-
-                let address_subview_lines = &self.address_view.lines[line_start_index..line_end_index];
-                let mut address_subview = Text::default();
-                address_subview.lines.extend(address_subview_lines.iter().cloned());
-
-                let hex_subview_lines = &self.hex_view.lines[line_start_index..line_end_index];
-                let mut hex_subview = Text::default();
-                hex_subview.lines.extend(hex_subview_lines.iter().cloned());
-
-                let address_block = ratatui::widgets::Paragraph::new(address_subview)
-                    .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP));
-                
-                let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
-
-                let hex_editor_block = ratatui::widgets::Paragraph::new(hex_subview)
-                    .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT));
-                
-                let info_view_block = 
-                match &self.info_mode 
-                {
-                    InfoMode::Text =>
-                    {
-                        let text_subview_lines = &self.text_view.lines[line_start_index..line_end_index];
-                        let mut text_subview = Text::default();
-                        text_subview.lines.extend(text_subview_lines.iter().cloned());
-                        ratatui::widgets::Paragraph::new(text_subview)
-                            .block(Block::default().title("Text View").borders(Borders::TOP | Borders::RIGHT))
-                    },
-                    InfoMode::Assembly =>
-                    {
-                        let assembly_start_index = self.get_assembly_view_scroll();
-                        let assembly_end_index = (assembly_start_index + f.size().height as usize - 2).min(self.assembly_instructions.len());
-                        let assembly_subview_lines = &self.assembly_instructions[assembly_start_index..assembly_end_index];
-                        let mut assembly_subview = Text::default();
-                        assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.color_settings, self.get_cursor_position().global_byte_index, &self.header)));
-                        ratatui::widgets::Paragraph::new(assembly_subview)
-                            .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT))
-                    }
-                };
-
-                
                 let scrolled_amount = self.get_cursor_position().global_byte_index;
                 let total_amount = self.data.len();
                 let scrollbar = Scrollbar::new(scrolled_amount, total_amount, self.color_settings.scrollbar);
 
+                if !self.data.is_empty()
+                {
+                    let line_start_index = self.scroll;
+                    let line_end_index = (self.scroll + f.size().height as usize - 2).min(self.hex_view.lines.len());
+
+                    let address_subview_lines = &self.address_view.lines[line_start_index..line_end_index];
+                    let mut address_subview = Text::default();
+                    address_subview.lines.extend(address_subview_lines.iter().cloned());
+
+                    let hex_subview_lines = &self.hex_view.lines[line_start_index..line_end_index];
+                    let mut hex_subview = Text::default();
+                    hex_subview.lines.extend(hex_subview_lines.iter().cloned());
+
+                    let address_block = ratatui::widgets::Paragraph::new(address_subview)
+                        .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP));
+                    
+                    let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
+
+                    let hex_editor_block = ratatui::widgets::Paragraph::new(hex_subview)
+                        .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT));
+                    
+                    let info_view_block = 
+                    match &self.info_mode 
+                    {
+                        InfoMode::Text =>
+                        {
+                            let text_subview_lines = &self.text_view.lines[line_start_index..line_end_index];
+                            let mut text_subview = Text::default();
+                            text_subview.lines.extend(text_subview_lines.iter().cloned());
+                            ratatui::widgets::Paragraph::new(text_subview)
+                                .block(Block::default().title("Text View").borders(Borders::TOP | Borders::RIGHT))
+                        },
+                        InfoMode::Assembly =>
+                        {
+                            let assembly_start_index = self.get_assembly_view_scroll();
+                            let assembly_end_index = (assembly_start_index + f.size().height as usize - 2).min(self.assembly_instructions.len());
+                            let assembly_subview_lines = &self.assembly_instructions[assembly_start_index..assembly_end_index];
+                            let mut assembly_subview = Text::default();
+                            assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.color_settings, self.get_cursor_position().global_byte_index, &self.header)));
+                            ratatui::widgets::Paragraph::new(assembly_subview)
+                                .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT))
+                        }
+                    };
+
+                    f.render_widget(address_block, address_rect);
+                    f.render_widget(hex_editor_block, hex_editor_rect);
+                    f.render_widget(info_view_block, info_view_rect);
+                }
                 f.render_widget(output_block, output_rect);
-                f.render_widget(address_block, address_rect);
-                f.render_widget(hex_editor_block, hex_editor_rect);
-                f.render_widget(info_view_block, info_view_rect);
                 f.render_widget(scrollbar, scrollbar_rect);
 
                 if let Some(popup_state) = &self.popup 

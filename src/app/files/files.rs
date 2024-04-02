@@ -131,10 +131,14 @@ impl <'a> App<'a>
         self.hex_cursor = (0,0);
         self.text_last_byte_index = 0;
         self.text_cursor = (0,0);
-        self.assembly_scroll = 0;
         self.info_mode = InfoMode::Text;
         self.scroll = 0;
         self.cursor = (0,0);
+
+        self.screen_size = Self::get_size(terminal)?;
+        self.block_size = 8;
+        self.vertical_margin = 2;
+        self.blocks_per_row = Self::calc_blocks_per_row(self.block_size, self.screen_size.0);
 
         Self::print_loading_status(&self.color_settings, &format!("Opening \"{}\"...", path), terminal)?;
         self.data = std::fs::read(&self.path)?;
