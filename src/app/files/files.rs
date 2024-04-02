@@ -1,12 +1,21 @@
 use std::{error::Error, path::PathBuf};
 
+use ratatui::{backend::Backend, Terminal};
+
 use crate::{app::{info_mode::InfoMode, notification::NotificationLevel, popup_state::PopupState, App}, headers::header::Header};
 
 use super::path_result::PathResult;
 
 impl <'a> App<'a>
 {
-    pub(in crate::app) fn go_to_path(&mut self, currently_open_path: &PathBuf, path: &str, scroll: usize, popup: &mut Option<PopupState>) -> Result<(), Box<dyn Error>>
+    pub(in crate::app) fn go_to_path<B: Backend>(
+        &mut self, 
+        currently_open_path: &PathBuf, 
+        path: &str, 
+        scroll: usize, 
+        popup: &mut Option<PopupState>,
+        terminal: &mut Terminal<B>
+    ) -> Result<(), Box<dyn Error>>
     {
         let contents = Self::find_dir_contents(currently_open_path, path)?;
         if contents.is_empty()
@@ -21,7 +30,7 @@ impl <'a> App<'a>
         }
         else
         {
-            self.open_file(&selected.path().to_string_lossy())?;
+            self.open_file(&selected.path().to_string_lossy(), terminal)?;
             *popup = None;
         }
         
@@ -111,7 +120,7 @@ impl <'a> App<'a>
         self.log(NotificationLevel::Info, "Press H for a list of commands.");
     }
 
-    pub(in crate::app) fn open_file(&mut self, path: &str) -> std::io::Result<()>
+    pub(in crate::app) fn open_file<B: Backend>(&mut self, path: &str, terminal: &mut Terminal<B>) -> Result<(), Box<dyn Error>>
     {
         self.log(NotificationLevel::Info, &format!("Opening file: \"{}\"", path));
 
@@ -127,18 +136,19 @@ impl <'a> App<'a>
         self.scroll = 0;
         self.cursor = (0,0);
 
+        Self::print_loading_status(&self.color_settings, &format!("Opening \"{}\"...", path), terminal)?;
         self.data = std::fs::read(&self.path)?;
         self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         
         self.address_view = Self::addresses(&self.color_settings, self.data.len(), self.block_size, self.blocks_per_row);
-        //Self::print_loading_status(&self.color_settings, "Decoding binary data...", terminal)?;
+        Self::print_loading_status(&self.color_settings, "Decoding binary data...", terminal)?;
         self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         self.header = Header::parse_header(&self.data);
-        //Self::print_loading_status(&self.color_settings, "Disassembling executable...", terminal)?;
+        Self::print_loading_status(&self.color_settings, "Disassembling executable...", terminal)?;
         (self.assembly_offsets, self.assembly_instructions) = Self::sections_from_bytes(&self.data, &self.header);
-        //Self::print_loading_status(&self.color_settings, "Opening ui...", terminal)?;
+        Self::print_loading_status(&self.color_settings, "Opening ui...", terminal)?;
         self.log_header_info();
 
         Ok(())
