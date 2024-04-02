@@ -156,7 +156,7 @@ impl <'a> App<'a>
         }
     }
 
-    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str) -> Line<'a>
+    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize) -> Line<'a>
     {
         let string = s.to_string();
         if string.len() == 0
@@ -164,7 +164,13 @@ impl <'a> App<'a>
             return Line::from(vec![Span::raw(" "), Span::styled(placeholder.to_string(), color_settings.placeholder), Span::raw(" ")]);
         }
         let mut spans = vec![Span::raw(" ")];
-        for (i, c) in string.chars().enumerate()
+
+        let available_width = available_width.saturating_sub(2);
+
+        let skip = 0.max(cursor as isize - (available_width as isize - 1) / 2) as usize;
+        let skip = skip.min(string.len().saturating_sub(available_width));
+
+        for (i, c) in string.chars().enumerate().skip(skip).take(available_width)
         {
             if i == cursor
             {
@@ -235,11 +241,12 @@ impl <'a> App<'a>
             PopupState::Open { currently_open_path, path, cursor, results, scroll } =>
             {
                 *popup_title = "Open";
-                let width = 60;
+                let available_width = 58;
+                let width = available_width + 2;
                 let max_results = self.get_scrollable_popup_line_count()?;
                 let height = max_results + 2 + 5;
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path");
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width);
 
                 let (prefix, currently_open_path_text) = if let Some(parent) = currently_open_path.parent()
                 {
@@ -300,11 +307,12 @@ impl <'a> App<'a>
             PopupState::Run { command, cursor, results, scroll } =>
             {
                 *popup_title = "Run";
-                let width = 60;
+                let available_width = 58;
+                let width = available_width + 2;
                 let max_results = self.get_scrollable_popup_line_count()?;
                 let height = max_results + 2 + 4;
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
-                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command");
+                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command", available_width);
                 editable_string.spans.insert(0, Span::styled(" >", color_settings.menu_text));
                 popup_text.lines.extend(
                     vec![
@@ -338,7 +346,8 @@ impl <'a> App<'a>
             PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
             {
                 *popup_title = "Find Symbol";
-                let width = 60;
+                let available_width = 58;
+                let width = available_width + 2;
                 let max_symbols = self.get_scrollable_popup_line_count()?;
                 let height = max_symbols + 2 + 4;
                 let mut selection = *scroll;
@@ -358,7 +367,7 @@ impl <'a> App<'a>
 
 
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter");
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter", available_width);
                 if self.header.get_symbols().is_some()
                 {
                     let symbols_as_lines = if symbols.len() > 0 || filter.len() == 0
@@ -518,8 +527,11 @@ impl <'a> App<'a>
             PopupState::JumpToAddress {location: address, cursor} =>
             {
                 *popup_title = "Jump";
-                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - 3, 60, 3);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location");
+                let available_width = 58;
+                let width = available_width + 2;
+                let height = 3;
+                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16/2, width as u16, height as u16);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location", available_width);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
                 );
