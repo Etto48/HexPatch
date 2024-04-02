@@ -65,7 +65,7 @@ impl <'a> App<'a>
                             },
                             'o' => {
                                 let mut new_popup = None;
-                                self.open_dir(&mut new_popup, self.get_current_dir().to_string_lossy().as_ref())?;
+                                Self::open_dir(&mut new_popup, self.get_current_dir().to_string_lossy().as_ref())?;
                                 self.popup = new_popup;
                             },
                             _ => {}
@@ -255,7 +255,7 @@ impl <'a> App<'a>
             Some(PopupState::Open {currently_open_path, path, cursor, results, scroll: _scroll}) => 
             {
                 Self::handle_string_edit(path, cursor, &event, None, false, None, false)?;
-                *results = self.find_dir_contents(&currently_open_path, &path)?;
+                *results = Self::find_dir_contents(&currently_open_path, &path)?;
             }
             Some(PopupState::Run {command, cursor, results, scroll: _scroll}) => 
             {

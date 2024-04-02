@@ -94,6 +94,7 @@ impl <'a> App<'a>
         let block_size = 8;
         let vertical_margin = 2;
         let blocks_per_row = Self::calc_blocks_per_row(block_size, screen_size.0);
+        
         let address_view = Self::addresses(&color_settings, data.len(), block_size, blocks_per_row);
         Self::print_loading_status(&color_settings, "Decoding binary data...", terminal)?;
         let hex_view = Self::bytes_to_styled_hex(&color_settings, &data, block_size, blocks_per_row);
@@ -103,7 +104,15 @@ impl <'a> App<'a>
         let (assembly_offsets, assembly_instructions) = Self::sections_from_bytes(&data, &header);
         let commands = Fuzzer::new(Command::get_commands().as_slice());
         Self::print_loading_status(&color_settings, "Opening ui...", terminal)?;
-        Ok(App{
+
+        let mut popup = None;
+        if canonical_path.is_dir()
+        {
+            Self::open_dir(&mut popup, &canonical_path.to_string_lossy()).map_err(|e| e.to_string())?;
+        }
+
+        let app = 
+        App{
             path: canonical_path,
             commands,
             header,
@@ -132,12 +141,14 @@ impl <'a> App<'a>
 
             color_settings,
 
-            popup: None,
+            popup,
 
             vertical_margin,
             block_size,
             blocks_per_row,
-        })
+        };
+
+        Ok(app)
     }
 
     pub fn run<B: Backend>(&mut self, terminal: &mut ratatui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
