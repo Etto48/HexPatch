@@ -113,6 +113,8 @@ impl <'a> App<'a>
 
     pub(in crate::app) fn open_file(&mut self, path: &str) -> std::io::Result<()>
     {
+        self.log(NotificationLevel::Info, &format!("Opening file: \"{}\"", path));
+
         self.path = path.into();
         self.dirty = false;
         self.address_last_row = 0;

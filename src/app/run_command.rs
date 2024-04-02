@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span};
 
-use super::{color_settings::ColorSettings, notification::NotificationLevel, App};
+use super::{color_settings::ColorSettings, notification::NotificationLevel, popup_state::PopupState, App};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command
@@ -124,5 +124,109 @@ impl <'a> App<'a>
             }
         }
         Ok(())
+    }
+
+    pub(super) fn request_quit(&mut self)
+    {
+        if self.dirty
+        {
+            self.popup = Some(PopupState::QuitDirtySave(false));
+        }
+        else
+        {
+            self.needs_to_exit = true;
+        }
+    }
+
+    pub(super) fn request_save(&mut self)
+    {
+        if self.dirty
+        {
+            self.popup = Some(PopupState::Save(false));
+        }
+    }
+
+    pub(super) fn request_quit_without_save(&mut self)
+    {
+        if self.dirty
+        {
+            self.popup = Some(PopupState::SaveAndQuit(false));
+        }
+        else
+        {
+            self.needs_to_exit = true;
+        }
+    }
+
+    pub(super) fn request_open(&mut self) -> Result<(), Box<dyn Error>>
+    {
+        let mut new_popup = None;
+        Self::open_dir(&mut new_popup, self.get_current_dir())?;
+        self.popup = new_popup;
+        Ok(())
+    }
+
+    pub(super) fn request_popup_help(&mut self)
+    {
+        self.popup = Some(PopupState::Help(0));
+    }
+
+    pub(super) fn request_popup_log(&mut self)
+    {
+        self.notificaiton.reset();
+        self.popup = Some(PopupState::Log(0));
+    }
+
+    pub(super) fn request_popup_run(&mut self)
+    {
+        self.popup = Some(PopupState::Run { 
+            command: String::new(), 
+            cursor: 0, 
+            results: self.find_commands(""), 
+            scroll: 0 }
+        );
+    }
+
+    pub(super) fn request_popup_find_symbol(&mut self)
+    {
+        self.popup = Some(PopupState::FindSymbol { 
+            filter: String::new(), 
+            symbols: Vec::new(), 
+            cursor: 0, 
+            scroll: 0 }
+        );
+    }
+
+    pub(super) fn request_popup_patch(&mut self)
+    {
+        self.popup = Some(PopupState::Patch { 
+            assembly: String::new(), 
+            preview: Ok(Vec::new()), 
+            cursor: 0}
+        );
+    }
+
+    pub(super) fn request_popup_jump(&mut self)
+    {
+        self.popup = Some(PopupState::JumpToAddress { 
+            location: String::new(), 
+            cursor: 0}
+        );
+    }
+
+    pub(super) fn request_view_change(&mut self)
+    {
+        match self.info_mode {
+            super::info_mode::InfoMode::Text => 
+            {
+                self.info_mode = super::info_mode::InfoMode::Assembly;
+                self.update_hex_cursor();
+            },
+            super::info_mode::InfoMode::Assembly => 
+            {
+                self.info_mode = super::info_mode::InfoMode::Text;
+                self.update_hex_cursor();
+            },
+        }
     }
 }
