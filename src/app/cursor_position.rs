@@ -27,6 +27,19 @@ impl <'a> App<'a>
 {
     pub(super) fn get_cursor_position(&self) -> CursorPosition
     {
+        if self.data.is_empty()
+        {
+            return CursorPosition {
+                local_x: 0,
+                local_byte_index: 0,
+                block_index: 0,
+                local_block_index: 0,
+                line_index: 0,
+                line_byte_index: 0,
+                global_byte_index: 0,
+                high_byte: false,
+            };
+        }
         let local_x = self.cursor.0 as usize % (self.block_size * 3 + 1);
         let high_byte = local_x % 3 == 0;
         let local_byte_index = local_x / 3;
@@ -310,6 +323,5 @@ impl <'a> App<'a>
         self.update_address_cursor();
         self.update_hex_cursor();
         self.update_text_cursor();
-        self.update_assembly_scroll();
     }
 }

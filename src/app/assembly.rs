@@ -316,80 +316,85 @@ impl <'a> App<'a>
 
     pub(super) fn patch_bytes(&mut self, bytes: &[u8])
     {
-        let current_instruction = self.get_current_instruction().clone();
-        let current_ip = match current_instruction
+        let current_instruction = self.get_current_instruction();
+        if let Some(current_instruction) = current_instruction
         {
-            AssemblyLine::Instruction(instruction) => instruction.file_address,
-            AssemblyLine::SectionTag(_) => self.get_cursor_position().global_byte_index as u64
-        };
-        for (i, byte) in bytes.iter().enumerate()
-        {
-            self.data[current_ip as usize + i] = *byte;
-        }
-        self.color_instruction_bytes(&current_instruction, true);
-        for (i, byte) in bytes.iter().enumerate()
-        {
-            let style = Self::get_style_for_byte(&self.color_settings, *byte);
-            let cursor_position = self.get_expected_cursor_position(current_ip as usize + i, true);
-            let [high_byte, low_byte] = Self::u8_to_hex(*byte);
+            let current_instruction = current_instruction.clone();
+            let current_ip = match current_instruction
+            {
+                AssemblyLine::Instruction(instruction) => instruction.file_address,
+                AssemblyLine::SectionTag(_) => self.get_cursor_position().global_byte_index as u64
+            };
+            for (i, byte) in bytes.iter().enumerate()
+            {
+                self.data[current_ip as usize + i] = *byte;
+            }
+            self.color_instruction_bytes(&current_instruction, true);
+            for (i, byte) in bytes.iter().enumerate()
+            {
+                let style = Self::get_style_for_byte(&self.color_settings, *byte);
+                let cursor_position = self.get_expected_cursor_position(current_ip as usize + i, true);
+                let [high_byte, low_byte] = Self::u8_to_hex(*byte);
 
-            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].content = high_byte.to_string().into();
-            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].style = style;
-            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].content = low_byte.to_string().into();
-            self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].style = style;
-            
-            self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].content = Self::u8_to_char(*byte).to_string().into();
-            self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].style = style;
+                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].content = high_byte.to_string().into();
+                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].style = style;
+                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].content = low_byte.to_string().into();
+                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].style = style;
+                
+                self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].content = Self::u8_to_char(*byte).to_string().into();
+                self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].style = style;
+            }
+            self.dirty = true;
+            self.edit_assembly(bytes.len());
+            self.update_cursors();
         }
-        self.dirty = true;
-        self.edit_assembly(bytes.len());
-        self.update_cursors();
     }
 
     pub(super) fn patch(&mut self, assembly: &str)
     {
-        let current_instruction = self.get_current_instruction();
-        let current_virtual_address = if let AssemblyLine::Instruction(instruction) = current_instruction
+        if let Some(current_instruction) = self.get_current_instruction()
         {
-            instruction.instruction.ip()
-        }
-        else
-        {
-            self.get_cursor_position().global_byte_index as u64
-        };
-        let bytes = self.bytes_from_assembly(assembly,current_virtual_address);
-        match bytes
-        {
-            Ok(bytes) => self.patch_bytes(&bytes),
-            Err(e) => {
-                self.log(NotificationLevel::Error, &e);
+            let current_virtual_address = if let AssemblyLine::Instruction(instruction) = current_instruction
+            {
+                instruction.instruction.ip()
+            }
+            else
+            {
+                self.get_cursor_position().global_byte_index as u64
+            };
+            let bytes = self.bytes_from_assembly(assembly,current_virtual_address);
+            match bytes
+            {
+                Ok(bytes) => self.patch_bytes(&bytes),
+                Err(e) => {
+                    self.log(NotificationLevel::Error, &e);
+                }
             }
         }
     }
 
-    pub(super) fn update_assembly_scroll(&mut self)
+    pub(super) fn get_assembly_view_scroll(&self) -> usize
     {
-        // TODO: remove this function because it's useless
         let cursor_position = self.get_cursor_position();
         let current_ip = cursor_position.global_byte_index.min(self.assembly_offsets.len() - 1);
         let current_scroll = self.assembly_offsets[current_ip];
-        
-        self.assembly_scroll = current_scroll;
-    }
 
-    pub(super) fn get_assembly_view_scroll(&self) -> usize
-    {
         let visible_lines = self.screen_size.1 - self.vertical_margin;
         let center_of_view = visible_lines / 2;
-        let view_scroll = (self.assembly_scroll as isize - center_of_view as isize).clamp(0, (self.assembly_instructions.len() as isize - visible_lines as isize).max(0));
+        let view_scroll = (current_scroll as isize - center_of_view as isize).clamp(0, (self.assembly_instructions.len() as isize - visible_lines as isize).max(0));
         
         return view_scroll as usize;
     }
 
-    pub(super) fn get_current_instruction(&self) -> &AssemblyLine
+    pub(super) fn get_current_instruction(&self) -> Option<&AssemblyLine>
     {
-        let current_istruction_index =  self.assembly_offsets[self.get_cursor_position().global_byte_index];
-        &self.assembly_instructions[current_istruction_index as usize]
+        let global_byte_index = self.get_cursor_position().global_byte_index;
+        if global_byte_index >= self.assembly_offsets.len()
+        {
+            return None;
+        }
+        let current_istruction_index =  self.assembly_offsets[global_byte_index as usize];
+        Some(&self.assembly_instructions[current_istruction_index as usize])
     }
 
     pub(super) fn get_instruction_at(&self, index: usize) -> &AssemblyLine
@@ -400,99 +405,101 @@ impl <'a> App<'a>
 
     pub(super) fn edit_assembly(&mut self, modifyied_bytes: usize)
     {
-        let from_byte = self.get_current_instruction().ip() as usize;
-        let virtual_address = self.get_current_instruction().virtual_ip();
-        let text_section = self.header.get_text_section();
-        let (is_inside_text_section, maximum_code_byte) = 
-        if let Some(text_section) = text_section 
+        let current_instruction = self.get_current_instruction();
+        if let Some(current_instruction) = current_instruction
         {
-            (from_byte >= text_section.address as usize && 
-                from_byte < text_section.address as usize + text_section.size as usize,
-            text_section.address as usize + text_section.size as usize)
-        }
-        else
-        {
-            (true, self.data.len())
-        };
-        if !is_inside_text_section
-        {
-            return;
-        }
-        let mut decoder = iced_x86::Decoder::new(self.header.bitness(), &self.data[from_byte..maximum_code_byte], iced_x86::DecoderOptions::NONE);
-        decoder.set_ip(virtual_address as u64);
-        let mut offsets = Vec::new();
-        let mut instructions = Vec::new();
-        let mut instruction_lines = Vec::new();
-        let mut to_byte = self.data.len();
-
-        let from_instruction = self.assembly_offsets[from_byte];
-        let mut current_byte = from_byte;
-        for instruction in decoder
-        {   
-            let old_instruction = self.get_instruction_at(current_byte);
-            let instruction_tag = InstructionTag
+            let from_byte = current_instruction.ip() as usize;
+            let virtual_address = current_instruction.virtual_ip();
+            let text_section = self.header.get_text_section();
+            let (is_inside_text_section, maximum_code_byte) = 
+            if let Some(text_section) = text_section 
             {
-                instruction,
-                file_address: current_byte as u64
+                (from_byte >= text_section.address as usize && 
+                    from_byte < text_section.address as usize + text_section.size as usize,
+                text_section.address as usize + text_section.size as usize)
+            }
+            else
+            {
+                (true, self.data.len())
             };
-            if old_instruction == &AssemblyLine::Instruction(instruction_tag) && current_byte - from_byte >= modifyied_bytes
+            if !is_inside_text_section
             {
-                to_byte = old_instruction.ip() as usize;
-                break;
+                return;
             }
-            instructions.push(AssemblyLine::Instruction(instruction_tag));
-            instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction_tag, false, &self.header));
-            for _ in 0..instruction.len()
+            let mut decoder = iced_x86::Decoder::new(self.header.bitness(), &self.data[from_byte..maximum_code_byte], iced_x86::DecoderOptions::NONE);
+            decoder.set_ip(virtual_address as u64);
+            let mut offsets = Vec::new();
+            let mut instructions = Vec::new();
+            let mut instruction_lines = Vec::new();
+            let mut to_byte = self.data.len();
+
+            let from_instruction = self.assembly_offsets[from_byte];
+            let mut current_byte = from_byte;
+            for instruction in decoder
+            {   
+                let old_instruction = self.get_instruction_at(current_byte);
+                let instruction_tag = InstructionTag
+                {
+                    instruction,
+                    file_address: current_byte as u64
+                };
+                if old_instruction == &AssemblyLine::Instruction(instruction_tag) && current_byte - from_byte >= modifyied_bytes
+                {
+                    to_byte = old_instruction.ip() as usize;
+                    break;
+                }
+                instructions.push(AssemblyLine::Instruction(instruction_tag));
+                instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction_tag, false, &self.header));
+                for _ in 0..instruction.len()
+                {
+                    offsets.push(from_instruction + instructions.len() - 1);
+                    current_byte += 1;
+                }
+            }
+            if from_byte == to_byte
             {
-                offsets.push(from_instruction + instructions.len() - 1);
-                current_byte += 1;
+                return;
             }
-        }
-        if from_byte == to_byte
-        {
-            return;
-        }
 
-        let to_instruction = self.assembly_offsets[to_byte];
+            let to_instruction = self.assembly_offsets[to_byte];
 
-        let mut original_instruction_count = 1;
-        let mut original_instruction_ip = self.assembly_offsets[from_byte];
-        for i in from_byte..to_byte
-        {
-            if self.assembly_offsets[i] != original_instruction_ip
+            let mut original_instruction_count = 1;
+            let mut original_instruction_ip = self.assembly_offsets[from_byte];
+            for i in from_byte..to_byte
             {
-                original_instruction_count += 1;
-                original_instruction_ip = self.assembly_offsets[i];
+                if self.assembly_offsets[i] != original_instruction_ip
+                {
+                    original_instruction_count += 1;
+                    original_instruction_ip = self.assembly_offsets[i];
+                }
             }
-        }
 
-        let new_instruction_count = instructions.len();
+            let new_instruction_count = instructions.len();
 
-        let delta = new_instruction_count as isize - original_instruction_count as isize;
+            let delta = new_instruction_count as isize - original_instruction_count as isize;
 
-        self.assembly_offsets.splice(from_byte..to_byte, offsets);
-        for offset in self.assembly_offsets.iter_mut().skip(to_byte)
-        {
-            *offset = (*offset as isize + delta) as usize;
-        }
-
-        for i in from_instruction..to_instruction
-        {
-            if let AssemblyLine::Instruction(instruction) = &self.assembly_instructions[i]
+            self.assembly_offsets.splice(from_byte..to_byte, offsets);
+            for offset in self.assembly_offsets.iter_mut().skip(to_byte)
             {
-                self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction.instruction, self.assembly_instructions[i].ip()));    
+                *offset = (*offset as isize + delta) as usize;
             }
-        }
-        for i in 0..instructions.len()
-        {
-            if let AssemblyLine::Instruction(instruction) = &instructions[i]
+
+            for i in from_instruction..to_instruction
             {
-                self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction.instruction, instructions[i].ip()));
+                if let AssemblyLine::Instruction(instruction) = &self.assembly_instructions[i]
+                {
+                    self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction.instruction, self.assembly_instructions[i].ip()));    
+                }
             }
+            for i in 0..instructions.len()
+            {
+                if let AssemblyLine::Instruction(instruction) = &instructions[i]
+                {
+                    self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction.instruction, instructions[i].ip()));
+                }
+            }
+
+            self.assembly_instructions.splice(from_instruction..to_instruction, instructions);
         }
-
-        self.assembly_instructions.splice(from_instruction..to_instruction, instructions);
-
-        self.update_assembly_scroll();
     }
 }

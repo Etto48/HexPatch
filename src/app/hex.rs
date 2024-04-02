@@ -114,8 +114,12 @@ impl <'a> App<'a>
         if value >= '0' && value <= '9' || value >= 'A' && value <= 'F'
         {   
             let cursor_position = self.get_cursor_position();
-            let old_instruction = self.get_current_instruction().clone();
-            self.color_instruction_bytes(&old_instruction, true);
+            let old_instruction = self.get_current_instruction();
+            if let Some(old_instruction) = old_instruction
+            {
+                let old_instruction = old_instruction.clone();
+                self.color_instruction_bytes(&old_instruction, true);
+            }
             
             let hex = if cursor_position.high_byte
             {
@@ -162,26 +166,30 @@ impl <'a> App<'a>
     pub(super) fn update_hex_cursor(&mut self)
     {
         let cursor_position = self.get_cursor_position();
-        let instruction = self.get_current_instruction().clone();
-        if self.hex_last_byte_index < self.data.len()
+        let instruction = self.get_current_instruction();
+        if let Some(instruction) = instruction
         {
-            let old_byte = self.data[self.hex_last_byte_index];
-            let old_instruction = self.get_instruction_at(self.hex_last_byte_index).clone();
-            let style = Self::get_style_for_byte(&self.color_settings, old_byte);
-            self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = style;
-            self.color_instruction_bytes(&old_instruction, true);
-        }
+            let instruction = instruction.clone();
+            if self.hex_last_byte_index < self.data.len()
+            {
+                let old_byte = self.data[self.hex_last_byte_index];
+                let old_instruction = self.get_instruction_at(self.hex_last_byte_index).clone();
+                let style = Self::get_style_for_byte(&self.color_settings, old_byte);
+                self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = style;
+                self.color_instruction_bytes(&old_instruction, true);
+            }
 
-        if self.info_mode == InfoMode::Assembly
-        {
-            self.color_instruction_bytes(&instruction, false);
-        }
+            if self.info_mode == InfoMode::Assembly
+            {
+                self.color_instruction_bytes(&instruction, false);
+            }
 
-        self.hex_last_byte_index = cursor_position.global_byte_index;
-        self.hex_cursor = (cursor_position.line_index, cursor_position.line_byte_index * 3 + cursor_position.get_high_byte_offset());
-        if self.hex_cursor.0 < self.hex_view.lines.len() && self.hex_cursor.1 < self.hex_view.lines[self.hex_cursor.0].spans.len()
-        {
-            self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = self.color_settings.hex_selected;
+            self.hex_last_byte_index = cursor_position.global_byte_index;
+            self.hex_cursor = (cursor_position.line_index, cursor_position.line_byte_index * 3 + cursor_position.get_high_byte_offset());
+            if self.hex_cursor.0 < self.hex_view.lines.len() && self.hex_cursor.1 < self.hex_view.lines[self.hex_cursor.0].spans.len()
+            {
+                self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = self.color_settings.hex_selected;
+            }
         }
     }
 

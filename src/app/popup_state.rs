@@ -82,55 +82,58 @@ impl <'a> App<'a>
             Ok(preview) =>
             {
                 let old_instruction = self.get_current_instruction();
-                if let AssemblyLine::Instruction(instruction) = old_instruction
+                if let Some(old_instruction) = old_instruction
                 {
-                    let old_bytes_offset = instruction.file_address as usize;
-                    let old_bytes_len = instruction.instruction.len();
-                    let patch_len = preview.len();
-                    let max_instruction_length = std::cmp::min(16, self.data.len() - old_bytes_offset);
-                    let old_bytes_with_max_possible_length = &self.data[old_bytes_offset..old_bytes_offset + max_instruction_length];
-                    for (i, byte) in old_bytes_with_max_possible_length.iter().enumerate()
+                    if let AssemblyLine::Instruction(instruction) = old_instruction
                     {
-                        if i < patch_len
+                        let old_bytes_offset = instruction.file_address as usize;
+                        let old_bytes_len = instruction.instruction.len();
+                        let patch_len = preview.len();
+                        let max_instruction_length = std::cmp::min(16, self.data.len() - old_bytes_offset);
+                        let old_bytes_with_max_possible_length = &self.data[old_bytes_offset..old_bytes_offset + max_instruction_length];
+                        for (i, byte) in old_bytes_with_max_possible_length.iter().enumerate()
                         {
-                            
-                            let style = if i >= old_bytes_len 
+                            if i < patch_len
                             {
-                                color_settings.patch_patched_greater
+                                
+                                let style = if i >= old_bytes_len 
+                                {
+                                    color_settings.patch_patched_greater
+                                }
+                                else
+                                {
+                                    color_settings.patch_patched_less_or_equal
+                                };
+                                preview_string.spans.push(Span::styled(format!("{:02X} ", preview[i]), style));
+                            }
+                            else if i < old_bytes_len
+                            {
+                                let style = color_settings.patch_old_instruction;
+                                preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
                             }
                             else
                             {
-                                color_settings.patch_patched_less_or_equal
+                                let style = color_settings.patch_old_rest;
+                                preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
                             };
-                            preview_string.spans.push(Span::styled(format!("{:02X} ", preview[i]), style));
+                            
                         }
-                        else if i < old_bytes_len
-                        {
-                            let style = color_settings.patch_old_instruction;
-                            preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
-                        }
-                        else
-                        {
-                            let style = color_settings.patch_old_rest;
-                            preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
-                        };
-                        
-                    }
 
-                }
-                else 
-                {
-                    if preview.is_empty()
-                    {
-                        preview_string.spans.push(Span::styled("Preview", color_settings.placeholder));
                     }
                     else 
                     {
-                        for byte in preview.iter()
+                        if preview.is_empty()
                         {
-                            let style = Self::get_style_for_byte(color_settings, *byte);
-                            preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
-                        }       
+                            preview_string.spans.push(Span::styled("Preview", color_settings.placeholder));
+                        }
+                        else 
+                        {
+                            for byte in preview.iter()
+                            {
+                                let style = Self::get_style_for_byte(color_settings, *byte);
+                                preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
+                            }       
+                        }
                     }
                 }
             }
