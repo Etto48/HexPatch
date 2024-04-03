@@ -1,6 +1,7 @@
 #[derive(Debug, clap::Parser)]
+#[command(name = "hex-patch", about, version, author)]
 pub struct Args
 {
-    #[clap(index = 1, help = "The file to open in the hex editor", default_value = "./")]
+    #[arg(index = 1, help = "The starting path of the editor", default_value = "./")]
     pub path: std::path::PathBuf,
 }
