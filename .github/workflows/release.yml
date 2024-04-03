@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+      
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        run: cargo build --release --verbose
+
+      - name: Upload Asset *nix
+        if: matrix.os == 'ubuntu-latest' || matrix.os == 'macos-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/hex-patch
+          asset_name: hex-patch-${{ matrix.os }}
+          asset_content_type: application/octet-stream
+
+      - name: Upload Asset Windows
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./target/release/hex-patch.exe
+          asset_name: hex-patch-${{ matrix.os }}
+          asset_content_type: application/octet-stream
