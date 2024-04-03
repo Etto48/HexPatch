@@ -8,7 +8,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  release_assets:
+    permissions: write-all
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
