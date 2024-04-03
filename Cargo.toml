@@ -1,7 +1,14 @@
 [package]
 name = "hex-patch"
-version = "0.1.0"
+description = """
+HexPatch is a binary patcher and editor.
+It's capable of disassembling instructions and assembling patches.
+It supports PE and ELF executables for x86/x86_64 architectures."""
+version = "0.1.1"
+authors = ["Ettore Ricci"]
 edition = "2021"
+readme = "README.md"
+license-file = "LICENSE"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
