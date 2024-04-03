@@ -39,5 +39,5 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./target/release/hex-patch.exe
-          asset_name: hex-patch-${{ matrix.os }}
+          asset_name: hex-patch-${{ matrix.os }}.exe
           asset_content_type: application/octet-stream
