@@ -33,6 +33,9 @@ There may be issues with i386 executables, please report any issues.
 - Run command
     ![Run command](./assets/run.png)
 
+- Find text
+    ![Find text](./assets/find_text.png)
+
 - Find symbol
     ![Find symbol](./assets/find_symbol.png)
 

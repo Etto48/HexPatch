@@ -71,6 +71,9 @@ impl <'a> App<'a>
                             ' ' => {
                                 self.request_popup_run();
                             }
+                            '/' => {
+                                self.request_popup_find_text();
+                            }
                             's' => {
                                 self.request_popup_find_symbol();
                             },
@@ -238,6 +241,10 @@ impl <'a> App<'a>
                 Self::handle_string_edit(command, cursor, &event, None, false, None, false)?;
                 *results = self.find_commands(command);
             }
+            Some(PopupState::FindText {text, cursor}) =>
+            {
+                Self::handle_string_edit(text, cursor, &event, None, false, None, false)?;
+            }
             Some(PopupState::FindSymbol {filter, symbols, cursor, scroll: _scroll}) =>
             {
                 Self::handle_string_edit(filter, cursor, &event, None, false, None, false)?;
@@ -299,6 +306,12 @@ impl <'a> App<'a>
                             {
                                 self.run_command(command, *scroll)?;
                                 popup = self.popup.clone();
+                            }
+                            Some(PopupState::FindText { text, cursor: _cursor}) =>
+                            {
+                                self.find_text(&text);
+                                // Maybe removing the popup is not a good idea, more testing needed
+                                popup = None;
                             }
                             Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
                             {
