@@ -22,6 +22,11 @@ pub enum PopupState
         results: Vec<Command>,
         scroll: usize
     },
+    FindText
+    {
+        text: String,
+        cursor: usize,
+    },
     FindSymbol
     {
         filter: String,
@@ -352,6 +357,11 @@ impl <'a> App<'a>
                 }
 
             },
+            PopupState::FindText { text, cursor } =>
+            {
+                *popup_title = "Find Text";
+                
+            }
             PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
             {
                 *popup_title = "Find Symbol";

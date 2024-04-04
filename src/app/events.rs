@@ -300,6 +300,13 @@ impl <'a> App<'a>
                                 self.run_command(command, *scroll)?;
                                 popup = self.popup.clone();
                             }
+                            Some(PopupState::FindText { text, cursor }) =>
+                            {
+                                todo!("Find text not implemented yet");
+                                //self.find_text(&text);
+                                // Maybe removing the popup is not a good idea, more testing needed
+                                //popup = None;
+                            }
                             Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
                             {
                                 self.jump_to_fuzzy_symbol(&filter, &symbols, *scroll);
