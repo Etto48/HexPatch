@@ -314,7 +314,7 @@ impl <'a> App<'a>
         }
     }
 
-    pub(super) fn patch_bytes(&mut self, bytes: &[u8])
+    pub(super) fn patch_bytes(&mut self, bytes: &[u8], start_from_beginning_of_instruction: bool)
     {
         let current_instruction = self.get_current_instruction();
         if let Some(current_instruction) = current_instruction
@@ -325,15 +325,23 @@ impl <'a> App<'a>
                 AssemblyLine::Instruction(instruction) => instruction.file_address,
                 AssemblyLine::SectionTag(_) => self.get_cursor_position().global_byte_index as u64
             };
+            let instruction_offset = if start_from_beginning_of_instruction
+            {
+                0
+            }
+            else
+            {
+                self.get_cursor_position().global_byte_index as usize - current_ip as usize
+            };
             for (i, byte) in bytes.iter().enumerate()
             {
-                self.data[current_ip as usize + i] = *byte;
+                self.data[current_ip as usize + i + instruction_offset] = *byte;
             }
             self.color_instruction_bytes(&current_instruction, true);
             for (i, byte) in bytes.iter().enumerate()
             {
                 let style = Self::get_style_for_byte(&self.color_settings, *byte);
-                let cursor_position = self.get_expected_cursor_position(current_ip as usize + i, true);
+                let cursor_position = self.get_expected_cursor_position(current_ip as usize + i + instruction_offset, true);
                 let [high_byte, low_byte] = Self::u8_to_hex(*byte);
 
                 self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].content = high_byte.to_string().into();
@@ -345,7 +353,7 @@ impl <'a> App<'a>
                 self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].style = style;
             }
             self.dirty = true;
-            self.edit_assembly(bytes.len());
+            self.edit_assembly(bytes.len() + instruction_offset);
             self.update_cursors();
         }
     }
@@ -365,7 +373,7 @@ impl <'a> App<'a>
             let bytes = self.bytes_from_assembly(assembly,current_virtual_address);
             match bytes
             {
-                Ok(bytes) => self.patch_bytes(&bytes),
+                Ok(bytes) => self.patch_bytes(&bytes, true),
                 Err(e) => {
                     self.log(NotificationLevel::Error, &e);
                 }

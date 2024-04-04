@@ -16,6 +16,7 @@ pub enum Command
     Log,
     Run,
     FindSymbol,
+    Text,
     Patch,
     JumpToAddress,
     SwitchView,
@@ -38,6 +39,7 @@ impl Command
             "log",
             "run",
             "find",
+            "text",
             "patch",
             "jump",
             "view",
@@ -56,6 +58,7 @@ impl Command
             "log" => Command::Log,
             "run" => Command::Run,
             "find" => Command::FindSymbol,
+            "text" => Command::Text,
             "patch" => Command::Patch,
             "jump" => Command::JumpToAddress,
             "view" => Command::SwitchView,
@@ -82,6 +85,7 @@ impl Command
             Command::Log => Line::from(vec![Span::styled("log", s0), Span::styled(" Open the log.", s1)]),
             Command::Run => Line::from(vec![Span::styled("run", s0), Span::styled(" Run a command.", s1)]),
             Command::FindSymbol => Line::from(vec![Span::styled("find", s0), Span::styled(" Find a symbol.", s1)]),
+            Command::Text => Line::from(vec![Span::styled("text", s0), Span::styled(" Insert text.", s1)]),
             Command::Patch => Line::from(vec![Span::styled("patch", s0), Span::styled(" Patch assembly.", s1)]),
             Command::JumpToAddress => Line::from(vec![Span::styled("jump", s0), Span::styled(" Jump to address.", s1)]),
             Command::SwitchView => Line::from(vec![Span::styled("view", s0), Span::styled(" Switch between text and assembly.", s1)]),
@@ -136,6 +140,9 @@ impl <'a> App<'a>
             }
             Command::FindSymbol => {
                 self.request_popup_find_symbol();
+            }
+            Command::Text => {
+                self.request_popup_text();
             }
             Command::Patch => {
                 self.request_popup_patch();
@@ -254,6 +261,14 @@ impl <'a> App<'a>
             symbols: Vec::new(), 
             cursor: 0, 
             scroll: 0 }
+        );
+    }
+
+    pub(super) fn request_popup_text(&mut self)
+    {
+        self.popup = Some(PopupState::InsertText { 
+            text: String::new(), 
+            cursor: 0 }
         );
     }
 

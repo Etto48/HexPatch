@@ -74,6 +74,9 @@ impl <'a> App<'a>
                             's' => {
                                 self.request_popup_find_symbol();
                             },
+                            't' => {
+                                self.request_popup_text();
+                            },
                             'p' => {
                                 self.request_popup_patch();
                             },
@@ -240,6 +243,10 @@ impl <'a> App<'a>
                 Self::handle_string_edit(filter, cursor, &event, None, false, None, false)?;
                 *symbols = self.find_symbols(filter);
             }
+            Some(PopupState::InsertText { text, cursor }) =>
+            {
+                Self::handle_string_edit(text, cursor, &event, None, false, None, true)?;
+            }
             Some(PopupState::Patch {assembly, preview, cursor}) =>
             {
                 Self::handle_string_edit(assembly, cursor, &event, None, false, None, true)?;
@@ -300,6 +307,11 @@ impl <'a> App<'a>
                             }
                             Some(PopupState::Log(_)) =>
                             {
+                                popup = None;
+                            }
+                            Some(PopupState::InsertText { text, cursor: _cursor }) =>
+                            {
+                                self.insert_text(&text);
                                 popup = None;
                             }
                             Some(PopupState::Patch {assembly, preview: _preview, cursor: _cursor}) =>
