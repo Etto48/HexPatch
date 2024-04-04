@@ -61,7 +61,7 @@ impl <'a> App<'a>
 
     pub(super) fn insert_text(&mut self, text: &str)
     {
-        self.patch_bytes(text.as_bytes());
+        self.patch_bytes(text.as_bytes(), false);
     }
 
     pub(super) fn update_text_cursor(&mut self)

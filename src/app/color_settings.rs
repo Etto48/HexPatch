@@ -44,6 +44,8 @@ pub struct ColorSettings
     pub menu_text: Style,
     pub menu_text_selected: Style,
 
+    pub insert_text_status: Style,
+
     pub command_name: Style,
     pub command_description: Style,
     pub command_selected: Style,
@@ -114,6 +116,8 @@ impl Default for ColorSettings
             no_selected: Style::default().fg(Color::Black).bg(Color::Red),
             menu_text: Style::default().fg(Color::White),
             menu_text_selected: Style::default().fg(Color::Black).bg(Color::White),
+
+            insert_text_status: Style::default().fg(Color::Black).bg(status_bar_bg),
 
             command_name: Style::default().fg(Color::LightGreen),
             command_description: Style::default().fg(Color::Gray),

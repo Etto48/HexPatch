@@ -66,7 +66,7 @@ impl <'a> App<'a>
             Some(PopupState::Log(_)) => screen_height - 4 - 2,
             Some(PopupState::Help(_)) => screen_height - 4 - 2,
             Some(PopupState::Patch{..}) => screen_height - 6 - 2,
-            Some(PopupState::InsertText{..}) => screen_height - 2 - 2,
+            Some(PopupState::InsertText{..}) => screen_height - 5 - 2,
             _ => unimplemented!("Popup is not supposed to have scrollable lines")
         };
 
@@ -500,7 +500,7 @@ impl <'a> App<'a>
             {
                 *popup_title = "Text";
                 let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
-                let height = 2 + available_editable_text_lines as u16;
+                let height = 3 + 2 + available_editable_text_lines as u16;
                 let width = 60;
                 *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
                 let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, text, *cursor, "Text");
@@ -516,6 +516,10 @@ impl <'a> App<'a>
                 }
                 let editable_lines_count = editable_lines.len();
                 popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines as usize));
+                for _ in 0..(available_editable_text_lines as isize - editable_lines_count as isize)
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
                 if editable_lines_count as isize - skip_lines as isize > available_editable_text_lines as isize
                 {
                     popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
@@ -524,6 +528,9 @@ impl <'a> App<'a>
                 {
                     popup_text.lines.push(Line::raw(""));
                 }
+                let status = format!("{}B",text.as_bytes().len());
+                let padding = width as usize - status.len();
+                popup_text.lines.push(Line::styled(format!("{}{}",status, " ".repeat(padding)), color_settings.insert_text_status).left_aligned())
             }
             PopupState::Patch {assembly,preview,  cursor} =>
             {
