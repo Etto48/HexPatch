@@ -165,23 +165,34 @@ impl <'a> App<'a>
         }
     }
 
-    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize) -> Line<'a>
+    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize, show_cursor: bool) -> Line<'a>
     {
         let string = s.to_string();
         if string.len() == 0
         {
             return Line::from(vec![Span::raw(" "), Span::styled(placeholder.to_string(), color_settings.placeholder), Span::raw(" ")]);
         }
-        let mut spans = vec![Span::raw(" ")];
+        let mut spans = vec![];
+        
+        
 
         let available_width = available_width.saturating_sub(2);
 
         let skip = 0.max(cursor as isize - (available_width as isize - 1) / 2) as usize;
         let skip = skip.min(string.len().saturating_sub(available_width));
 
+        if skip > 0
+        {
+            spans.push(Span::styled("<", color_settings.menu_text_selected));
+        }
+        else
+        {
+            spans.push(Span::raw(" "));
+        }
+
         for (i, c) in string.chars().enumerate().skip(skip).take(available_width)
         {
-            if i == cursor
+            if i == cursor && show_cursor
             {
                 spans.push(Span::styled(c.to_string(), color_settings.menu_text_selected));
             }
@@ -190,56 +201,92 @@ impl <'a> App<'a>
                 spans.push(Span::raw(c.to_string()));
             }
         }
-        
-        spans.push(Span::styled(" ", if cursor == string.len() {
-            color_settings.menu_text_selected
-        } else {
-            color_settings.menu_text
-        }));
+
+        if s.len() as isize - skip as isize > available_width as isize
+        {
+            spans.push(Span::styled(">", color_settings.menu_text_selected));
+        }
+        else
+        {
+            spans.push(Span::styled(" ", if cursor == string.len() {
+                color_settings.menu_text_selected
+            } else {
+                color_settings.menu_text
+            }));
+        }
+
         Line::from(spans)
     }
 
-    pub(super) fn get_multiline_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str) -> (Vec<Line<'a>>, usize)
+    fn get_line_number_string(line_number: usize, char_for_line_count: usize) -> String
+    {
+        format!("{:width$}", line_number, width = char_for_line_count)
+    }
+
+    fn get_multiline_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize) -> (Vec<Line<'a>>, usize)
     {
         let string = s.to_string();
+        let line_count = &string.chars().filter(|c| *c == '\n').count() + 1;
+        let char_for_line_count = line_count.to_string().len();
         if string.len() == 0
         {
-            return (vec![Line::from(vec![Span::styled("   1 ", color_settings.patch_line_number), Span::styled(placeholder.to_string(), color_settings.placeholder), Span::raw(" ")]).left_aligned()], 0);
+            return (vec![Line::from(vec![Span::styled(Self::get_line_number_string(1, char_for_line_count), color_settings.patch_line_number), Span::raw(" "), Span::styled(placeholder.to_string(), color_settings.placeholder)]).left_aligned()], 0);
         }
         let mut lines = Vec::new();
         let mut selected_line = 0;
-        let mut current_line = vec![Span::styled("   1 ", color_settings.patch_line_number)];
+        let mut current_line = String::new();
+        let mut start_of_line_index = 0;
         for (i, c) in string.chars().enumerate()
         {
-            let style = if i == cursor
+            if i == cursor
             {
                 selected_line = lines.len();
-                color_settings.menu_text_selected
             }
-            else
-            {
-                color_settings.menu_text
-            };
             if c == '\n'
             {
-                current_line.push(Span::styled(" ", style));
-                lines.push(Line::from(current_line).left_aligned());
-                current_line = vec![Span::styled(format!(" {:3} ", lines.len() + 1), color_settings.patch_line_number)];
+                let line_number = Span::styled(Self::get_line_number_string(lines.len() + 1, char_for_line_count), color_settings.patch_line_number);
+                let mut line_cursor = cursor as isize - start_of_line_index as isize;
+                let mut show_cursor = true;
+                if line_cursor > current_line.len() as isize || line_cursor < 0
+                {
+                    show_cursor = false;
+                    line_cursor = 0;
+                }
+                else {
+                    current_line.push(' ');
+                }
+                start_of_line_index = i + 1;
+                let used_width = line_number.content.len();
+                let mut line = Self::get_line_from_string_and_cursor(color_settings, &current_line, line_cursor as usize, "", available_width - used_width, show_cursor);
+                line.spans.insert(0, line_number);
+                lines.push(line.left_aligned());
+                current_line.clear();
             }
             else
             {
-                current_line.push(Span::styled(c.to_string(), style));
+                current_line.push(c);
             }
         }
         if cursor == string.len()
         {
+            if current_line.len() == 0
+            {
+                current_line.push(' ');
+            }
             selected_line = lines.len();
-            current_line.push(Span::styled(" ", color_settings.menu_text_selected));
         }
-        if current_line.len() > 0
+        let line_number = Span::styled(Self::get_line_number_string(lines.len() + 1, char_for_line_count), color_settings.patch_line_number);
+        let mut line_cursor = cursor as isize - start_of_line_index as isize;
+        let mut show_cursor = true;
+        if line_cursor > current_line.len() as isize || line_cursor < 0
         {
-            lines.push(Line::from(current_line).left_aligned());
+            show_cursor = false;
+            line_cursor = 0;
         }
+        let used_width = line_number.content.len();
+        let mut line = Self::get_line_from_string_and_cursor(color_settings, &current_line, line_cursor as usize, "", available_width - used_width, show_cursor);
+        line.spans.insert(0, line_number);
+        lines.push(line.left_aligned());
         (lines, selected_line)
     }
 
@@ -255,7 +302,7 @@ impl <'a> App<'a>
                 let max_results = self.get_scrollable_popup_line_count()?;
                 let height = max_results + 2 + 5;
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
 
                 let (prefix, currently_open_path_text) = if let Some(parent) = currently_open_path.parent()
                 {
@@ -321,7 +368,7 @@ impl <'a> App<'a>
                 let max_results = self.get_scrollable_popup_line_count()?;
                 let height = max_results + 2 + 4;
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
-                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command", available_width);
+                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command", available_width, true);
                 editable_string.spans.insert(0, Span::styled(" >", color_settings.menu_text));
                 popup_text.lines.extend(
                     vec![
@@ -360,9 +407,24 @@ impl <'a> App<'a>
                 let max_symbols = self.get_scrollable_popup_line_count()?;
                 let height = max_symbols + 2 + 4;
                 let mut selection = *scroll;
-                let scroll = if *scroll > symbols.len() - max_symbols/2
+                let symbols_len = if symbols.len() > 0
                 {
-                    symbols.len().saturating_sub(max_symbols)
+                    symbols.len()
+                }
+                else
+                {
+                    if let Some(symbol_table) = self.header.get_symbols()
+                    {
+                        symbol_table.len()
+                    }
+                    else 
+                    {
+                        0
+                    }   
+                };
+                let scroll = if *scroll as isize > symbols_len as isize - (max_symbols as isize)/2
+                {
+                    symbols_len.saturating_sub(max_symbols)
                 }
                 else if *scroll < max_symbols/2
                 {
@@ -370,13 +432,13 @@ impl <'a> App<'a>
                 }
                 else
                 {
-                    *scroll - max_symbols/2
+                    scroll.saturating_sub(max_symbols/2)
                 };
                 selection = selection.saturating_sub(scroll);
 
 
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter", available_width);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter", available_width, true);
                 if self.header.get_symbols().is_some()
                 {
                     let symbols_as_lines = if symbols.len() > 0 || filter.len() == 0
@@ -501,9 +563,10 @@ impl <'a> App<'a>
                 *popup_title = "Text";
                 let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
                 let height = 3 + 2 + available_editable_text_lines as u16;
-                let width = 60;
+                let available_width = 58;
+                let width = available_width as u16 + 2;
                 *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
-                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, text, *cursor, "Text");
+                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width);
                 let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
                 let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines as usize));
                 if skip_lines == 0
@@ -537,10 +600,10 @@ impl <'a> App<'a>
                 *popup_title = "Patch";
                 let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
                 let height = 6 + available_editable_text_lines as u16;
-
-                let width = 60;
+                let available_width = 58;
+                let width = available_width as u16 + 2;
                 *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
-                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly");
+                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly", available_width);
                 let preview_line = self.get_patch_preview(color_settings, preview);
                 popup_text.lines.extend(
                     vec![
@@ -576,7 +639,7 @@ impl <'a> App<'a>
                 let width = available_width + 2;
                 let height = 3;
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16/2, width as u16, height as u16);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location", available_width);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location", available_width, true);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
                 );
