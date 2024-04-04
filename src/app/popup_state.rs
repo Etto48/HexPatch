@@ -30,6 +30,11 @@ pub enum PopupState
         scroll: usize
     },
     Log(usize),
+    InsertText
+    {
+        text: String,
+        cursor: usize
+    },
     Patch
     {
         assembly: String,
@@ -61,7 +66,8 @@ impl <'a> App<'a>
             Some(PopupState::Log(_)) => screen_height - 4 - 2,
             Some(PopupState::Help(_)) => screen_height - 4 - 2,
             Some(PopupState::Patch{..}) => screen_height - 6 - 2,
-            _ => 0
+            Some(PopupState::InsertText{..}) => screen_height - 2 - 2,
+            _ => unimplemented!("Popup is not supposed to have scrollable lines")
         };
 
         if lines <= 0
@@ -488,6 +494,35 @@ impl <'a> App<'a>
                     {
                         popup_text.lines.push(Line::raw(""));
                     }
+                }
+            }
+            PopupState::InsertText {text, cursor} =>
+            {
+                *popup_title = "Text";
+                let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
+                let height = 2 + available_editable_text_lines as u16;
+                let width = 60;
+                *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
+                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, text, *cursor, "Text");
+                let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
+                let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines as usize));
+                if skip_lines == 0
+                {
+                    popup_text.lines.push(Line::raw(""));
+                }
+                else 
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                }
+                let editable_lines_count = editable_lines.len();
+                popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines as usize));
+                if editable_lines_count as isize - skip_lines as isize > available_editable_text_lines as isize
+                {
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                }
+                else
+                {
+                    popup_text.lines.push(Line::raw(""));
                 }
             }
             PopupState::Patch {assembly,preview,  cursor} =>

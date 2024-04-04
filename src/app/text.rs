@@ -59,6 +59,11 @@ impl <'a> App<'a>
         ret
     }
 
+    pub(super) fn insert_text(&mut self, text: &str)
+    {
+        self.patch_bytes(text.as_bytes());
+    }
+
     pub(super) fn update_text_cursor(&mut self)
     {
         let cursor_position = self.get_cursor_position();
