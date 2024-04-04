@@ -134,8 +134,6 @@ impl <'a> App<'a>
 
     pub fn run<B: Backend>(&mut self, terminal: &mut ratatui::Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
     {
-        self.log_header_info();
-
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_if_needed(self.screen_size.0);
 
