@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span, Text};
 
-use super::{color_settings::ColorSettings, App};
+use super::{color_settings::ColorSettings, notification::NotificationLevel, App};
 
 impl <'a> App<'a>
 {
@@ -84,6 +84,57 @@ impl <'a> App<'a>
         {
             self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = self.color_settings.text_selected;
         }
+    }
+
+    fn found_text_here(&self, starting_from: usize, text: &str) -> bool
+    {
+        for (i,byte) in text.bytes().enumerate()
+        {
+            if self.data.len() <= starting_from + i
+            {
+                return false;
+            }
+            else if self.data[starting_from + i] != byte
+            {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub(super) fn find_text(&mut self, text: &str)
+    {
+        if text.len() == 0 || self.data.len() == 0
+        {
+            return;
+        }
+        let already_searched = self.text_last_searched_string == text;
+        if !already_searched
+        {
+            self.text_last_searched_string = text.to_string();
+        }
+        let mut search_here = self.get_cursor_position().global_byte_index;
+        // find the next occurence of the text
+        if already_searched && Self::found_text_here(&self, search_here, text)
+        {
+            search_here += text.len();
+        }
+        else
+        {
+            search_here = 0;
+        }
+        let max_search_index = self.data.len() + search_here;
+        while search_here < max_search_index
+        {
+            let actual_search_here = search_here % self.data.len();
+            if Self::found_text_here(&self, actual_search_here, text)
+            {
+                self.jump_to(actual_search_here, false);
+                return;
+            }
+            search_here += 1;
+        }
+        self.log(NotificationLevel::Warning, "Text not found");
     }
 
     pub(super) fn u8_to_char(input: u8) -> char

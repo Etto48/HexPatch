@@ -15,6 +15,7 @@ pub enum Command
     Open,
     Log,
     Run,
+    FindText,
     FindSymbol,
     Text,
     Patch,
@@ -38,7 +39,8 @@ impl Command
             "open",
             "log",
             "run",
-            "find",
+            "ftext",
+            "fsym",
             "text",
             "patch",
             "jump",
@@ -57,7 +59,8 @@ impl Command
             "open" => Command::Open,
             "log" => Command::Log,
             "run" => Command::Run,
-            "find" => Command::FindSymbol,
+            "ftext" => Command::FindText,
+            "fsym" => Command::FindSymbol,
             "text" => Command::Text,
             "patch" => Command::Patch,
             "jump" => Command::JumpToAddress,
@@ -84,7 +87,8 @@ impl Command
             Command::Open => Line::from(vec![Span::styled("open", s0), Span::styled(" Open a file.", s1)]),
             Command::Log => Line::from(vec![Span::styled("log", s0), Span::styled(" Open the log.", s1)]),
             Command::Run => Line::from(vec![Span::styled("run", s0), Span::styled(" Run a command.", s1)]),
-            Command::FindSymbol => Line::from(vec![Span::styled("find", s0), Span::styled(" Find a symbol.", s1)]),
+            Command::FindText => Line::from(vec![Span::styled("ftext", s0), Span::styled(" Find text.", s1)]),
+            Command::FindSymbol => Line::from(vec![Span::styled("fsym", s0), Span::styled(" Find a symbol.", s1)]),
             Command::Text => Line::from(vec![Span::styled("text", s0), Span::styled(" Insert text.", s1)]),
             Command::Patch => Line::from(vec![Span::styled("patch", s0), Span::styled(" Patch assembly.", s1)]),
             Command::JumpToAddress => Line::from(vec![Span::styled("jump", s0), Span::styled(" Jump to address.", s1)]),
@@ -137,6 +141,9 @@ impl <'a> App<'a>
             }
             Command::Run => {
                 self.request_popup_run();
+            }
+            Command::FindText => {
+                self.request_popup_find_text();
             }
             Command::FindSymbol => {
                 self.request_popup_find_symbol();
@@ -261,6 +268,14 @@ impl <'a> App<'a>
             symbols: Vec::new(), 
             cursor: 0, 
             scroll: 0 }
+        );
+    }
+
+    pub(super) fn request_popup_find_text(&mut self)
+    {
+        self.popup = Some(PopupState::FindText { 
+            text: self.text_last_searched_string.clone(), 
+            cursor: 0 }
         );
     }
 
