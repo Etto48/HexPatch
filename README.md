@@ -36,6 +36,9 @@ There may be issues with i386 executables, please report any issues.
 - Find symbol
     ![Find symbol](./assets/find_symbol.png)
 
+- Insert Text
+    ![Insert text](./assets/text.png)
+
 - Patch
     ![Patch](./assets/patch.png)
     Create a new line with `SHIFT + ENTER`.

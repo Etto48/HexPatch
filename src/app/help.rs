@@ -44,6 +44,7 @@ impl <'a> App<'a>
             HelpLine::new("V", "Change view"),
             HelpLine::new("J", "Jumpt to location"),
             HelpLine::new("S", "Search symbol"),
+            HelpLine::new("T", "Insert text"),
             HelpLine::new("P", "Patch assembly"),
             HelpLine::new("L", "Open log"),
             HelpLine::new("H", "Help"),
