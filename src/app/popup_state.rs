@@ -411,7 +411,7 @@ impl <'a> App<'a>
                 let width = available_width + 2;
                 let height = 3;
                 *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16/2, width as u16, height as u16);
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width);
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width, true);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
                 );
