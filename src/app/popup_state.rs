@@ -241,10 +241,6 @@ impl <'a> App<'a>
             if i == cursor
             {
                 selected_line = lines.len();
-                if c == '\n'
-                {
-                    current_line.push(' ');
-                }
             }
             if c == '\n'
             {
@@ -255,6 +251,9 @@ impl <'a> App<'a>
                 {
                     show_cursor = false;
                     line_cursor = 0;
+                }
+                else {
+                    current_line.push(' ');
                 }
                 start_of_line_index = i + 1;
                 let used_width = line_number.content.len();
@@ -270,8 +269,11 @@ impl <'a> App<'a>
         }
         if cursor == string.len()
         {
+            if current_line.len() == 0
+            {
+                current_line.push(' ');
+            }
             selected_line = lines.len();
-            current_line.push(' ');
         }
         let line_number = Span::styled(Self::get_line_number_string(lines.len() + 1, char_for_line_count), color_settings.patch_line_number);
         let mut line_cursor = cursor as isize - start_of_line_index as isize;
