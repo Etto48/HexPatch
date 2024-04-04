@@ -184,7 +184,7 @@ impl <'a> App<'a>
         }
         if address >= self.data.len()
         {
-            address = self.data.len() - 1;
+            address = self.data.len().saturating_sub(1);
         }
 
         let expected_cursor_position = self.get_expected_cursor_position(address, false);
