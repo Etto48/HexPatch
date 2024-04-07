@@ -1,5 +1,6 @@
 use std::{collections::HashMap, rc::Rc};
 
+use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
 use object::{read::elf::{ElfFile32, ElfFile64}, BigEndian, LittleEndian, Object, ObjectSection, ObjectSymbol, SectionKind};
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -216,5 +217,11 @@ impl ElfHeader
     pub fn get_symbols(&self) -> Rc<HashMap<u64,String>>
     {
         self.symbol_table.clone()
+    }
+
+    pub fn get_decoder(&self) -> CsResult<Capstone>
+    {
+        // TODO: Add support for other architectures
+        Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build()
     }
 }

@@ -1,5 +1,7 @@
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
+use capstone::{arch::BuildsCapstone, Capstone, CsResult};
+
 use super::{elf::ElfHeader, pe::PEHeader};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -186,5 +188,29 @@ impl Header
             .iter()
             .find(|x| virtual_address >= x.virtual_address && virtual_address < x.virtual_address + x.size)
             .map(|x| x.address + virtual_address - x.virtual_address)
+    }
+
+    pub fn get_decoder(&self) -> CsResult<Capstone>
+    {
+        let ret = match self
+        {
+            Header::Elf(header) => 
+            {
+                header.get_decoder()
+            },
+            Header::PE(header) => 
+            {
+                header.get_decoder()
+            },
+            Header::None => Capstone::new().x86().mode(capstone::arch::x86::ArchMode::Mode64).build(),
+        };
+        match ret
+        {
+            Ok(mut cs) => {
+                cs.set_skipdata(true).expect("Failed to set skipdata");
+                Ok(cs)
+            }
+            Err(e) => Err(e),
+        }
     }
 }

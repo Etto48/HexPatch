@@ -1,5 +1,6 @@
 use std::{collections::HashMap, fs::File, rc::Rc};
 
+use capstone::{arch::BuildsCapstone, Capstone, CsResult};
 use object::{pe::ImageNtHeaders64, read::pe::PeFile, LittleEndian, Object, ObjectSymbol};
 use pdb::FallibleIterator;
 
@@ -162,5 +163,11 @@ impl PEHeader
     pub fn bitness(&self) -> u32
     {
         self.bitness
+    }
+
+    pub fn get_decoder(&self) -> CsResult<Capstone>
+    {
+        // TODO: Add support for other architectures
+        Capstone::new().x86().mode(capstone::arch::x86::ArchMode::Mode64).build()
     }
 }
