@@ -198,7 +198,8 @@ impl App
             current_byte = section.file_offset as usize;
             match section.name.as_str()
             {
-                ".text" => {
+                ".text" |
+                "__text" => {
                     lines.push(
                         AssemblyLine::SectionTag(
                             SectionTag {
