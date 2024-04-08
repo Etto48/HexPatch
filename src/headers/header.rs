@@ -90,7 +90,7 @@ impl Header
             {
                 for section in &header.sections
                 {
-                    if section.name == ".text"
+                    if section.name == ".text" || section.name == "__text"
                     {
                         return Some(section.clone())
                     }
