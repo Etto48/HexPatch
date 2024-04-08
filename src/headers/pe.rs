@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fs::File, rc::Rc};
+use std::{collections::HashMap, fs::File};
 
 use capstone::{Capstone, CsResult};
 use object::{pe::ImageNtHeaders64, read::pe::PeFile, Architecture, LittleEndian, Object, ObjectSymbol};
@@ -28,7 +28,7 @@ pub struct PEHeader
     pub architecture: Architecture,
     pub bitness: u32,
     pub section_table: Vec<Section>,
-    pub symbol_table: Rc<HashMap<u64, String>>,
+    pub symbol_table: HashMap<u64, String>,
     pub inverse_symbol_table: HashMap<String, u64>
 }
 
@@ -152,7 +152,7 @@ impl PEHeader
                     architecture,
                     bitness,
                     section_table,
-                    symbol_table: Rc::new(symbols),
+                    symbol_table: symbols,
                     inverse_symbol_table
                 })
             },
@@ -160,9 +160,9 @@ impl PEHeader
         }
     }
 
-    pub fn get_symbols(&self) -> Rc<HashMap<u64, String>>
+    pub fn get_symbols(&self) -> &HashMap<u64, String>
     {
-        self.symbol_table.clone()
+        &self.symbol_table
     }
 
     pub fn bitness(&self) -> u32

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, rc::Rc};
+use std::{collections::HashMap, fmt::Display};
 
 use capstone::Insn;
 
@@ -11,7 +11,7 @@ pub struct Instruction {
 }
 
 impl Instruction {
-    pub fn new(instruction: &Insn, symbols: Option<Rc<HashMap<u64,String>>>) -> Self {
+    pub fn new(instruction: &Insn, symbols: Option<&HashMap<u64,String>>) -> Self {
         let mnemonic = instruction.mnemonic().expect("Failed to get mnemonic");
         let operands = instruction.op_str().expect("Failed to get operands");
         let operands = operands.split(", ").collect::<Vec<_>>();

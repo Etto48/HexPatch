@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display, rc::Rc};
+use std::{collections::HashMap, fmt::Display};
 
 use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
 use object::Architecture;
@@ -150,7 +150,7 @@ impl Header
         }
     }
 
-    pub fn get_symbols(&self) -> Option<Rc<HashMap<u64,String>>>
+    pub fn get_symbols(&self) -> Option<&HashMap<u64,String>>
     {
         match self
         {

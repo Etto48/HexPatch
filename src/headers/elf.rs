@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
 use capstone::{Capstone, CsResult};
 use object::{read::elf::{ElfFile32, ElfFile64}, Architecture, BigEndian, LittleEndian, Object, ObjectSection, ObjectSymbol, SectionKind};
@@ -51,7 +51,7 @@ pub struct ElfHeader
     pub endianness: Endianness,
     pub entry_point: u64,
     pub section_table: Vec<Section>,
-    pub symbol_table: Rc<HashMap<u64, String>>,
+    pub symbol_table: HashMap<u64, String>,
     pub inverse_symbol_table: HashMap<String, u64>
 }
 
@@ -210,7 +210,7 @@ impl ElfHeader
             endianness,
             entry_point,
             section_table: sections,
-            symbol_table: Rc::new(symbols),
+            symbol_table: symbols,
             inverse_symbol_table
         })
     }
@@ -226,9 +226,9 @@ impl ElfHeader
         dbg!(header);
     }
 
-    pub fn get_symbols(&self) -> Rc<HashMap<u64,String>>
+    pub fn get_symbols(&self) -> &HashMap<u64,String>
     {
-        self.symbol_table.clone()
+        &self.symbol_table
     }
 
     pub fn get_decoder(&self) -> CsResult<Capstone>
