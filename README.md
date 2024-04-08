@@ -3,11 +3,24 @@
 [![Rust](https://github.com/Etto48/HexPatch/actions/workflows/rust.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/rust.yml)
 
 HexPatch is a binary patcher and editor with terminal user interface (TUI), it's capable of disassembling instructions and assembling patches.
-It supports PE and ELF executables, both with debug symbols.
+It supports a variety of architectures and file formats.
 
 ## Supported file formats
 
-Both ELF and PE files are supported. The following architectures are supported:
+The following file formats are supported:
+
+- Coff
+- CoffBig
+- Elf32
+- Elf64
+- MachO32
+- MachO64
+- Pe32
+- Pe64
+- Xcoff32
+- Xcoff64
+
+The following architectures are supported:
 
 - Aarch64
 - Aarch64_Ilp32
