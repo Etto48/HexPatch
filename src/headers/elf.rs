@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use capstone::{Capstone, CsResult};
+use keystone_engine::{Keystone, KeystoneError};
 use object::{read::elf::{ElfFile32, ElfFile64}, Architecture, BigEndian, LittleEndian, Object, ObjectSection, ObjectSymbol, SectionKind};
 
 use super::header::Header;
@@ -234,5 +235,10 @@ impl ElfHeader
     pub fn get_decoder(&self) -> CsResult<Capstone>
     {
         Header::get_decoder_for_arch(&self.architecture)
+    }
+
+    pub fn get_encoder(&self) -> Result<Keystone, KeystoneError>
+    {
+        Header::get_encoder_for_arch(&self.architecture)
     }
 }

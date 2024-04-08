@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
+use keystone_engine::{Arch, Keystone, KeystoneError, Mode};
 use object::Architecture;
 
 use super::{elf::ElfHeader, pe::PEHeader};
@@ -264,6 +265,66 @@ impl Header
         }
     }
 
+    pub(super) fn get_encoder_for_arch(architecture: &Architecture) -> Result<Keystone, KeystoneError>
+    {
+        match architecture
+        {
+            Architecture::Aarch64 =>
+            {
+                Keystone::new(Arch::ARM64, Mode::LITTLE_ENDIAN)
+            },
+            Architecture::Aarch64_Ilp32 => 
+            {
+                Keystone::new(Arch::ARM64, Mode::LITTLE_ENDIAN)
+            },
+            Architecture::Arm => 
+            {
+                Keystone::new(Arch::ARM, Mode::ARM)
+            },
+            Architecture::I386 => 
+            {
+                Keystone::new(Arch::X86, Mode::MODE_32)
+            },
+            Architecture::X86_64 => 
+            {
+                Keystone::new(Arch::X86, Mode::MODE_64)
+            },
+            Architecture::X86_64_X32 => 
+            {
+                Keystone::new(Arch::X86, Mode::MODE_32)
+            },
+            Architecture::Hexagon => 
+            {
+                Keystone::new(Arch::HEXAGON, Mode::MODE_32)
+            },
+            Architecture::Mips => 
+            {
+                Keystone::new(Arch::MIPS, Mode::MIPS32)
+            },
+            Architecture::Mips64 => 
+            {
+                Keystone::new(Arch::MIPS, Mode::MIPS64)
+            },
+            Architecture::PowerPc => 
+            {
+                Keystone::new(Arch::PPC, Mode::PPC32)
+            },
+            Architecture::PowerPc64 => 
+            {
+                Keystone::new(Arch::PPC, Mode::PPC64)
+            },
+            Architecture::S390x => 
+            {
+                Keystone::new(Arch::SYSTEMZ, Mode::MODE_32)
+            },
+            Architecture::Sparc64 => 
+            {
+                Keystone::new(Arch::SPARC, Mode::SPARC64)
+            },
+            _ => Keystone::new(Arch::X86, Mode::MODE_64),
+        }
+    }
+
     pub fn get_decoder(&self) -> CsResult<Capstone>
     {
         let ret = match self
@@ -286,5 +347,15 @@ impl Header
             }
             Err(e) => Err(e),
         }
+    }
+
+    pub fn get_encoder(&self) -> Result<Keystone, KeystoneError>
+    {
+        let ret = match self {
+            Header::Elf(h) => h.get_encoder(),
+            Header::PE(h) => h.get_encoder(),
+            Header::None => Keystone::new(Arch::X86, Mode::MODE_64),
+        };
+        ret
     }
 }
