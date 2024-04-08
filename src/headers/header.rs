@@ -69,6 +69,16 @@ impl Header
         }
     }
 
+    pub fn architecture(&self) -> Architecture
+    {
+        match self
+        {
+            Header::Elf(h) => h.architecture,
+            Header::PE(h) => h.architecture,
+            Header::None => Architecture::Unknown,
+        }
+    }
+
     pub fn get_sections(&self) -> Vec<Section>
     {
         match self
