@@ -4,14 +4,14 @@ use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
 use keystone_engine::{Arch, Keystone, KeystoneError, Mode};
 use object::Architecture;
 
-use super::{elf::ElfHeader, pe::PEHeader};
+use super::generic::GenericHeader;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Section
 {
     pub name: String,
     pub virtual_address: u64,
-    pub address: u64,
+    pub file_offset: u64,
     pub size: u64,
 }
 
@@ -19,15 +19,14 @@ impl Display for Section
 {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
-        write!(f, "{}: [{:X} - {:X})", self.name, self.address, self.address + self.size)
+        write!(f, "{}: [{:X} - {:X})", self.name, self.file_offset, self.file_offset + self.size)
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Header
 {
-    Elf(ElfHeader),
-    PE(PEHeader),
+    GenericHeader(GenericHeader),
     None,
 }
 
@@ -35,27 +34,23 @@ impl Header
 {
     pub fn parse_header(bytes: &[u8]) -> Header
     {
-        let elf_header = ElfHeader::parse_header(bytes);
-        match elf_header
+        let header = GenericHeader::parse_header(bytes);
+        match header
         {
-            Some(header) => return Header::Elf(header),
-            None => {},
-        };
-        let pe_header = PEHeader::parse_header(bytes);
-        match pe_header
-        {
-            Some(header) => return Header::PE(header),
-            None => {},
-        };
-        Header::None
+            Some(header) => Header::GenericHeader(header),
+            None => Header::None,
+        }
     }
 
     pub fn bitness(&self) -> u32
     {
         match self
         {
-            Header::Elf(header) => header.bitness(),
-            Header::PE(header) => header.bitness(),
+            Header::GenericHeader(header) => match header.bitness
+            {
+                super::generic::Bitness::Bit32 => 32,
+                super::generic::Bitness::Bit64 => 64,
+            },
             Header::None => 64,
         }
     }
@@ -64,8 +59,7 @@ impl Header
     {
         match self
         {
-            Header::Elf(header) => header.entry_point,
-            Header::PE(header) => header.entry_point,
+            Header::GenericHeader(header) => header.entry,
             Header::None => 0,
         }
     }
@@ -74,8 +68,7 @@ impl Header
     {
         match self
         {
-            Header::Elf(h) => h.architecture,
-            Header::PE(h) => h.architecture,
+            Header::GenericHeader(header) => header.architecture,
             Header::None => Architecture::Unknown,
         }
     }
@@ -84,37 +77,7 @@ impl Header
     {
         match self
         {
-            Header::Elf(header) => 
-            {
-                let mut sections = Vec::new();
-                for section in &header.section_table
-                {
-                    sections.push(Section
-                    {
-                        name: section.name.clone(),
-                        virtual_address: section.address as u64,
-                        address: section.offset as u64,
-                        size: section.size as u64,
-                    })
-                }
-                sections
-            
-            },
-            Header::PE(header) => 
-            {
-                let mut sections = Vec::new();
-                for section in &header.section_table
-                {
-                    sections.push(Section
-                    {
-                        name: section.name.clone(),
-                        virtual_address: section.virtual_address as u64,
-                        address: section.pointer_to_raw_data as u64,
-                        size: section.size_of_raw_data as u64,
-                    })
-                }
-                sections
-            },
+            Header::GenericHeader(header) => header.sections.clone(),
             Header::None => Vec::new(),
         }
     }
@@ -123,36 +86,13 @@ impl Header
     {
         match self
         {
-            Header::Elf(header) => 
+            Header::GenericHeader(header) => 
             {
-                for section in &header.section_table
+                for section in &header.sections
                 {
                     if section.name == ".text"
                     {
-                        return Some(Section
-                        {
-                            name: section.name.clone(),
-                            virtual_address: section.address as u64,
-                            address: section.offset as u64,
-                            size: section.size as u64,
-                        });
-                    }
-                }
-                None
-            },
-            Header::PE(header) => 
-            {
-                for section in &header.section_table
-                {
-                    if section.name == ".text"
-                    {
-                        return Some(Section
-                        {
-                            name: section.name.clone(),
-                            virtual_address: section.virtual_address as u64,
-                            address: section.pointer_to_raw_data as u64,
-                            size: section.size_of_raw_data as u64,
-                        });
+                        return Some(section.clone())
                     }
                 }
                 None
@@ -165,16 +105,8 @@ impl Header
     {
         match self
         {
-            Header::Elf(header) => 
-            {
-                Some(header.get_symbols())
-            },
-            Header::PE(header) => 
-            {
-                Some(header.get_symbols())
-            },
+            Header::GenericHeader(header) => Some(&header.symbols),
             Header::None => None,
-            
         }
     }
 
@@ -182,14 +114,7 @@ impl Header
     {
         match self
         {
-            Header::Elf(header) => 
-            {
-                header.inverse_symbol_table.get(symbol).map(|x| *x)
-            },
-            Header::PE(header) => 
-            {
-                header.inverse_symbol_table.get(symbol).map(|x| *x)
-            },
+            Header::GenericHeader(header) => header.symbols_by_name.get(symbol).cloned(),
             Header::None => None,
         }
     }
@@ -199,7 +124,7 @@ impl Header
         self.get_sections()
             .iter()
             .find(|x| virtual_address >= x.virtual_address && virtual_address < x.virtual_address + x.size)
-            .map(|x| x.address + virtual_address - x.virtual_address)
+            .map(|x| x.file_offset + virtual_address - x.virtual_address)
     }
 
     pub(super) fn get_decoder_for_arch(architecture: &Architecture) -> CsResult<Capstone>
@@ -329,14 +254,7 @@ impl Header
     {
         let ret = match self
         {
-            Header::Elf(header) => 
-            {
-                header.get_decoder()
-            },
-            Header::PE(header) => 
-            {
-                header.get_decoder()
-            },
+            Header::GenericHeader(header) => Self::get_decoder_for_arch(&header.architecture),
             Header::None => Capstone::new().x86().mode(capstone::arch::x86::ArchMode::Mode64).build(),
         };
         match ret
@@ -352,8 +270,7 @@ impl Header
     pub fn get_encoder(&self) -> Result<Keystone, KeystoneError>
     {
         let ret = match self {
-            Header::Elf(h) => h.get_encoder(),
-            Header::PE(h) => h.get_encoder(),
+            Header::GenericHeader(header) => Self::get_encoder_for_arch(&header.architecture),
             Header::None => Keystone::new(Arch::X86, Mode::MODE_64),
         };
         ret

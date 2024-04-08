@@ -102,7 +102,9 @@ impl App
         let symbol_table = self.header.get_symbols();
         if let Some(symbol_table) = symbol_table
         {
-            return symbol_table.iter().filter(|(_, symbol)| symbol.contains(filter)).map(|(address, symbol)| (*address, symbol.clone())).collect()
+            let mut symbols: Vec<(u64, String)> = symbol_table.iter().filter(|(_, symbol)| symbol.contains(filter)).map(|(address, symbol)| (*address, symbol.clone())).collect();
+            symbols.sort_by_key(|(_, symbol)| symbol.len());
+            return symbols;
         }
         else 
         {
@@ -168,7 +170,7 @@ impl App
             sections.push(Section {
                 name: ".text".to_string(),
                 virtual_address: 0,
-                address: 0,
+                file_offset: 0,
                 size: bytes.len() as u64,
             });
         }
@@ -176,24 +178,24 @@ impl App
         let mut current_byte = 0;
         for section in sections
         {
-            if section.address > current_byte as u64
+            if section.file_offset > current_byte as u64
             {
                 lines.push(AssemblyLine::SectionTag(
                     SectionTag {
                         name: "Unknown".to_string(),
                         file_address: current_byte as u64,
                         virtual_address: 0,
-                        size: section.address as usize - current_byte
+                        size: section.file_offset as usize - current_byte
                     }
                 ));
-                for _ in 0..section.address as usize - current_byte
+                for _ in 0..section.file_offset as usize - current_byte
                 {
                     line_offsets[current_byte] = lines.len() - 1;
                     current_byte += 1;
                 }
             }
             // if there are any overlapping sections, this should fix it
-            current_byte = section.address as usize;
+            current_byte = section.file_offset as usize;
             match section.name.as_str()
             {
                 ".text" => {
@@ -201,14 +203,14 @@ impl App
                         AssemblyLine::SectionTag(
                             SectionTag {
                                 name: ".text".to_string(),
-                                file_address: section.address,
+                                file_address: section.file_offset,
                                 virtual_address: section.virtual_address,
                                 size: section.size as usize
                             }
                         )
                     );
                     let (offsets, instructions) = Self::assembly_from_section(bytes, header, section.virtual_address as usize, current_byte, section.size as usize, lines.len());
-                    line_offsets.splice(section.address as usize..section.address as usize + section.size as usize, offsets);
+                    line_offsets.splice(section.file_offset as usize..section.file_offset as usize + section.size as usize, offsets);
                     lines.extend(instructions);
                     current_byte += section.size as usize;
                 },
@@ -216,7 +218,7 @@ impl App
                     lines.push(AssemblyLine::SectionTag(
                         SectionTag {
                             name: name.to_string(),
-                            file_address: section.address,
+                            file_address: section.file_offset,
                             virtual_address: section.virtual_address,
                             size: section.size as usize,
                         }
@@ -378,9 +380,9 @@ impl App
             let (is_inside_text_section, maximum_code_byte) = 
             if let Some(text_section) = text_section 
             {
-                (from_byte >= text_section.address as usize && 
-                    from_byte < text_section.address as usize + text_section.size as usize,
-                text_section.address as usize + text_section.size as usize)
+                (from_byte >= text_section.file_offset as usize && 
+                    from_byte < text_section.file_offset as usize + text_section.size as usize,
+                text_section.file_offset as usize + text_section.size as usize)
             }
             else
             {

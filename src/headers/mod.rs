@@ -1,3 +1,2 @@
 pub mod header;
-pub mod elf;
-pub mod pe;
+pub mod generic;
