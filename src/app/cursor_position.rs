@@ -157,7 +157,7 @@ impl App
                 self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {:#X}", symbol, address));
                 self.jump_to(address as usize, true);
             }
-            else if let Some(address) = self.header.get_sections().iter().find(|x|x.name == symbol).map(|x|x.address)
+            else if let Some(address) = self.header.get_sections().iter().find(|x|x.name == symbol).map(|x|x.file_offset)
             {
                 self.log(NotificationLevel::Debug, &format!("Jumping to section {} at {:#X}", symbol, address));
                 self.jump_to(address as usize, false);

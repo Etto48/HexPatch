@@ -101,8 +101,7 @@ impl App
         {
             match &self.header
             {
-                Header::Elf(_) => self.log(NotificationLevel::Info,"Loaded ELF file."),
-                Header::PE(_) => self.log(NotificationLevel::Info,"Loaded PE file."),
+                Header::GenericHeader(header) => self.log(NotificationLevel::Info, &format!("File type: {:?}", header.file_type())),
                 Header::None => unreachable!(),
             }
             self.log(NotificationLevel::Info, &format!("Architecture: {:?}", self.header.architecture()));
