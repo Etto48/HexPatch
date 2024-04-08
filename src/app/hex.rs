@@ -2,11 +2,26 @@ use ratatui::text::{Line, Span, Text};
 
 use super::{assembly::AssemblyLine, color_settings::ColorSettings, info_mode::InfoMode, notification::NotificationLevel, App};
 
-impl <'a> App<'a>
+pub(super) struct InstructionInfo
 {
-    pub(super) fn bytes_to_styled_hex(color_settings: &ColorSettings, bytes: &[u8], block_size: usize, blocks_per_row: usize) -> Text<'a>
+    pub offset: isize,
+    pub length: usize,
+}
+
+impl App
+{
+    pub(super) fn bytes_to_styled_hex(
+        color_settings: &ColorSettings, 
+        bytes: &[u8], 
+        block_size: usize, 
+        blocks_per_row: usize, 
+        selected_byte_index: usize, 
+        high_byte: bool, 
+        instruction_info: Option<InstructionInfo>
+    ) -> Text<'static>
     {
         let mut ret = Text::default();
+        ret.lines.reserve(bytes.len() / (block_size * blocks_per_row) + 1);
         let mut current_line = Line::default();
         let mut local_block = 0;
         let mut local_byte = 0;
@@ -17,9 +32,23 @@ impl <'a> App<'a>
             let hex_chars = Self::u8_to_hex(*b);
             let hex_high = hex_chars[0].to_string();
             let hex_low = hex_chars[1].to_string();
-            let style = Self::get_style_for_byte(color_settings, *b);
+            let (mut space_style,mut style) = (color_settings.hex_default, Self::get_style_for_byte(color_settings, *b));
+
+            if let Some(instruction_info) = &instruction_info
+            {
+                if byte_index >= instruction_info.offset && byte_index < instruction_info.offset + instruction_info.length as isize
+                {
+                    let is_last_space = byte_index == instruction_info.offset + instruction_info.length as isize - 1;
+                    if !is_last_space
+                    {
+                        space_style = color_settings.hex_current_instruction;
+                    }
+                    style = color_settings.hex_current_instruction;
+                }
+            }
+
             let span = Span::styled(hex_high, 
-            if byte_index == 0
+            if byte_index == selected_byte_index as isize && high_byte
             {
                 color_settings.hex_selected
             }
@@ -28,7 +57,14 @@ impl <'a> App<'a>
                 style
             });
             current_line.spans.push(span);
-            let span = Span::styled(hex_low, style);
+            let span = Span::styled(hex_low, if byte_index == selected_byte_index as isize && !high_byte
+            {
+                color_settings.hex_selected
+            }
+            else
+            {
+                style
+            });
             current_line.spans.push(span);
             let mut spacing_string = " ".to_string();
             local_byte += 1;
@@ -45,8 +81,7 @@ impl <'a> App<'a>
                 }
             }
 
-            let style = Self::get_style_for_byte(color_settings, *b);
-            let span = Span::styled(spacing_string, style);
+            let span = Span::styled(spacing_string, space_style);
             current_line.spans.push(span);
 
             if next_line
@@ -77,14 +112,6 @@ impl <'a> App<'a>
     {
         let old_cursor = self.get_cursor_position();
         self.blocks_per_row = blocks_per_row;
-        self.address_view = Self::addresses(&&self.color_settings, self.data.len(), self.block_size, self.blocks_per_row);
-        self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
-        self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
-        self.hex_cursor = (0, 0);
-        self.hex_last_byte_index = 0;
-        self.text_cursor = (0, 0);
-        self.text_last_byte_index = 0;
-        self.address_last_row = 0;
 
         self.jump_to(old_cursor.global_byte_index, false);
     }
@@ -114,106 +141,68 @@ impl <'a> App<'a>
         if value >= '0' && value <= '9' || value >= 'A' && value <= 'F'
         {   
             let cursor_position = self.get_cursor_position();
-            let old_instruction = self.get_current_instruction();
-            if let Some(old_instruction) = old_instruction
+
+            let old_byte = self.data[cursor_position.global_byte_index];
+            let old_byte_str = format!("{:02X}", old_byte);
+            let new_byte_str = if cursor_position.high_byte
             {
-                let old_instruction = old_instruction.clone();
-                self.color_instruction_bytes(&old_instruction, true);
-            }
-            
-            let hex = if cursor_position.high_byte
-            {
-                format!("{}{}", value, self.hex_view.lines[cursor_position.line_index]
-                    .spans[cursor_position.line_byte_index * 3 + 1].content)
+                format!("{}{}", value, old_byte_str.chars().nth(1).unwrap())
             }
             else
             {
-                format!("{}{}", self.hex_view.lines[cursor_position.line_index]
-                    .spans[cursor_position.line_byte_index * 3].content, value)
+                format!("{}{}", old_byte_str.chars().nth(0).unwrap(), value)
             };
+            let new_byte = u8::from_str_radix(&new_byte_str, 16).unwrap();
 
-            let old_byte = self.data[cursor_position.global_byte_index];
+            self.data[cursor_position.global_byte_index] = new_byte;
 
-            let byte = u8::from_str_radix(&hex, 16).unwrap();
-
-            self.data[cursor_position.global_byte_index] = byte;
-
-            if old_byte != byte
+            if old_byte != new_byte
             {
                 self.dirty = true;
             }
-
-            let style = Self::get_style_for_byte(&self.color_settings, byte);
-            let [high_char, low_char] = Self::u8_to_hex(byte);
-
-            self.hex_view.lines[cursor_position.line_index]
-                .spans[cursor_position.line_byte_index * 3] = Span::styled(high_char.to_string(), style);
-            self.hex_view.lines[cursor_position.line_index]
-                .spans[cursor_position.line_byte_index * 3 + 1] = Span::styled(low_char.to_string(), style);
-            
-            
-            let text = App::u8_to_char(byte);
-            let new_str = text.to_string();
-
-            self.text_view.lines[cursor_position.line_index]
-                .spans[cursor_position.line_byte_index * 2] = Span::styled(new_str, style);
         }
         self.edit_assembly(1);
-        self.update_hex_cursor();
-        self.update_text_cursor();
     }
 
-    pub(super) fn update_hex_cursor(&mut self)
+    /// start_row is included, end_row is excluded
+    pub(super) fn get_hex_view(&self, start_row: usize, end_row: usize) -> Text<'static>
     {
-        let cursor_position = self.get_cursor_position();
-        let instruction = self.get_current_instruction();
-        if let Some(instruction) = instruction
+        let start_byte = start_row * self.blocks_per_row * self.block_size;
+        let end_byte = end_row * self.blocks_per_row * self.block_size;
+        let end_byte = std::cmp::min(end_byte, self.data.len());
+        let bytes = &self.data[start_byte..end_byte];
+        let selected_byte_index = self.get_cursor_position().global_byte_index.saturating_sub(start_byte);
+        let high_byte = self.get_cursor_position().high_byte;
+        let instruction_info = 
         {
-            let instruction = instruction.clone();
-            if self.hex_last_byte_index < self.data.len()
-            {
-                let old_byte = self.data[self.hex_last_byte_index];
-                let old_instruction = self.get_instruction_at(self.hex_last_byte_index).clone();
-                let style = Self::get_style_for_byte(&self.color_settings, old_byte);
-                self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = style;
-                self.color_instruction_bytes(&old_instruction, true);
-            }
-
             if self.info_mode == InfoMode::Assembly
             {
-                self.color_instruction_bytes(&instruction, false);
-            }
-
-            self.hex_last_byte_index = cursor_position.global_byte_index;
-            self.hex_cursor = (cursor_position.line_index, cursor_position.line_byte_index * 3 + cursor_position.get_high_byte_offset());
-            if self.hex_cursor.0 < self.hex_view.lines.len() && self.hex_cursor.1 < self.hex_view.lines[self.hex_cursor.0].spans.len()
-            {
-                self.hex_view.lines[self.hex_cursor.0].spans[self.hex_cursor.1].style = self.color_settings.hex_selected;
-            }
-        }
-    }
-
-    pub(super) fn color_instruction_bytes(&mut self, instruction: &AssemblyLine, original_color: bool)
-    {
-        if let AssemblyLine::Instruction(instruction) = instruction
-        {
-            for i in instruction.file_address as usize..instruction.file_address as usize + instruction.instruction.len() {
-                let gui_pos = self.get_expected_cursor_position(i, true);
-                let style = if original_color
+                let current_instruction = self.get_current_instruction();
+                let instruction_info = if let Some(instruction) = current_instruction
                 {
-                    Self::get_style_for_byte(&self.color_settings, self.data[i])
+                    if let AssemblyLine::Instruction(instruction) = instruction
+                    {
+                        let offset = instruction.file_address as isize - start_byte as isize;
+                        let length = instruction.instruction.len();
+                        Some(InstructionInfo { offset: offset, length })
+                    }
+                    else
+                    {
+                        None
+                    }
                 }
-                else 
+                else
                 {
-                    self.color_settings.hex_current_instruction   
+                    None
                 };
-                self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3].style = style;
-                self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+1].style = style;
-                if i != instruction.file_address as usize + instruction.instruction.len()-1 {
-                    self.hex_view.lines[gui_pos.line_index].spans[gui_pos.line_byte_index*3+2].style = style;
-                }
+                instruction_info
             }
-        }
+            else
+            {
+                None
+            }
+        };
+        Self::bytes_to_styled_hex(&self.color_settings, bytes, self.block_size, self.blocks_per_row, selected_byte_index, high_byte, instruction_info)
     }
 
     pub(super) fn save_data(&mut self) -> Result<(), std::io::Error>

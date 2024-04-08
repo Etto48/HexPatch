@@ -2,18 +2,19 @@ use ratatui::text::{Line, Span, Text};
 
 use super::{color_settings::ColorSettings, notification::NotificationLevel, App};
 
-impl <'a> App<'a>
+impl App
 {
-    pub(super) fn bytes_to_styled_text(color_settings: &ColorSettings, bytes: &'_[u8], block_size: usize, blocks_per_row: usize) -> Text<'a>
+    pub(super) fn bytes_to_styled_text(color_settings: &ColorSettings, bytes: &'_[u8], block_size: usize, blocks_per_row: usize, selected_byte_offset: usize) -> Text<'static>
     {
         let mut ret = Text::default();
+        ret.lines.reserve(bytes.len() / (block_size * blocks_per_row) + 1);
         let mut current_line = Line::default();
         let mut local_block = 0;
         let mut local_byte = 0;
         let mut byte_index = 0;
         for b in bytes
         {
-            let style = if byte_index == 0
+            let style = if byte_index == selected_byte_offset
             {
                 color_settings.text_selected
             }
@@ -64,28 +65,6 @@ impl <'a> App<'a>
         self.patch_bytes(text.as_bytes(), false);
     }
 
-    pub(super) fn update_text_cursor(&mut self)
-    {
-        let cursor_position = self.get_cursor_position();
-        let current_line = cursor_position.line_index;
-        let current_byte = cursor_position.line_byte_index;
-        let current_text_span = current_byte * 2;
-
-        if self.text_last_byte_index < self.data.len()
-        {
-            let old_byte = self.data[self.text_last_byte_index];
-            let style = Self::get_style_for_byte(&self.color_settings, old_byte);
-            self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = style;
-        }
-
-        self.text_last_byte_index = cursor_position.global_byte_index;
-        self.text_cursor = (current_line, current_text_span);
-        if self.text_cursor.0 < self.text_view.lines.len() && self.text_cursor.1 < self.text_view.lines[self.text_cursor.0].spans.len()
-        {
-            self.text_view.lines[self.text_cursor.0].spans[self.text_cursor.1].style = self.color_settings.text_selected;
-        }
-    }
-
     fn found_text_here(&self, starting_from: usize, text: &str) -> bool
     {
         for (i,byte) in text.bytes().enumerate()
@@ -100,6 +79,16 @@ impl <'a> App<'a>
             }
         }
         true
+    }
+
+    pub(super) fn get_text_view(&self, start_row: usize, end_row: usize) -> Text<'static>
+    {
+        let start_byte = start_row * self.blocks_per_row * self.block_size;
+        let end_byte = end_row * self.blocks_per_row * self.block_size;
+        let end_byte = std::cmp::min(end_byte, self.data.len());
+        let bytes = &self.data[start_byte..end_byte];
+        let selected_byte_offset = self.get_cursor_position().global_byte_index.saturating_sub(start_byte);
+        Self::bytes_to_styled_text(&self.color_settings, bytes, self.block_size, self.blocks_per_row, selected_byte_offset)
     }
 
     pub(super) fn find_text(&mut self, text: &str)

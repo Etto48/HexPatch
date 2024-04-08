@@ -7,7 +7,7 @@ use super::{assembly::AssemblyLine, color_settings::ColorSettings, help::HelpLin
 
 use crate::{fuzzer::fuzzer::Fuzzer, headers::header::Header};
 
-pub struct App<'a> 
+pub struct App 
 {
     pub(super) path: PathBuf,
     pub(super) commands: Fuzzer,
@@ -17,16 +17,8 @@ pub struct App<'a>
     pub(super) notificaiton: NotificationLevel,
     pub(super) dirty: bool,
     pub(super) data: Vec<u8>,
-    pub(super) address_view: Text<'a>,
-    pub(super) hex_view: Text<'a>,
-    pub(super) text_view: Text<'a>,
     pub(super) assembly_offsets: Vec<usize>,
     pub(super) assembly_instructions: Vec<AssemblyLine>,
-    pub(super) address_last_row: usize,
-    pub(super) hex_last_byte_index: usize,
-    pub(super) hex_cursor: (usize, usize),
-    pub(super) text_last_byte_index: usize,
-    pub(super) text_cursor: (usize, usize),
     pub(super) text_last_searched_string: String,
     pub(super) info_mode: InfoMode,
     pub(super) scroll: usize,
@@ -44,7 +36,7 @@ pub struct App<'a>
     pub(super) blocks_per_row: usize,
 }
 
-impl <'a> App<'a>
+impl App
 {
     pub(super) fn print_loading_status<B: Backend>(color_settings: &ColorSettings, status: &str, terminal: &mut ratatui::Terminal<B>) -> Result<(), String>
     {
@@ -95,16 +87,8 @@ impl <'a> App<'a>
             notificaiton: NotificationLevel::None,
             data: Vec::new(),
             dirty: false,
-            address_view: Text::default(),
-            hex_view: Text::default(),
-            text_view: Text::default(),
             assembly_offsets: Vec::new(),
             assembly_instructions: Vec::new(),
-            address_last_row: 0,
-            hex_last_byte_index: 0,
-            hex_cursor: (0,0),
-            text_last_byte_index: 0,
-            text_cursor: (0,0),
             text_last_searched_string: String::new(),
             info_mode: InfoMode::Text,
             scroll: 0,
@@ -172,22 +156,17 @@ impl <'a> App<'a>
                 if !self.data.is_empty()
                 {
                     let line_start_index = self.scroll;
-                    let line_end_index = (self.scroll + f.size().height as usize - 2).min(self.hex_view.lines.len());
+                    let line_end_index = (self.scroll + f.size().height as usize).saturating_sub(2);
 
-                    let address_subview_lines = &self.address_view.lines[line_start_index..line_end_index];
-                    let mut address_subview = Text::default();
-                    address_subview.lines.extend(address_subview_lines.iter().cloned());
+                    let address_view = self.get_address_view(line_start_index,line_end_index);
+                    let hex_view = self.get_hex_view(line_start_index,line_end_index);
 
-                    let hex_subview_lines = &self.hex_view.lines[line_start_index..line_end_index];
-                    let mut hex_subview = Text::default();
-                    hex_subview.lines.extend(hex_subview_lines.iter().cloned());
-
-                    let address_block = ratatui::widgets::Paragraph::new(address_subview)
+                    let address_block = ratatui::widgets::Paragraph::new(address_view)
                         .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP));
                     
                     let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
 
-                    let hex_editor_block = ratatui::widgets::Paragraph::new(hex_subview)
+                    let hex_editor_block = ratatui::widgets::Paragraph::new(hex_view)
                         .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT));
                     
                     let info_view_block = 
@@ -195,7 +174,7 @@ impl <'a> App<'a>
                     {
                         InfoMode::Text =>
                         {
-                            let text_subview_lines = &self.text_view.lines[line_start_index..line_end_index];
+                            let text_subview_lines = self.get_text_view(line_start_index,line_end_index);
                             let mut text_subview = Text::default();
                             text_subview.lines.extend(text_subview_lines.iter().cloned());
                             ratatui::widgets::Paragraph::new(text_subview)

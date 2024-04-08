@@ -57,7 +57,7 @@ pub enum PopupState
     Help(usize)
 }
 
-impl <'a> App<'a>
+impl App
 {
 
     pub(super) fn get_scrollable_popup_line_count(&self) -> Result<usize, String>
@@ -85,7 +85,7 @@ impl <'a> App<'a>
         }
     }
 
-    pub(super) fn get_patch_preview(&self, color_settings: &ColorSettings, preview: &Result<Vec<u8>,String>) -> Line<'a>
+    pub(super) fn get_patch_preview(&self, color_settings: &ColorSettings, preview: &Result<Vec<u8>,String>) -> Line<'static>
     {
         let mut preview_string = Line::raw(" ");
         match preview
@@ -170,7 +170,7 @@ impl <'a> App<'a>
         }
     }
 
-    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize, show_cursor: bool) -> Line<'a>
+    fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize, show_cursor: bool) -> Line<'static>
     {
         let string = s.to_string();
         if string.len() == 0
@@ -228,7 +228,7 @@ impl <'a> App<'a>
         format!("{:width$}", line_number, width = char_for_line_count)
     }
 
-    fn get_multiline_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize) -> (Vec<Line<'a>>, usize)
+    fn get_multiline_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize) -> (Vec<Line<'static>>, usize)
     {
         let string = s.to_string();
         let line_count = &string.chars().filter(|c| *c == '\n').count() + 1;
@@ -295,7 +295,7 @@ impl <'a> App<'a>
         (lines, selected_line)
     }
 
-    pub(super) fn fill_popup(&'a self, color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'a>, popup_rect: &mut Rect) -> Result<(), Box<dyn Error>>
+    pub(super) fn fill_popup(&self, color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'static>, popup_rect: &mut Rect) -> Result<(), Box<dyn Error>>
     {
         match &popup_state
         {

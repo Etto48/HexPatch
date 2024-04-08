@@ -6,7 +6,7 @@ use crate::{app::{info_mode::InfoMode, notification::NotificationLevel, popup_st
 
 use super::path_result::PathResult;
 
-impl <'a> App<'a>
+impl App
 {
     pub(in crate::app) fn go_to_path<B: Backend>(
         &mut self, 
@@ -127,11 +127,6 @@ impl <'a> App<'a>
 
         self.path = path.into();
         self.dirty = false;
-        self.address_last_row = 0;
-        self.hex_last_byte_index = 0;
-        self.hex_cursor = (0,0);
-        self.text_last_byte_index = 0;
-        self.text_cursor = (0,0);
         self.info_mode = InfoMode::Text;
         self.scroll = 0;
         self.cursor = (0,0);
@@ -143,13 +138,8 @@ impl <'a> App<'a>
 
         Self::print_loading_status(&self.color_settings, &format!("Opening \"{}\"...", path), terminal)?;
         self.data = std::fs::read(&self.path)?;
-        self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
-        self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         
-        self.address_view = Self::addresses(&self.color_settings, self.data.len(), self.block_size, self.blocks_per_row);
         Self::print_loading_status(&self.color_settings, "Decoding binary data...", terminal)?;
-        self.hex_view = Self::bytes_to_styled_hex(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
-        self.text_view = Self::bytes_to_styled_text(&self.color_settings, &self.data, self.block_size, self.blocks_per_row);
         self.header = Header::parse_header(&self.data);
         Self::print_loading_status(&self.color_settings, "Disassembling executable...", terminal)?;
         (self.assembly_offsets, self.assembly_instructions) = Self::sections_from_bytes(&self.data, &self.header);
