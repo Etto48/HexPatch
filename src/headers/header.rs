@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fmt::Display, rc::Rc};
 
-use capstone::{arch::BuildsCapstone, Capstone, CsResult};
+use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
+use object::Architecture;
 
 use super::{elf::ElfHeader, pe::PEHeader};
 
@@ -188,6 +189,69 @@ impl Header
             .iter()
             .find(|x| virtual_address >= x.virtual_address && virtual_address < x.virtual_address + x.size)
             .map(|x| x.address + virtual_address - x.virtual_address)
+    }
+
+    pub(super) fn get_decoder_for_arch(architecture: &Architecture) -> CsResult<Capstone>
+    {
+        match architecture {
+            Architecture::Aarch64 => 
+            {
+                Capstone::new().arm64().mode(arch::arm64::ArchMode::Arm).build()
+            },
+            Architecture::Aarch64_Ilp32 => 
+            {
+                Capstone::new().arm64().mode(arch::arm64::ArchMode::Arm).build()
+            },
+            Architecture::Arm => 
+            {
+                Capstone::new().arm().mode(arch::arm::ArchMode::Arm).build()
+            },
+            Architecture::I386 => 
+            {
+                Capstone::new().x86().mode(arch::x86::ArchMode::Mode32).build()
+            },
+            Architecture::X86_64 => 
+            {
+                Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build()
+            },
+            Architecture::X86_64_X32 => 
+            {
+                Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build()
+            },
+            Architecture::Mips => 
+            {
+                Capstone::new().mips().mode(arch::mips::ArchMode::Mips32).build()
+            },
+            Architecture::Mips64 => 
+            {
+                Capstone::new().mips().mode(arch::mips::ArchMode::Mips64).build()
+            },
+            Architecture::PowerPc => 
+            {
+                Capstone::new().ppc().mode(arch::ppc::ArchMode::Mode32).build()
+            },
+            Architecture::PowerPc64 => 
+            {
+                Capstone::new().ppc().mode(arch::ppc::ArchMode::Mode64).build()
+            },
+            Architecture::Riscv32 => 
+            {
+                Capstone::new().riscv().mode(arch::riscv::ArchMode::RiscV32).build()
+            },
+            Architecture::Riscv64 => 
+            {
+                Capstone::new().riscv().mode(arch::riscv::ArchMode::RiscV64).build()
+            },
+            Architecture::S390x => 
+            {
+                Capstone::new().sysz().mode(arch::sysz::ArchMode::Default).build()
+            },
+            Architecture::Sparc64 => 
+            {
+                Capstone::new().sparc().mode(arch::sparc::ArchMode::V9).build()
+            },
+            _ => Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build(),
+        }
     }
 
     pub fn get_decoder(&self) -> CsResult<Capstone>

@@ -1,7 +1,9 @@
 use std::{collections::HashMap, rc::Rc};
 
-use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
-use object::{read::elf::{ElfFile32, ElfFile64}, BigEndian, LittleEndian, Object, ObjectSection, ObjectSymbol, SectionKind};
+use capstone::{Capstone, CsResult};
+use object::{read::elf::{ElfFile32, ElfFile64}, Architecture, BigEndian, LittleEndian, Object, ObjectSection, ObjectSymbol, SectionKind};
+
+use super::header::Header;
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Bitness
@@ -45,6 +47,7 @@ pub struct Section
 pub struct ElfHeader
 {
     pub bitness: Bitness,
+    pub architecture: Architecture,
     pub endianness: Endianness,
     pub entry_point: u64,
     pub section_table: Vec<Section>,
@@ -106,6 +109,14 @@ impl ElfHeader
         {
             ElfVariant::Elf32Little(_) | ElfVariant::Elf32Big(_) => Bitness::Bit32,
             ElfVariant::Elf64Little(_) | ElfVariant::Elf64Big(_) => Bitness::Bit64
+        };
+
+        let architecture = match &header
+        {
+            ElfVariant::Elf64Little(h) => h.architecture(),
+            ElfVariant::Elf64Big(h) => h.architecture(),
+            ElfVariant::Elf32Little(h) => h.architecture(),
+            ElfVariant::Elf32Big(h) => h.architecture(),
         };
 
         let endianness = match header
@@ -195,6 +206,7 @@ impl ElfHeader
 
         Some(ElfHeader {
             bitness,
+            architecture,
             endianness,
             entry_point,
             section_table: sections,
@@ -221,7 +233,6 @@ impl ElfHeader
 
     pub fn get_decoder(&self) -> CsResult<Capstone>
     {
-        // TODO: Add support for other architectures
-        Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build()
+        Header::get_decoder_for_arch(&self.architecture)
     }
 }

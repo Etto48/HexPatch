@@ -1,8 +1,10 @@
 use std::{collections::HashMap, fs::File, rc::Rc};
 
-use capstone::{arch::BuildsCapstone, Capstone, CsResult};
-use object::{pe::ImageNtHeaders64, read::pe::PeFile, LittleEndian, Object, ObjectSymbol};
+use capstone::{Capstone, CsResult};
+use object::{pe::ImageNtHeaders64, read::pe::PeFile, Architecture, LittleEndian, Object, ObjectSymbol};
 use pdb::FallibleIterator;
+
+use super::header::Header;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Section
@@ -23,6 +25,7 @@ pub struct Section
 pub struct PEHeader
 {
     pub entry_point: u64,
+    pub architecture: Architecture,
     pub bitness: u32,
     pub section_table: Vec<Section>,
     pub symbol_table: Rc<HashMap<u64, String>>,
@@ -40,6 +43,7 @@ impl PEHeader
             {
                 let entry_point = header.nt_headers().optional_header.address_of_entry_point.get(LittleEndian::default()) as u64;
                 let bitness = if header.is_64() { 64 } else { 32 };
+                let architecture = header.architecture();
 
                 let mut section_table = Vec::new();
                 let section_table_in_header = header.section_table();
@@ -145,6 +149,7 @@ impl PEHeader
                 Some(PEHeader
                 {
                     entry_point,
+                    architecture,
                     bitness,
                     section_table,
                     symbol_table: Rc::new(symbols),
@@ -167,7 +172,6 @@ impl PEHeader
 
     pub fn get_decoder(&self) -> CsResult<Capstone>
     {
-        // TODO: Add support for other architectures
-        Capstone::new().x86().mode(capstone::arch::x86::ArchMode::Mode64).build()
+        Header::get_decoder_for_arch(&self.architecture)
     }
 }

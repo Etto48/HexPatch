@@ -1,5 +1,3 @@
-use std::{collections::HashMap, rc::Rc};
-
 use ratatui::text::{Line, Span};
 
 use crate::asm::assembler::assemble;
@@ -30,29 +28,6 @@ pub enum AssemblyLine
     Instruction(InstructionTag),
     SectionTag(SectionTag)
 }
-
-pub struct CustomSymbolResolver
-{
-    symbol_table: Rc<HashMap<u64, String>>
-}
-
-impl CustomSymbolResolver
-{
-    pub fn new(symbol_table: Rc<HashMap<u64, String>>) -> Self
-    {
-        Self { symbol_table }
-    }
-}
-
-/*impl SymbolResolver for CustomSymbolResolver
-{
-    fn symbol(
-            &mut self, _instruction: &Instruction, _operand: u32, _instruction_operand: Option<u32>, address: u64, _address_size: u32,
-        ) -> Option<iced_x86::SymbolResult<'_>> {
-        self.symbol_table.get(&address).map(|symbol| iced_x86::SymbolResult::with_string(address, symbol.clone()))
-    }
-}*/
-
 
 impl AssemblyLine
 {
@@ -140,17 +115,9 @@ impl <'a> App<'a>
         line.spans.push(Span::raw(" "));
         
 
-        let instruction_string = if let Some(symbol_table) = &symbol_table
-        {
-            instruction.instruction.to_string()
-        } 
-        else
-        {
-            instruction.instruction.to_string()
-        };
-        let mut instruction_pieces = instruction_string.split_whitespace();
-        let mnemonic = instruction_pieces.next().unwrap().to_string();
-        let args = instruction_pieces.collect::<Vec<&str>>().join(" ");
+        // TODO: handle symbols
+        let mnemonic = instruction.instruction.mnemonic();
+        let args = instruction.instruction.operands();
         let mnemonic_style = 
         match instruction.instruction.mnemonic() {
             "nop" => color_settings.assembly_nop,
@@ -159,9 +126,9 @@ impl <'a> App<'a>
         };
         
 
-        line.spans.push(Span::styled(mnemonic, mnemonic_style));
+        line.spans.push(Span::styled(mnemonic.to_string(), mnemonic_style));
         line.spans.push(Span::raw(" "));
-        line.spans.push(Span::raw(args));
+        line.spans.push(Span::raw(args.to_string()));
         if let Some(symbol_table) = symbol_table
         {
             if let Some(symbol) = symbol_table.get(&instruction.instruction.ip())
@@ -282,7 +249,7 @@ impl <'a> App<'a>
         {
             let instruction_tag = InstructionTag
             {
-                instruction: Instruction::new(instruction),
+                instruction: Instruction::new(instruction, header.get_symbols()),
                 file_address: current_byte as u64 + starting_file_address as u64
             };
             instructions.push(AssemblyLine::Instruction(instruction_tag));
@@ -428,7 +395,7 @@ impl <'a> App<'a>
             {
                 return;
             }
-            let mut decoder = self.header.get_decoder().expect("Failed to create decoder");
+            let decoder = self.header.get_decoder().expect("Failed to create decoder");
             let mut offsets = Vec::new();
             let mut instructions = Vec::new();
             let mut instruction_lines = Vec::new();
@@ -442,7 +409,7 @@ impl <'a> App<'a>
                 let old_instruction = self.get_instruction_at(current_byte);
                 let instruction_tag = InstructionTag
                 {
-                    instruction: Instruction::new(instruction),
+                    instruction: Instruction::new(instruction, self.header.get_symbols()),
                     file_address: current_byte as u64
                 };
                 let new_assembly_line = AssemblyLine::Instruction(instruction_tag.clone());
