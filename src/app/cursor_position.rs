@@ -90,8 +90,9 @@ impl <'a> App<'a>
                 if let Some(symbol) = symbols.iter().skip(scroll).next()
                 {
                     let (address, name) = symbol;
-                    self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {:#X}", name, address));
+                    let log_message = format!("Jumping to symbol {} at {:#X}", name, address);
                     self.jump_to(*address as usize, true);
+                    self.log(NotificationLevel::Debug, &log_message);
                 }
                 else
                 {

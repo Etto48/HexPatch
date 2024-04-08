@@ -1,7 +1,10 @@
-use std::{collections::HashMap, fs::File, rc::Rc};
+use std::{collections::HashMap, fs::File};
 
-use object::{pe::ImageNtHeaders64, read::pe::PeFile, LittleEndian, Object, ObjectSymbol};
+use capstone::{Capstone, CsResult};
+use object::{pe::ImageNtHeaders64, read::pe::PeFile, Architecture, LittleEndian, Object, ObjectSymbol};
 use pdb::FallibleIterator;
+
+use super::header::Header;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Section
@@ -22,9 +25,10 @@ pub struct Section
 pub struct PEHeader
 {
     pub entry_point: u64,
+    pub architecture: Architecture,
     pub bitness: u32,
     pub section_table: Vec<Section>,
-    pub symbol_table: Rc<HashMap<u64, String>>,
+    pub symbol_table: HashMap<u64, String>,
     pub inverse_symbol_table: HashMap<String, u64>
 }
 
@@ -39,6 +43,7 @@ impl PEHeader
             {
                 let entry_point = header.nt_headers().optional_header.address_of_entry_point.get(LittleEndian::default()) as u64;
                 let bitness = if header.is_64() { 64 } else { 32 };
+                let architecture = header.architecture();
 
                 let mut section_table = Vec::new();
                 let section_table_in_header = header.section_table();
@@ -144,9 +149,10 @@ impl PEHeader
                 Some(PEHeader
                 {
                     entry_point,
+                    architecture,
                     bitness,
                     section_table,
-                    symbol_table: Rc::new(symbols),
+                    symbol_table: symbols,
                     inverse_symbol_table
                 })
             },
@@ -154,13 +160,18 @@ impl PEHeader
         }
     }
 
-    pub fn get_symbols(&self) -> Rc<HashMap<u64, String>>
+    pub fn get_symbols(&self) -> &HashMap<u64, String>
     {
-        self.symbol_table.clone()
+        &self.symbol_table
     }
 
     pub fn bitness(&self) -> u32
     {
         self.bitness
+    }
+
+    pub fn get_decoder(&self) -> CsResult<Capstone>
+    {
+        Header::get_decoder_for_arch(&self.architecture)
     }
 }

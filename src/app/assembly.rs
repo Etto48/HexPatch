@@ -1,11 +1,8 @@
-use std::{collections::HashMap, rc::Rc};
-
-use iced_x86::{Formatter, Instruction, SymbolResolver};
 use ratatui::text::{Line, Span};
 
 use crate::asm::assembler::assemble;
 
-use super::{app::App, color_settings::ColorSettings, notification::NotificationLevel};
+use super::{app::App, color_settings::ColorSettings, instruction::Instruction, notification::NotificationLevel};
 
 use crate::headers::header::{Header, Section};
 
@@ -18,7 +15,7 @@ pub struct SectionTag
     pub size: usize
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InstructionTag
 {
     pub instruction: Instruction,
@@ -31,29 +28,6 @@ pub enum AssemblyLine
     Instruction(InstructionTag),
     SectionTag(SectionTag)
 }
-
-pub struct CustomSymbolResolver
-{
-    symbol_table: Rc<HashMap<u64, String>>
-}
-
-impl CustomSymbolResolver
-{
-    pub fn new(symbol_table: Rc<HashMap<u64, String>>) -> Self
-    {
-        Self { symbol_table }
-    }
-}
-
-impl SymbolResolver for CustomSymbolResolver
-{
-    fn symbol(
-            &mut self, _instruction: &Instruction, _operand: u32, _instruction_operand: Option<u32>, address: u64, _address_size: u32,
-        ) -> Option<iced_x86::SymbolResult<'_>> {
-        self.symbol_table.get(&address).map(|symbol| iced_x86::SymbolResult::with_string(address, symbol.clone()))
-    }
-}
-
 
 impl AssemblyLine
 {
@@ -141,33 +115,20 @@ impl <'a> App<'a>
         line.spans.push(Span::raw(" "));
         
 
-        let instruction_string = if let Some(symbol_table) = &symbol_table
-        {
-            let symbol_resolver = CustomSymbolResolver::new(symbol_table.clone());
-        let symbol_resolver_box = Box::new(symbol_resolver);
-            let mut formatter = iced_x86::NasmFormatter::with_options(Some(symbol_resolver_box),None);
-            let mut output = String::new();
-            formatter.format(&instruction.instruction, &mut output);
-            output
-        } 
-        else
-        {
-            instruction.instruction.to_string()
-        };
-        let mut instruction_pieces = instruction_string.split_whitespace();
-        let mnemonic = instruction_pieces.next().unwrap().to_string();
-        let args = instruction_pieces.collect::<Vec<&str>>().join(" ");
+        // TODO: handle symbols
+        let mnemonic = instruction.instruction.mnemonic();
+        let args = instruction.instruction.operands();
         let mnemonic_style = 
         match instruction.instruction.mnemonic() {
-            iced_x86::Mnemonic::Nop => color_settings.assembly_nop,
-            iced_x86::Mnemonic::INVALID => color_settings.assembly_bad,
+            "nop" => color_settings.assembly_nop,
+            "?" => color_settings.assembly_bad,
             _ => color_settings.assembly_default,
         };
         
 
-        line.spans.push(Span::styled(mnemonic, mnemonic_style));
+        line.spans.push(Span::styled(mnemonic.to_string(), mnemonic_style));
         line.spans.push(Span::raw(" "));
-        line.spans.push(Span::raw(args));
+        line.spans.push(Span::raw(args.to_string()));
         if let Some(symbol_table) = symbol_table
         {
             if let Some(symbol) = symbol_table.get(&instruction.instruction.ip())
@@ -282,13 +243,13 @@ impl <'a> App<'a>
         let mut line_offsets = vec![0; section_size];
         let mut instructions = Vec::new();
         let mut current_byte = 0;
-        let mut decoder = iced_x86::Decoder::new(header.bitness(), &bytes[starting_file_address..starting_file_address + section_size], iced_x86::DecoderOptions::NONE);
-        decoder.set_ip(starting_ip as u64);
-        for instruction in decoder
+        let decoder = header.get_decoder().expect("Failed to create decoder");
+        let decoded = decoder.disasm_all(&bytes[starting_file_address..starting_file_address+section_size], starting_ip as u64).expect("Failed to disassemble");
+        for instruction in decoded.into_iter()
         {
             let instruction_tag = InstructionTag
             {
-                instruction,
+                instruction: Instruction::new(instruction, header.get_symbols()),
                 file_address: current_byte as u64 + starting_file_address as u64
             };
             instructions.push(AssemblyLine::Instruction(instruction_tag));
@@ -320,7 +281,7 @@ impl <'a> App<'a>
         if let Some(current_instruction) = current_instruction
         {
             let current_instruction = current_instruction.clone();
-            let current_ip = match current_instruction
+            let current_ip = match &current_instruction
             {
                 AssemblyLine::Instruction(instruction) => instruction.file_address,
                 AssemblyLine::SectionTag(_) => self.get_cursor_position().global_byte_index as u64
@@ -434,8 +395,7 @@ impl <'a> App<'a>
             {
                 return;
             }
-            let mut decoder = iced_x86::Decoder::new(self.header.bitness(), &self.data[from_byte..maximum_code_byte], iced_x86::DecoderOptions::NONE);
-            decoder.set_ip(virtual_address as u64);
+            let decoder = self.header.get_decoder().expect("Failed to create decoder");
             let mut offsets = Vec::new();
             let mut instructions = Vec::new();
             let mut instruction_lines = Vec::new();
@@ -443,20 +403,22 @@ impl <'a> App<'a>
 
             let from_instruction = self.assembly_offsets[from_byte];
             let mut current_byte = from_byte;
-            for instruction in decoder
+            let decoded = decoder.disasm_all(&self.data[from_byte..maximum_code_byte], virtual_address).expect("Failed to disassemble");
+            for instruction in decoded.into_iter()
             {   
                 let old_instruction = self.get_instruction_at(current_byte);
                 let instruction_tag = InstructionTag
                 {
-                    instruction,
+                    instruction: Instruction::new(instruction, self.header.get_symbols()),
                     file_address: current_byte as u64
                 };
-                if old_instruction == &AssemblyLine::Instruction(instruction_tag) && current_byte - from_byte >= modifyied_bytes
+                let new_assembly_line = AssemblyLine::Instruction(instruction_tag.clone());
+                if old_instruction == &new_assembly_line && current_byte - from_byte >= modifyied_bytes
                 {
                     to_byte = old_instruction.ip() as usize;
                     break;
                 }
-                instructions.push(AssemblyLine::Instruction(instruction_tag));
+                instructions.push(new_assembly_line);
                 instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction_tag, false, &self.header));
                 for _ in 0..instruction.len()
                 {

@@ -105,6 +105,7 @@ impl <'a> App<'a>
                 Header::PE(_) => self.log(NotificationLevel::Info,"Loaded PE file."),
                 Header::None => unreachable!(),
             }
+            self.log(NotificationLevel::Info, &format!("Architecture: {:?}", self.header.architecture()));
             self.log(NotificationLevel::Info, &format!("Bitness: {}", self.header.bitness()));
             self.log(NotificationLevel::Info, &format!("Entry point: {:#X}", self.header.entry_point()));
             for section in self.header.get_sections()

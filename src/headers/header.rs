@@ -1,4 +1,7 @@
-use std::{collections::HashMap, fmt::Display, rc::Rc};
+use std::{collections::HashMap, fmt::Display};
+
+use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
+use object::Architecture;
 
 use super::{elf::ElfHeader, pe::PEHeader};
 
@@ -63,6 +66,16 @@ impl Header
             Header::Elf(header) => header.entry_point,
             Header::PE(header) => header.entry_point,
             Header::None => 0,
+        }
+    }
+
+    pub fn architecture(&self) -> Architecture
+    {
+        match self
+        {
+            Header::Elf(h) => h.architecture,
+            Header::PE(h) => h.architecture,
+            Header::None => Architecture::Unknown,
         }
     }
 
@@ -147,7 +160,7 @@ impl Header
         }
     }
 
-    pub fn get_symbols(&self) -> Option<Rc<HashMap<u64,String>>>
+    pub fn get_symbols(&self) -> Option<&HashMap<u64,String>>
     {
         match self
         {
@@ -186,5 +199,92 @@ impl Header
             .iter()
             .find(|x| virtual_address >= x.virtual_address && virtual_address < x.virtual_address + x.size)
             .map(|x| x.address + virtual_address - x.virtual_address)
+    }
+
+    pub(super) fn get_decoder_for_arch(architecture: &Architecture) -> CsResult<Capstone>
+    {
+        match architecture {
+            Architecture::Aarch64 => 
+            {
+                Capstone::new().arm64().mode(arch::arm64::ArchMode::Arm).build()
+            },
+            Architecture::Aarch64_Ilp32 => 
+            {
+                Capstone::new().arm64().mode(arch::arm64::ArchMode::Arm).build()
+            },
+            Architecture::Arm => 
+            {
+                Capstone::new().arm().mode(arch::arm::ArchMode::Arm).build()
+            },
+            Architecture::I386 => 
+            {
+                Capstone::new().x86().mode(arch::x86::ArchMode::Mode32).build()
+            },
+            Architecture::X86_64 => 
+            {
+                Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build()
+            },
+            Architecture::X86_64_X32 => 
+            {
+                Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build()
+            },
+            Architecture::Mips => 
+            {
+                Capstone::new().mips().mode(arch::mips::ArchMode::Mips32).build()
+            },
+            Architecture::Mips64 => 
+            {
+                Capstone::new().mips().mode(arch::mips::ArchMode::Mips64).build()
+            },
+            Architecture::PowerPc => 
+            {
+                Capstone::new().ppc().mode(arch::ppc::ArchMode::Mode32).build()
+            },
+            Architecture::PowerPc64 => 
+            {
+                Capstone::new().ppc().mode(arch::ppc::ArchMode::Mode64).build()
+            },
+            Architecture::Riscv32 => 
+            {
+                Capstone::new().riscv().mode(arch::riscv::ArchMode::RiscV32).build()
+            },
+            Architecture::Riscv64 => 
+            {
+                Capstone::new().riscv().mode(arch::riscv::ArchMode::RiscV64).build()
+            },
+            Architecture::S390x => 
+            {
+                Capstone::new().sysz().mode(arch::sysz::ArchMode::Default).build()
+            },
+            Architecture::Sparc64 => 
+            {
+                Capstone::new().sparc().mode(arch::sparc::ArchMode::V9).build()
+            },
+            _ => Capstone::new().x86().mode(arch::x86::ArchMode::Mode64).build(),
+        }
+    }
+
+    pub fn get_decoder(&self) -> CsResult<Capstone>
+    {
+        let ret = match self
+        {
+            Header::Elf(header) => 
+            {
+                header.get_decoder()
+            },
+            Header::PE(header) => 
+            {
+                header.get_decoder()
+            },
+            Header::None => Capstone::new().x86().mode(capstone::arch::x86::ArchMode::Mode64).build(),
+        };
+        match ret
+        {
+            Ok(mut cs) => {
+                cs.set_skipdata(true).expect("Failed to set skipdata");
+                Ok(cs)
+            }
+            Err(e) => Err(e),
+        }
     }
 }

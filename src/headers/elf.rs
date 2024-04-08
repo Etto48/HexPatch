@@ -1,6 +1,9 @@
-use std::{collections::HashMap, rc::Rc};
+use std::collections::HashMap;
 
-use object::{read::elf::{ElfFile32, ElfFile64}, BigEndian, LittleEndian, Object, ObjectSection, ObjectSymbol, SectionKind};
+use capstone::{Capstone, CsResult};
+use object::{read::elf::{ElfFile32, ElfFile64}, Architecture, BigEndian, LittleEndian, Object, ObjectSection, ObjectSymbol, SectionKind};
+
+use super::header::Header;
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Bitness
@@ -44,10 +47,11 @@ pub struct Section
 pub struct ElfHeader
 {
     pub bitness: Bitness,
+    pub architecture: Architecture,
     pub endianness: Endianness,
     pub entry_point: u64,
     pub section_table: Vec<Section>,
-    pub symbol_table: Rc<HashMap<u64, String>>,
+    pub symbol_table: HashMap<u64, String>,
     pub inverse_symbol_table: HashMap<String, u64>
 }
 
@@ -105,6 +109,14 @@ impl ElfHeader
         {
             ElfVariant::Elf32Little(_) | ElfVariant::Elf32Big(_) => Bitness::Bit32,
             ElfVariant::Elf64Little(_) | ElfVariant::Elf64Big(_) => Bitness::Bit64
+        };
+
+        let architecture = match &header
+        {
+            ElfVariant::Elf64Little(h) => h.architecture(),
+            ElfVariant::Elf64Big(h) => h.architecture(),
+            ElfVariant::Elf32Little(h) => h.architecture(),
+            ElfVariant::Elf32Big(h) => h.architecture(),
         };
 
         let endianness = match header
@@ -194,10 +206,11 @@ impl ElfHeader
 
         Some(ElfHeader {
             bitness,
+            architecture,
             endianness,
             entry_point,
             section_table: sections,
-            symbol_table: Rc::new(symbols),
+            symbol_table: symbols,
             inverse_symbol_table
         })
     }
@@ -213,8 +226,13 @@ impl ElfHeader
         dbg!(header);
     }
 
-    pub fn get_symbols(&self) -> Rc<HashMap<u64,String>>
+    pub fn get_symbols(&self) -> &HashMap<u64,String>
     {
-        self.symbol_table.clone()
+        &self.symbol_table
+    }
+
+    pub fn get_decoder(&self) -> CsResult<Capstone>
+    {
+        Header::get_decoder_for_arch(&self.architecture)
     }
 }
