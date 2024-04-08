@@ -1,6 +1,7 @@
 use std::{collections::HashMap, fs::File};
 
 use capstone::{Capstone, CsResult};
+use keystone_engine::{Keystone, KeystoneError};
 use object::{pe::ImageNtHeaders64, read::pe::PeFile, Architecture, LittleEndian, Object, ObjectSymbol};
 use pdb::FallibleIterator;
 
@@ -173,5 +174,10 @@ impl PEHeader
     pub fn get_decoder(&self) -> CsResult<Capstone>
     {
         Header::get_decoder_for_arch(&self.architecture)
+    }
+
+    pub fn get_encoder(&self) -> Result<Keystone, KeystoneError>
+    {
+        Header::get_encoder_for_arch(&self.architecture)
     }
 }

@@ -7,9 +7,22 @@ It supports PE and ELF executables, both with debug symbols.
 
 ## Supported file formats
 
-Both ELF and PE files are supported, only amd64 and i386 architectures are supported.
+Both ELF and PE files are supported. The following architectures are supported:
 
-There may be issues with i386 executables, please report any issues.
+- Aarch64
+- Aarch64_Ilp32
+- Arm
+- I386
+- X86_64
+- X86_64_X32
+- Mips
+- Mips64
+- PowerPc
+- PowerPc64
+- Riscv32
+- Riscv64
+- S390x
+- Sparc64
 
 ## Features
 
@@ -45,17 +58,6 @@ There may be issues with i386 executables, please report any issues.
 - Patch
     ![Patch](./assets/patch.png)
     Create a new line with `SHIFT + ENTER`.
-
-## Patching
-
-You need one of the following assembler installed and available in your PATH:
-
-- [nasm](https://www.nasm.us/)
-- [yasm](http://yasm.tortall.net/)
-- [gas](https://www.gnu.org/software/binutils/)
-- [llvm-as](https://llvm.org/docs/CommandGuide/llvm-as.html)
-
-This functionality is tested mainly with `nasm`. Please report any issues with other assemblers.
 
 ## Known issues
 

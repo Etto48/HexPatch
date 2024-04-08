@@ -77,6 +77,18 @@ impl AssemblyLine
             }
         }
     }
+
+    pub fn is_same_instruction(&self, other: &AssemblyLine) -> bool
+    {
+        match (self, other)
+        {
+            (AssemblyLine::Instruction(instruction), AssemblyLine::Instruction(other_instruction)) => 
+            {
+                instruction.instruction.to_string() == other_instruction.instruction.to_string()
+            },
+            _ => false
+        }
+    }
 }
 
 impl App
@@ -263,7 +275,7 @@ impl App
 
     pub(super) fn bytes_from_assembly(&self, assembly: &str, starting_virtual_address: u64) -> Result<Vec<u8>, String>
     {        
-        let bytes = assemble(assembly, self.header.bitness(), starting_virtual_address);
+        let bytes = assemble(assembly, starting_virtual_address, &self.header);
         match bytes
         {
             Ok(bytes) => Ok(bytes),
@@ -386,17 +398,30 @@ impl App
 
             let from_instruction = self.assembly_offsets[from_byte];
             let mut current_byte = from_byte;
-            let decoded = decoder.disasm_all(&self.data[from_byte..maximum_code_byte], virtual_address).expect("Failed to disassemble");
-            for instruction in decoded.into_iter()
+            let mut ip_offset = 0;
+
+            loop
             {   
+                if current_byte >= maximum_code_byte
+                {
+                    break;
+                }
+                let bytes = &self.data[current_byte..maximum_code_byte];
+                let decoded = decoder.disasm_count(bytes, virtual_address + ip_offset, 1).expect("Failed to disassemble");
+                if decoded.len() == 0
+                {
+                    break;
+                }
+                let instruction = decoded.into_iter().next().unwrap();
+                ip_offset += instruction.len() as u64;
                 let old_instruction = self.get_instruction_at(current_byte);
                 let instruction_tag = InstructionTag
                 {
-                    instruction: Instruction::new(instruction, self.header.get_symbols()),
+                    instruction: Instruction::new(&instruction, self.header.get_symbols()),
                     file_address: current_byte as u64
                 };
                 let new_assembly_line = AssemblyLine::Instruction(instruction_tag.clone());
-                if old_instruction == &new_assembly_line && current_byte - from_byte >= modifyied_bytes
+                if old_instruction.is_same_instruction(&new_assembly_line) && current_byte - from_byte >= modifyied_bytes
                 {
                     to_byte = old_instruction.ip() as usize;
                     break;
@@ -432,9 +457,12 @@ impl App
             let delta = new_instruction_count as isize - original_instruction_count as isize;
 
             self.assembly_offsets.splice(from_byte..to_byte, offsets);
-            for offset in self.assembly_offsets.iter_mut().skip(to_byte)
+            if delta != 0
             {
-                *offset = (*offset as isize + delta) as usize;
+                for offset in self.assembly_offsets.iter_mut().skip(to_byte)
+                {
+                    *offset = (*offset as isize + delta) as usize;
+                }
             }
 
             for i in from_instruction..to_instruction
