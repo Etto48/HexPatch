@@ -29,6 +29,16 @@ impl Instruction {
                         }
                     }
                 }
+                if let Some(operand) = operand.strip_prefix("#0x")
+                {
+                    if let Ok(operand_address) = u64::from_str_radix(operand, 16)
+                    {
+                        if let Some(symbol) = symbols.get(&operand_address) {
+                            found_symbol = true;
+                            operands_string.push_str(symbol);
+                        }
+                    }
+                }
             }
             if !found_symbol {
                 operands_string.push_str(operand);
