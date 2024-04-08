@@ -19,7 +19,7 @@ impl LogLine
         }
     }
 
-    pub(super) fn to_line(&self, color_settings: &ColorSettings) -> Line
+    pub(super) fn to_line(&self, color_settings: &ColorSettings) -> Line<'static>
     {
         let mut line = Line::default();
         let style = match self.level
@@ -37,7 +37,7 @@ impl LogLine
     }
 }
 
-impl <'a> App<'a>
+impl App
 {
     pub(super) fn log(&mut self, level: NotificationLevel, message: &str)
     {

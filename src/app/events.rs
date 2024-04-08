@@ -3,7 +3,7 @@ use ratatui::{backend::Backend, Terminal};
 
 use super::{popup_state::PopupState, App};
 
-impl <'a> App<'a>
+impl App
 {
     fn handle_event_normal(&mut self, event: event::Event) -> Result<(), Box<dyn std::error::Error>>
     {

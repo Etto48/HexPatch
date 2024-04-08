@@ -145,7 +145,7 @@ impl Default for ColorSettings
     }
 }
 
-impl <'a> App<'a>
+impl App
 {
     pub(super) fn get_style_for_byte(color_settings: &ColorSettings, byte: u8) -> Style
     {

@@ -23,7 +23,7 @@ impl CursorPosition
     }
 }
 
-impl <'a> App<'a>
+impl App
 {
     pub(super) fn get_cursor_position(&self) -> CursorPosition
     {
@@ -206,11 +206,11 @@ impl <'a> App<'a>
             self.scroll = line_index - (self.screen_size.1 - self.vertical_margin - 1) as usize;
             self.cursor = (local_x as u16, (self.screen_size.1 - self.vertical_margin - 1) as u16);
         }
-        self.update_cursors();
     }
 
     pub(super) fn move_cursor(&mut self, dx: isize, dy: isize)
     {
+        let hex_view_lines = self.get_hex_view_lines();
         // TODO: check that the cursor does not overflow the data
         let (x, y) = self.cursor;
         let mut x = x as isize + dx;
@@ -249,9 +249,9 @@ impl <'a> App<'a>
             x = 0;
             y += 1;
         }
-        if y >= (self.hex_view.lines.len() as isize - 1)
+        if y >= (hex_view_lines as isize - 1)
         {
-            y = self.hex_view.lines.len() as isize - 1;
+            y = hex_view_lines as isize - 1;
         }
         if y < 0
         {
@@ -264,7 +264,7 @@ impl <'a> App<'a>
         else if y >= view_size_y as isize
         {
             y = view_size_y as isize - 1;
-            if self.scroll < self.hex_view.lines.len() - view_size_y as usize
+            if self.scroll < hex_view_lines.saturating_sub(view_size_y as usize)
             {
                 self.scroll += 1;
             }
@@ -279,8 +279,6 @@ impl <'a> App<'a>
         }
 
         self.cursor = (x as u16, y as u16);
-
-        self.update_cursors();
     }
 
     pub(super) fn move_cursor_page_up(&mut self)
@@ -290,39 +288,36 @@ impl <'a> App<'a>
             self.cursor.1 = 0;
         }
         self.scroll = self.scroll.saturating_sub((self.screen_size.1 - self.vertical_margin) as usize);
-        self.update_cursors();
     }
 
     pub(super) fn move_cursor_page_down(&mut self)
     {
-        if self.scroll == self.hex_view.lines.len() - (self.screen_size.1 - self.vertical_margin) as usize
+        let hex_view_lines = self.get_hex_view_lines();
+        if self.scroll == hex_view_lines - (self.screen_size.1 - self.vertical_margin) as usize
         {
             self.cursor.1 = self.screen_size.1 - self.vertical_margin - 1;
         }
-        self.scroll = (self.scroll + (self.screen_size.1 - self.vertical_margin) as usize).min(self.hex_view.lines.len() - (self.screen_size.1 - self.vertical_margin) as usize);
-        self.update_cursors();
+        self.scroll = (self.scroll + (self.screen_size.1 - self.vertical_margin) as usize).min(hex_view_lines - (self.screen_size.1 - self.vertical_margin) as usize);
+    }
+
+    pub(super) fn get_hex_view_lines(&self) -> usize
+    {
+        let hex_view_lines = self.data.len() / (self.block_size * self.blocks_per_row) + if self.data.len() % (self.block_size * self.blocks_per_row) == 0 { 0 } else { 1 };
+        hex_view_lines
     }
 
     pub(super) fn move_cursor_to_end(&mut self)
     {
-        self.scroll = (self.hex_view.lines.len() as isize - (self.screen_size.1 as isize - self.vertical_margin as isize)).max(0) as usize;
+        let hex_view_lines = self.get_hex_view_lines();
+        self.scroll = (hex_view_lines as isize - (self.screen_size.1 as isize - self.vertical_margin as isize)).max(0) as usize;
         let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - 3;
-        let y = (self.screen_size.1 - self.vertical_margin - 1).min(self.hex_view.lines.len() as u16 - 1);
+        let y = (self.screen_size.1 - self.vertical_margin - 1).min(hex_view_lines as u16 - 1);
         self.cursor = (x, y);
-        self.update_cursors();
     }
 
     pub(super) fn move_cursor_to_start(&mut self)
     {
         self.cursor = (0, 0);
         self.scroll = 0;
-        self.update_cursors();
-    }
-
-    pub(super) fn update_cursors(&mut self)
-    {
-        self.update_address_cursor();
-        self.update_hex_cursor();
-        self.update_text_cursor();
     }
 }

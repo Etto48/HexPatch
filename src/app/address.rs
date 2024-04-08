@@ -1,38 +1,28 @@
 use ratatui::text::{Line, Span, Text};
 
-use super::{color_settings::ColorSettings, App};
+use super::App;
 
-impl <'a> App<'a>
+impl <'a> App
 {
-    pub(super) fn addresses(color_settings: &ColorSettings, size: usize, block_size: usize, blocks_per_row: usize) -> Text<'a>
+    pub(super) fn get_address_view(&self, start_row: usize, end_row: usize) -> Text<'static>
     {
-        let mut result = Text::default();
-
-        for i in 0..=size/(block_size * blocks_per_row)
+        let mut ret = Text::default();
+        ret.lines.reserve(end_row - start_row);
+        let selected_row = self.get_cursor_position().line_index;
+        for i in start_row..end_row
         {
             let mut line = Line::default();
-            line.spans.push(Span::styled(format!("{:16X}", i * block_size * blocks_per_row), 
-            if i == 0 { 
-                color_settings.address_selected 
-            } else { 
-                color_settings.address_default 
+            line.spans.push(Span::styled(format!("{:16X}", i * self.block_size * self.blocks_per_row), 
+            if i == selected_row
+            {
+                self.color_settings.address_selected
+            }
+            else
+            {
+                self.color_settings.address_default
             }));
-            result.lines.push(line);
+            ret.lines.push(line);
         }
-        result
-    }
-
-    pub(super) fn update_address_cursor(&mut self)
-    {
-        if self.address_last_row < self.address_view.lines.len()
-        {
-            self.address_view.lines[self.address_last_row].spans[0].style = self.color_settings.address_default;
-        }
-        let current_row = self.cursor.1 as usize + self.scroll;
-        if current_row < self.address_view.lines.len()
-        {
-            self.address_last_row = current_row;
-            self.address_view.lines[self.address_last_row].spans[0].style = self.color_settings.address_selected;
-        }
+        ret
     }
 }

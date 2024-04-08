@@ -2,9 +2,9 @@ use ratatui::text::{Line, Span, Text};
 
 use super::App;
 
-impl <'a> App<'a>
+impl App
 {
-    pub(super) fn build_status_bar(&self) -> Text<'a>
+    pub(super) fn build_status_bar(&self) -> Text<'static>
     {
         let mut status_bar = Text::default();
         status_bar.style = self.color_settings.status_bar;

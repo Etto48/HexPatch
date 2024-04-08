@@ -18,17 +18,17 @@ impl HelpLine
         }
     }
 
-    pub fn to_line(&self, color_settings: &ColorSettings) -> Line<'_> 
+    pub fn to_line(&self, color_settings: &ColorSettings) -> Line<'static> 
     {
         let mut line = Line::default();
         line.spans.push(Span::styled(format!("{:>2}",&self.command), color_settings.help_command));
         line.spans.push(Span::styled(": ", color_settings.menu_text));
-        line.spans.push(Span::styled(&self.description, color_settings.menu_text));
+        line.spans.push(Span::styled(self.description.clone(), color_settings.menu_text));
         line.left_aligned()
     }
 }
 
-impl <'a> App<'a>
+impl App
 {
     pub(super) fn help_list() -> Vec<HelpLine>
     {

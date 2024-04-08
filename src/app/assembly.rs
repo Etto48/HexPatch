@@ -79,7 +79,7 @@ impl AssemblyLine
     }
 }
 
-impl <'a> App<'a>
+impl App
 {
     pub(super) fn find_symbols(&self, filter: &str) -> Vec<(u64, String)>
     {
@@ -98,7 +98,7 @@ impl <'a> App<'a>
         }
     }
 
-    fn instruction_to_line (color_settings: &ColorSettings, instruction: &InstructionTag, selected: bool, header: &Header) -> Line<'a>
+    fn instruction_to_line (color_settings: &ColorSettings, instruction: &InstructionTag, selected: bool, header: &Header) -> Line<'static>
     {
         let symbol_table = header.get_symbols();
         let mut line = Line::default();
@@ -114,13 +114,12 @@ impl <'a> App<'a>
         ));
         line.spans.push(Span::raw(" "));
         
-
-        // TODO: handle symbols
         let mnemonic = instruction.instruction.mnemonic();
         let args = instruction.instruction.operands();
         let mnemonic_style = 
         match instruction.instruction.mnemonic() {
             "nop" => color_settings.assembly_nop,
+            // TODO: handle bad instructions better
             "?" => color_settings.assembly_bad,
             _ => color_settings.assembly_default,
         };
@@ -298,24 +297,8 @@ impl <'a> App<'a>
             {
                 self.data[current_ip as usize + i + instruction_offset] = *byte;
             }
-            self.color_instruction_bytes(&current_instruction, true);
-            for (i, byte) in bytes.iter().enumerate()
-            {
-                let style = Self::get_style_for_byte(&self.color_settings, *byte);
-                let cursor_position = self.get_expected_cursor_position(current_ip as usize + i + instruction_offset, true);
-                let [high_byte, low_byte] = Self::u8_to_hex(*byte);
-
-                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].content = high_byte.to_string().into();
-                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3].style = style;
-                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].content = low_byte.to_string().into();
-                self.hex_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 3 + 1].style = style;
-                
-                self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].content = Self::u8_to_char(*byte).to_string().into();
-                self.text_view.lines[cursor_position.line_index].spans[cursor_position.line_byte_index * 2].style = style;
-            }
             self.dirty = true;
             self.edit_assembly(bytes.len() + instruction_offset);
-            self.update_cursors();
         }
     }
 
