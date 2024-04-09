@@ -227,7 +227,6 @@ impl App
         }
         let new_global_byte_index = new_half_byte_position as usize / 2;
         let new_high_byte = new_half_byte_position % 2 == 0;
-        self.log(NotificationLevel::Debug, &format!("Half byte delta: {}, new half byte position: {}, new global byte index: {}, new high byte: {}", half_byte_delta, new_half_byte_position, new_global_byte_index, new_high_byte));
 
         let new_selected_row = new_global_byte_index / (self.block_size * self.blocks_per_row);
         let min_visible_row = self.scroll;
