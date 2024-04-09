@@ -84,7 +84,8 @@ impl AssemblyLine
         {
             (AssemblyLine::Instruction(instruction), AssemblyLine::Instruction(other_instruction)) => 
             {
-                instruction.instruction.to_string() == other_instruction.instruction.to_string()
+                instruction.instruction.bytes == other_instruction.instruction.bytes &&
+                instruction.instruction.virtual_address == other_instruction.instruction.virtual_address
             },
             _ => false
         }
@@ -641,5 +642,24 @@ mod test
         }
         assert!(text_found);
         
+    }
+
+    #[test]
+    fn test_bad_instruction()
+    {
+        let data = vec![0x06, 0x0f, 0x07];
+        let app = App::mockup(data);
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    assert!(instruction.instruction.to_string().contains(".byte"));
+                },
+                _ => {}
+            }
+        }
+
     }
 }
