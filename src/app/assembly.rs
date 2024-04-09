@@ -646,7 +646,7 @@ mod test
     #[test]
     fn test_bad_instruction()
     {
-        let data = vec![0x06, 0x0f, 0x07];
+        let data = vec![0x06, 0x0e, 0x07];
         let app = App::mockup(data);
         for line in app.assembly_instructions.iter()
         {
@@ -654,7 +654,8 @@ mod test
             {
                 AssemblyLine::Instruction(instruction) =>
                 {
-                    assert!(instruction.instruction.to_string().contains(".byte"));
+                    let contains_bad_instruction = instruction.instruction.to_string().contains(".byte");
+                    assert!(contains_bad_instruction, "Found {} instead of .byte ...", instruction.instruction.to_string());
                 },
                 _ => {}
             }

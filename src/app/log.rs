@@ -2,6 +2,7 @@ use ratatui::text::{Line, Span};
 
 use super::{color_settings::ColorSettings, notification::NotificationLevel, App};
 
+#[derive(Debug, Clone)]
 pub struct LogLine
 {
     pub(super) level: NotificationLevel,
