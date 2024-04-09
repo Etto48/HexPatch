@@ -120,7 +120,7 @@ impl App
     {
         let block_characters_hex = block_size * 3 + 1;
         let block_characters_text = block_size * 2 + 1;
-        let available_width = width - 18 - 2 - 2;
+        let available_width = width.saturating_sub(18 + 2 + 2);
         let complessive_chars_per_block = block_characters_hex + block_characters_text;
         let blocks_per_row = (available_width + 2) / complessive_chars_per_block as u16;
         blocks_per_row as usize

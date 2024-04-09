@@ -77,38 +77,14 @@ impl App
         let canonical_path = Self::path_canonicalize(path, None).map_err(|e| e.to_string())?;
         let screen_size = Self::get_size(terminal)?;
 
-        let mut app = 
-        App{
-            path: canonical_path,
-            commands: Fuzzer::new(&Command::get_commands()),
-            header: Header::None,
-            log: Vec::new(),
-            help_list: Self::help_list(),
-            notificaiton: NotificationLevel::None,
-            data: Vec::new(),
-            dirty: false,
-            assembly_offsets: Vec::new(),
-            assembly_instructions: Vec::new(),
-            text_last_searched_string: String::new(),
-            info_mode: InfoMode::Text,
-            scroll: 0,
-            cursor: (0,0),
-            poll_time: Duration::from_millis(1000),
-            needs_to_exit: false,
-            screen_size,
-
-            color_settings,
-
-            popup: None,
-
-            vertical_margin: 2,
-            block_size: 8,
-            blocks_per_row: 1,
-        };
+        let mut app = App::default();
+        app.path = canonical_path;
+        app.screen_size = screen_size;
+        app.color_settings = color_settings;
 
         if app.path.is_file()
         {
-            app.open_file(&app.path.to_string_lossy().to_string(), terminal).map_err(|e| e.to_string())?;
+            app.open_file(&app.path.to_string_lossy().to_string(), Some(terminal)).map_err(|e| e.to_string())?;
         }
         else
         {
@@ -227,3 +203,35 @@ impl App
     }
 }
 
+impl Default for App
+{
+    fn default() -> Self {
+        App{
+            path: PathBuf::new(),
+            commands: Fuzzer::new(&Command::get_commands()),
+            header: Header::None,
+            log: Vec::new(),
+            help_list: Self::help_list(),
+            notificaiton: NotificationLevel::None,
+            data: Vec::new(),
+            dirty: false,
+            assembly_offsets: Vec::new(),
+            assembly_instructions: Vec::new(),
+            text_last_searched_string: String::new(),
+            info_mode: InfoMode::Text,
+            scroll: 0,
+            cursor: (0,0),
+            poll_time: Duration::from_millis(1000),
+            needs_to_exit: false,
+            screen_size: (0,0),
+
+            color_settings: ColorSettings::default(),
+
+            popup: None,
+
+            vertical_margin: 2,
+            block_size: 8,
+            blocks_per_row: 1,
+        }
+    }
+}

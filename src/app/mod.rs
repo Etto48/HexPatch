@@ -16,5 +16,6 @@ pub mod info_mode;
 pub mod run_command;
 pub mod cursor_position;
 pub mod color_settings;
+pub mod test;
 
 pub use app::App;

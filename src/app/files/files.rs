@@ -30,7 +30,7 @@ impl App
         }
         else
         {
-            self.open_file(&selected.path().to_string_lossy(), terminal)?;
+            self.open_file(&selected.path().to_string_lossy(), Some(terminal))?;
             *popup = None;
         }
         
@@ -120,7 +120,7 @@ impl App
         self.log(NotificationLevel::Info, "Press H for a list of commands.");
     }
 
-    pub(in crate::app) fn open_file<B: Backend>(&mut self, path: &str, terminal: &mut Terminal<B>) -> Result<(), Box<dyn Error>>
+    pub(in crate::app) fn open_file<B: Backend>(&mut self, path: &str, mut terminal: Option<&mut Terminal<B>>) -> Result<(), Box<dyn Error>>
     {
         self.log(NotificationLevel::Info, &format!("Opening file: \"{}\"", path));
 
@@ -130,19 +130,36 @@ impl App
         self.scroll = 0;
         self.cursor = (0,0);
 
-        self.screen_size = Self::get_size(terminal)?;
+        (self.screen_size, terminal) = if let Some(terminal) = terminal {(Self::get_size(terminal)?, Some(terminal))} else {((0,0), None)};
         self.block_size = 8;
         self.vertical_margin = 2;
         self.blocks_per_row = Self::calc_blocks_per_row(self.block_size, self.screen_size.0);
 
-        Self::print_loading_status(&self.color_settings, &format!("Opening \"{}\"...", path), terminal)?;
+        terminal = if let Some(terminal) = terminal
+        {
+            Self::print_loading_status(&self.color_settings, &format!("Opening \"{}\"...", path), terminal)?;
+            Some(terminal)
+        } else {None};
         self.data = std::fs::read(&self.path)?;
         
-        Self::print_loading_status(&self.color_settings, "Decoding binary data...", terminal)?;
+        terminal = if let Some(terminal) = terminal
+        {
+            Self::print_loading_status(&self.color_settings, "Decoding binary data...", terminal)?;
+            Some(terminal)
+        } else {None};
         self.header = Header::parse_header(&self.data);
-        Self::print_loading_status(&self.color_settings, "Disassembling executable...", terminal)?;
+
+        terminal = if let Some(terminal) = terminal
+        {
+            Self::print_loading_status(&self.color_settings, "Disassembling executable...", terminal)?;
+            Some(terminal)
+        } else {None};
         (self.assembly_offsets, self.assembly_instructions) = Self::sections_from_bytes(&self.data, &self.header);
-        Self::print_loading_status(&self.color_settings, "Opening ui...", terminal)?;
+
+        if let Some(terminal) = terminal
+        {
+            Self::print_loading_status(&self.color_settings, "Opening ui...", terminal)?;
+        }
         self.log_header_info();
 
         Ok(())
