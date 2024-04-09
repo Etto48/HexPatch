@@ -134,7 +134,6 @@ impl App
         let mnemonic_style = 
         match instruction.instruction.mnemonic() {
             "nop" => color_settings.assembly_nop,
-            // TODO: handle bad instructions better
             ".byte" => color_settings.assembly_bad,
             _ => color_settings.assembly_default,
         };
