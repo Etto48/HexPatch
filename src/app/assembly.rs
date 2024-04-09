@@ -487,3 +487,63 @@ impl App
         }
     }
 }
+
+#[cfg(test)]
+mod test
+{
+    use std::vec;
+
+    use super::*;
+    #[test]
+    fn test_assembly_line()
+    {
+        let file_address = 0xdeadbeef;
+        let virtual_address = 0xcafebabe;
+
+        let al = AssemblyLine::Instruction(
+            InstructionTag {
+                instruction: Instruction {
+                    mnemonic: "mov".to_string(),
+                    operands: "rax, rbx".to_string(),
+                    virtual_address,
+                    bytes: vec![0x48, 0x89, 0xd8],
+                },
+                file_address
+            }
+        );
+        let line = al.to_line(&ColorSettings::default(), 0, &Header::None);
+
+        let contains_mnemonic = line.spans.iter().any(|span| span.content.contains("mov"));
+        assert!(contains_mnemonic);
+        let contains_operands = line.spans.iter().any(|span| span.content.contains("rax, rbx"));
+        assert!(contains_operands); 
+        let comma_count = line.spans.iter().map(|span|span.content.chars().filter(|c| *c == ',').count()).sum::<usize>();
+        assert_eq!(comma_count, 1);
+        let contains_virtual_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", virtual_address)));
+        assert!(contains_virtual_address);
+        let contains_file_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", file_address)));
+        assert!(contains_file_address);
+
+        let section_size = 0x1000;
+
+        let al = AssemblyLine::SectionTag(
+            SectionTag {
+                name: ".text".to_string(),
+                file_address,
+                virtual_address,
+                size: section_size
+            }
+        );
+
+        let line = al.to_line(&ColorSettings::default(), 0, &Header::None);
+
+        let contains_section_name = line.spans.iter().any(|span| span.content.contains(".text"));
+        assert!(contains_section_name);
+        let contains_virtual_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", virtual_address)));
+        assert!(contains_virtual_address);
+        let contains_file_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", file_address)));
+        assert!(contains_file_address);
+        let contains_size = line.spans.iter().any(|span| span.content.contains(&format!("{}B", section_size)));
+        assert!(contains_size);
+    }
+}
