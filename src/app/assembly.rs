@@ -546,4 +546,100 @@ mod test
         let contains_size = line.spans.iter().any(|span| span.content.contains(&format!("{}B", section_size)));
         assert!(contains_size);
     }
+
+    #[test]
+    fn test_disassemble_and_patch()
+    {
+        let data = vec![0x48, 0x89, 0xd8, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
+        let mut app = App::mockup(data);
+        app.screen_size = (80, 24);
+        app.resize_if_needed(80);
+        let mut expected_instructions = vec!["mov rax, rbx", "mov rcx, rax", "mov rax, rax"];
+        expected_instructions.reverse();
+        let mut text_found = false;
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    assert!(text_found, "Instructions must be after .text section");
+                    let instruction_text = expected_instructions.pop().expect("There are too many instructions in assembly_instructions");
+                    assert!(instruction.instruction.to_string().contains(instruction_text));
+                },
+                AssemblyLine::SectionTag(section) => 
+                {
+                    if text_found
+                    {
+                        panic!("There are too many .text sections in assembly_instructions");
+                    }
+                    assert_eq!(section.name, ".text");
+                    text_found = true;
+                }
+            }
+        }
+        assert!(text_found);
+
+        app.patch("nop; nop; nop;");
+        let expected_data = vec![0x90, 0x90, 0x90, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
+        let mut expected_instructions = vec!["nop", "nop", "nop", "mov rcx, rax", "mov rax, rax"];
+        expected_instructions.reverse();
+        assert_eq!(app.data, expected_data);
+        text_found = false;
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    assert!(text_found, "Instructions must be after .text section");
+                    let instruction_text = expected_instructions.pop().expect("There are too many instructions in assembly_instructions");
+                    assert!(instruction.instruction.to_string().contains(instruction_text));
+                },
+                AssemblyLine::SectionTag(section) => 
+                {
+                    if text_found
+                    {
+                        panic!("There are too many .text sections in assembly_instructions");
+                    }
+                    assert_eq!(section.name, ".text");
+                    text_found = true;
+                }
+            }
+        }
+        assert!(text_found);
+
+        // move one byte forward
+        app.move_cursor(2,0);
+
+        app.patch("jmp rax");
+        let expected_data = vec![0x90, 0xff, 0xe0, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
+        let mut expected_instructions = vec!["nop", "jmp rax", "mov rcx, rax", "mov rax, rax"];
+        expected_instructions.reverse();
+        assert_eq!(app.data, expected_data);
+        text_found = false;
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    assert!(text_found, "Instructions must be after .text section");
+                    let instruction_text = expected_instructions.pop().expect("There are too many instructions in assembly_instructions");
+                    assert!(instruction.instruction.to_string().contains(instruction_text));
+                },
+                AssemblyLine::SectionTag(section) => 
+                {
+                    if text_found
+                    {
+                        panic!("There are too many .text sections in assembly_instructions");
+                    }
+                    assert_eq!(section.name, ".text");
+                    text_found = true;
+                }
+            }
+        }
+        assert!(text_found);
+        
+    }
 }

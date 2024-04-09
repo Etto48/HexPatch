@@ -27,7 +27,7 @@ impl App
 {
     pub(super) fn get_cursor_position(&self) -> CursorPosition
     {
-        if self.data.is_empty()
+        if self.data.is_empty() || self.blocks_per_row == 0
         {
             return CursorPosition {
                 local_x: 0,
@@ -216,7 +216,7 @@ impl App
         let mut x = x as isize + dx;
         let mut y = y as isize + dy;
         
-        let view_size_y = self.screen_size.1 - self.vertical_margin;
+        let view_size_y = self.screen_size.1.saturating_sub(self.vertical_margin);
 
         let viewed_block_size = (self.block_size * 3 + 1) as isize;
         let viewed_line_size = viewed_block_size * self.blocks_per_row as isize + self.blocks_per_row as isize - 3;
@@ -272,6 +272,10 @@ impl App
 
         let data_len = self.data.len() as isize;
         let bytes_per_row = self.block_size as isize * self.blocks_per_row as isize;
+        if bytes_per_row == 0
+        {
+            return;
+        }
         let characters_in_last_row = (data_len % bytes_per_row) * 3 + (data_len % bytes_per_row) / self.block_size as isize - 2;
         if y + self.scroll as isize == data_len / bytes_per_row 
         {
@@ -302,6 +306,10 @@ impl App
 
     pub(super) fn get_hex_view_lines(&self) -> usize
     {
+        if self.data.is_empty() || self.blocks_per_row == 0
+        {
+            return 0;
+        }
         let hex_view_lines = self.data.len() / (self.block_size * self.blocks_per_row) + if self.data.len() % (self.block_size * self.blocks_per_row) == 0 { 0 } else { 1 };
         hex_view_lines
     }
