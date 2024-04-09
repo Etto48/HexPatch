@@ -257,14 +257,10 @@ impl Header
             Header::GenericHeader(header) => Self::get_decoder_for_arch(&header.architecture),
             Header::None => Capstone::new().x86().mode(capstone::arch::x86::ArchMode::Mode64).build(),
         };
-        match ret
-        {
-            Ok(mut cs) => {
-                cs.set_skipdata(true).expect("Failed to set skipdata");
-                Ok(cs)
-            }
-            Err(e) => Err(e),
-        }
+        ret.map(|mut cs| {
+            cs.set_skipdata(true).expect("Failed to set skipdata");
+            cs
+        })
     }
 
     pub fn get_encoder(&self) -> Result<Keystone, KeystoneError>
