@@ -203,7 +203,7 @@ impl App
                     lines.push(
                         AssemblyLine::SectionTag(
                             SectionTag {
-                                name: ".text".to_string(),
+                                name: section.name.clone(),
                                 file_address: section.file_offset,
                                 virtual_address: section.virtual_address,
                                 size: section.size as usize
