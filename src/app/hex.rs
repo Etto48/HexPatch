@@ -137,7 +137,7 @@ impl App
     {
         value = value.to_uppercase().next().unwrap(); 
 
-        if ('0'..'9').contains(&value) || ('A'..'F').contains(&value)
+        if ('0'..='9').contains(&value) || ('A'..='F').contains(&value)
         {   
             let cursor_position = self.get_cursor_position();
 
