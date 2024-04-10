@@ -183,9 +183,13 @@ impl App
                     let mut popup_text = Text::default();
                     let mut popup_title = "Popup";
 
-                    let mut popup_rect = Rect::new(f.size().width / 2 - 27, f.size().height / 2 - 2, 54, 5);
+                    let mut popup_width = 60;
+                    let mut popup_height = 5;
 
-                    let popup_result = self.fill_popup(&self.color_settings, popup_state, f, &mut popup_title, &mut popup_text, &mut popup_rect);
+                    let popup_result = self.fill_popup(&self.color_settings, popup_state, &mut popup_title, &mut popup_text, &mut popup_height, &mut popup_width);
+                    popup_height = popup_height.min(f.size().height.saturating_sub(2) as usize);
+                    popup_width = popup_width.min(f.size().width.saturating_sub(1) as usize);
+                    let popup_rect = Rect::new((f.size().width / 2).saturating_sub((popup_width / 2 + 1) as u16), (f.size().height / 2).saturating_sub((popup_height / 2) as u16), popup_width as u16, popup_height as u16);
 
                     if popup_result.is_ok()
                     {

@@ -405,11 +405,11 @@ impl App
                             },
                             Some(PopupState::Log(scroll)) =>
                             {
-                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()?), -1);
+                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), -1);
                             }
                             Some(PopupState::Help(scroll)) =>
                             {
-                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()?), 1);
+                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()), 1);
                             }
                             _ => {}
                         }
@@ -431,11 +431,11 @@ impl App
                             },
                             Some(PopupState::Log(scroll)) =>
                             {
-                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()?), 1);
+                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), 1);
                             }
                             Some(PopupState::Help(scroll)) =>
                             {
-                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()?), -1);
+                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()), -1);
                             }
                             _ => {}
                         }
