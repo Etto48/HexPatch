@@ -147,8 +147,8 @@ impl App
                     _ => {}
                 }
             },
-            event::Event::Resize(width, _height) => {
-                self.resize_if_needed(width);
+            event::Event::Resize(width, height) => {
+                self.resize_to_size(width, height);
             },
             _ => {}
         }
@@ -510,10 +510,10 @@ impl App
                     _ => {}
                 }
             },
-            event::Event::Resize(width, _height) =>
+            event::Event::Resize(width, height) =>
             {
                 Self::resize_popup_if_needed(&mut popup);
-                self.resize_if_needed(width);
+                self.resize_to_size(width, height);
             },
             _ => {}
         }

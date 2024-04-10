@@ -551,8 +551,7 @@ mod test
     {
         let data = vec![0x48, 0x89, 0xd8, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
         let mut app = App::mockup(data);
-        app.screen_size = (80, 24);
-        app.resize_if_needed(80);
+        app.resize_to_size(80, 24);
         let mut expected_instructions = vec!["mov rax, rbx", "mov rcx, rax", "mov rax, rax"];
         expected_instructions.reverse();
         let mut text_found = false;

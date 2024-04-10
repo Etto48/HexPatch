@@ -98,11 +98,12 @@ impl App
         ret
     }
 
-    pub(super) fn resize_if_needed(&mut self, width: u16)
+    pub(super) fn resize_to_size(&mut self, width: u16, height: u16)
     {
         let blocks_per_row = Self::calc_blocks_per_row(self.block_size, width);
-        if self.blocks_per_row != blocks_per_row
+        if (width, height) != self.screen_size
         {
+            self.screen_size = (width, height);
             self.resize(blocks_per_row);
         }
     }
@@ -215,34 +216,20 @@ mod test
     {
         let data = vec![0; 0x100];
         let mut app = App::mockup(data);
-        app.screen_size = (80, 24);
-        app.resize_if_needed(80);
-        app.screen_size = (80, 50);
-        app.resize_if_needed(80);
-        app.screen_size = (40, 24);
-        app.resize_if_needed(40);
-        app.screen_size = (250, 250);
-        app.resize_if_needed(250);
+        app.resize_to_size(80, 24);
+        app.resize_to_size(80, 50);
+        app.resize_to_size(40, 24);
+        app.resize_to_size(250, 250);
 
-        app.screen_size = (80, 1);
-        app.resize_if_needed(80);
-        app.screen_size = (250, 1);
-        app.resize_if_needed(250);
-        app.screen_size = (40, 1);
-        app.resize_if_needed(40);
-        app.screen_size = (1, 1);
-        app.resize_if_needed(1);
+        app.resize_to_size(80, 1);
+        app.resize_to_size(250, 1);
+        app.resize_to_size(40, 1);
+        app.resize_to_size(1, 1);
 
-        app.screen_size = (1, 50);
-        app.resize_if_needed(1);
-        app.screen_size = (1, 250);
-        app.resize_if_needed(1);
-        app.screen_size = (1, 24);
-        app.resize_if_needed(1);
-        app.screen_size = (1, 1);
-        app.resize_if_needed(1);
-        
-        app.screen_size = (80, 24);
-        app.resize_if_needed(80);
+        app.resize_to_size(1, 50);
+        app.resize_to_size(1, 250);
+        app.resize_to_size(1, 24);
+        app.resize_to_size(1, 1);
+        app.resize_to_size(80, 24);
     }
 }
