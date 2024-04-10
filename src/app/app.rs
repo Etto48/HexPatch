@@ -162,7 +162,8 @@ impl App
                             let assembly_end_index = (assembly_start_index + f.size().height as usize - 2).min(self.assembly_instructions.len());
                             let assembly_subview_lines = &self.assembly_instructions[assembly_start_index..assembly_end_index];
                             let mut assembly_subview = Text::default();
-                            assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.color_settings, self.get_cursor_position().global_byte_index, &self.header)));
+                            let address_min_width = assembly_subview_lines.last().map(|x| format!("{:X}",x.ip()).len() + 1).unwrap_or(1);
+                            assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.color_settings, self.get_cursor_position().global_byte_index, &self.header, address_min_width)));
                             ratatui::widgets::Paragraph::new(assembly_subview)
                                 .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT))
                         }
