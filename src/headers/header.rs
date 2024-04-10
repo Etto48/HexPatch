@@ -257,14 +257,10 @@ impl Header
             Header::GenericHeader(header) => Self::get_decoder_for_arch(&header.architecture),
             Header::None => Capstone::new().x86().mode(capstone::arch::x86::ArchMode::Mode64).build(),
         };
-        match ret
-        {
-            Ok(mut cs) => {
-                cs.set_skipdata(true).expect("Failed to set skipdata");
-                Ok(cs)
-            }
-            Err(e) => Err(e),
-        }
+        ret.map(|mut cs| {
+            cs.set_skipdata(true).expect("Failed to set skipdata");
+            cs
+        })
     }
 
     pub fn get_encoder(&self) -> Result<Keystone, KeystoneError>
@@ -274,5 +270,63 @@ impl Header
             Header::None => Keystone::new(Arch::X86, Mode::MODE_64),
         };
         ret
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use crate::headers::generic::FileType;
+
+    use super::*;
+    #[test]
+    fn test_parse_elf()
+    {
+        let data = include_bytes!("../../test/elf.bin");
+        let header = Header::parse_header(data);
+        if let Header::GenericHeader(header) = header
+        {
+            assert_eq!(header.file_type, FileType::Elf64);
+            assert_eq!(header.architecture, Architecture::X86_64);
+            assert_eq!(header.endianness, object::Endianness::Little);
+        }
+        else
+        {
+            panic!("Failed to parse ELF header.");
+        }
+    }
+
+    #[test]
+    fn test_parse_pe()
+    {
+        let data = include_bytes!("../../test/pe.bin");
+        let header = Header::parse_header(data);
+        if let Header::GenericHeader(header) = header
+        {
+            assert_eq!(header.file_type, FileType::Pe64);
+            assert_eq!(header.architecture, Architecture::X86_64);
+            assert_eq!(header.endianness, object::Endianness::Little);
+        }
+        else
+        {
+            panic!("Failed to parse PE header.");
+        }
+    }
+
+    #[test]
+    fn test_parse_macho()
+    {
+        let data = include_bytes!("../../test/macho.bin");
+        let header = Header::parse_header(data);
+        if let Header::GenericHeader(header) = header
+        {
+            assert_eq!(header.file_type, FileType::MachO64);
+            assert_eq!(header.architecture, Architecture::X86_64);
+            assert_eq!(header.endianness, object::Endianness::Little);
+        }
+        else
+        {
+            panic!("Failed to parse Mach-O header.");
+        }
     }
 }

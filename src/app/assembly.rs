@@ -84,7 +84,8 @@ impl AssemblyLine
         {
             (AssemblyLine::Instruction(instruction), AssemblyLine::Instruction(other_instruction)) => 
             {
-                instruction.instruction.to_string() == other_instruction.instruction.to_string()
+                instruction.instruction.bytes == other_instruction.instruction.bytes &&
+                instruction.instruction.virtual_address == other_instruction.instruction.virtual_address
             },
             _ => false
         }
@@ -133,8 +134,7 @@ impl App
         let mnemonic_style = 
         match instruction.instruction.mnemonic() {
             "nop" => color_settings.assembly_nop,
-            // TODO: handle bad instructions better
-            "?" => color_settings.assembly_bad,
+            ".byte" => color_settings.assembly_bad,
             _ => color_settings.assembly_default,
         };
         
@@ -485,5 +485,181 @@ impl App
 
             self.assembly_instructions.splice(from_instruction..to_instruction, instructions);
         }
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use std::vec;
+
+    use super::*;
+    #[test]
+    fn test_assembly_line()
+    {
+        let file_address = 0xdeadbeef;
+        let virtual_address = 0xcafebabe;
+
+        let al = AssemblyLine::Instruction(
+            InstructionTag {
+                instruction: Instruction {
+                    mnemonic: "mov".to_string(),
+                    operands: "rax, rbx".to_string(),
+                    virtual_address,
+                    bytes: vec![0x48, 0x89, 0xd8],
+                },
+                file_address
+            }
+        );
+        let line = al.to_line(&ColorSettings::default(), 0, &Header::None);
+
+        let contains_mnemonic = line.spans.iter().any(|span| span.content.contains("mov"));
+        assert!(contains_mnemonic);
+        let contains_operands = line.spans.iter().any(|span| span.content.contains("rax, rbx"));
+        assert!(contains_operands); 
+        let comma_count = line.spans.iter().map(|span|span.content.chars().filter(|c| *c == ',').count()).sum::<usize>();
+        assert_eq!(comma_count, 1);
+        let contains_virtual_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", virtual_address)));
+        assert!(contains_virtual_address);
+        let contains_file_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", file_address)));
+        assert!(contains_file_address);
+
+        let section_size = 0x1000;
+
+        let al = AssemblyLine::SectionTag(
+            SectionTag {
+                name: ".text".to_string(),
+                file_address,
+                virtual_address,
+                size: section_size
+            }
+        );
+
+        let line = al.to_line(&ColorSettings::default(), 0, &Header::None);
+
+        let contains_section_name = line.spans.iter().any(|span| span.content.contains(".text"));
+        assert!(contains_section_name);
+        let contains_virtual_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", virtual_address)));
+        assert!(contains_virtual_address);
+        let contains_file_address = line.spans.iter().any(|span| span.content.contains(&format!("{:X}", file_address)));
+        assert!(contains_file_address);
+        let contains_size = line.spans.iter().any(|span| span.content.contains(&format!("{}B", section_size)));
+        assert!(contains_size);
+    }
+
+    #[test]
+    fn test_disassemble_and_patch()
+    {
+        let data = vec![0x48, 0x89, 0xd8, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
+        let mut app = App::mockup(data);
+        app.screen_size = (80, 24);
+        app.resize_if_needed(80);
+        let mut expected_instructions = vec!["mov rax, rbx", "mov rcx, rax", "mov rax, rax"];
+        expected_instructions.reverse();
+        let mut text_found = false;
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    assert!(text_found, "Instructions must be after .text section");
+                    let instruction_text = expected_instructions.pop().expect("There are too many instructions in assembly_instructions");
+                    assert!(instruction.instruction.to_string().contains(instruction_text));
+                },
+                AssemblyLine::SectionTag(section) => 
+                {
+                    if text_found
+                    {
+                        panic!("There are too many .text sections in assembly_instructions");
+                    }
+                    assert_eq!(section.name, ".text");
+                    text_found = true;
+                }
+            }
+        }
+        assert!(text_found);
+
+        app.patch("nop; nop; nop;");
+        let expected_data = vec![0x90, 0x90, 0x90, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
+        let mut expected_instructions = vec!["nop", "nop", "nop", "mov rcx, rax", "mov rax, rax"];
+        expected_instructions.reverse();
+        assert_eq!(app.data, expected_data);
+        text_found = false;
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    assert!(text_found, "Instructions must be after .text section");
+                    let instruction_text = expected_instructions.pop().expect("There are too many instructions in assembly_instructions");
+                    assert!(instruction.instruction.to_string().contains(instruction_text));
+                },
+                AssemblyLine::SectionTag(section) => 
+                {
+                    if text_found
+                    {
+                        panic!("There are too many .text sections in assembly_instructions");
+                    }
+                    assert_eq!(section.name, ".text");
+                    text_found = true;
+                }
+            }
+        }
+        assert!(text_found);
+
+        // move one byte forward
+        app.move_cursor(2,0);
+
+        app.patch("jmp rax");
+        let expected_data = vec![0x90, 0xff, 0xe0, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
+        let mut expected_instructions = vec!["nop", "jmp rax", "mov rcx, rax", "mov rax, rax"];
+        expected_instructions.reverse();
+        assert_eq!(app.data, expected_data);
+        text_found = false;
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    assert!(text_found, "Instructions must be after .text section");
+                    let instruction_text = expected_instructions.pop().expect("There are too many instructions in assembly_instructions");
+                    assert!(instruction.instruction.to_string().contains(instruction_text));
+                },
+                AssemblyLine::SectionTag(section) => 
+                {
+                    if text_found
+                    {
+                        panic!("There are too many .text sections in assembly_instructions");
+                    }
+                    assert_eq!(section.name, ".text");
+                    text_found = true;
+                }
+            }
+        }
+        assert!(text_found);
+        
+    }
+
+    #[test]
+    fn test_bad_instruction()
+    {
+        let data = vec![0x06, 0x0e, 0x07];
+        let app = App::mockup(data);
+        for line in app.assembly_instructions.iter()
+        {
+            match line
+            {
+                AssemblyLine::Instruction(instruction) =>
+                {
+                    let contains_bad_instruction = instruction.instruction.to_string().contains(".byte");
+                    assert!(contains_bad_instruction, "Found {} instead of .byte ...", instruction.instruction.to_string());
+                },
+                _ => {}
+            }
+        }
+
     }
 }

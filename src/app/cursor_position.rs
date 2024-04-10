@@ -2,6 +2,7 @@ use super::{notification::NotificationLevel, App};
 
 pub struct CursorPosition
 {
+    pub cursor: Option<(u16, u16)>,
     pub local_x: usize,
     pub local_byte_index: usize,
     pub block_index: usize,
@@ -27,9 +28,10 @@ impl App
 {
     pub(super) fn get_cursor_position(&self) -> CursorPosition
     {
-        if self.data.is_empty()
+        if self.data.is_empty() || self.blocks_per_row == 0
         {
             return CursorPosition {
+                cursor: Some((0, 0)),
                 local_x: 0,
                 local_byte_index: 0,
                 block_index: 0,
@@ -50,6 +52,7 @@ impl App
         let global_byte_index = line_byte_index + line_index * self.block_size * self.blocks_per_row;
 
         CursorPosition {
+            cursor: Some(self.cursor),
             local_x,
             local_byte_index,
             block_index,
@@ -68,8 +71,20 @@ impl App
         let local_block_index = block_index % self.blocks_per_row;
         let local_byte_index = global_byte_index % self.block_size;
         let local_x = (local_byte_index + local_block_index * self.block_size) * 3 + local_block_index;
+        let cursor_x = local_x as u16 + if high_byte { 0 } else { 1 };
+        let cursor_y = line_index as isize - self.scroll as isize;
+        let cursor =
+        if cursor_y < 0 || cursor_y >= self.screen_size.1 as isize - self.vertical_margin as isize
+        {
+            None
+        }
+        else
+        {
+            Some((cursor_x as u16, cursor_y as u16))
+        };
 
         CursorPosition {
+            cursor,
             local_x,
             local_byte_index,
             block_index,
@@ -210,75 +225,37 @@ impl App
 
     pub(super) fn move_cursor(&mut self, dx: isize, dy: isize)
     {
-        let hex_view_lines = self.get_hex_view_lines();
-        // TODO: check that the cursor does not overflow the data
-        let (x, y) = self.cursor;
-        let mut x = x as isize + dx;
-        let mut y = y as isize + dy;
-        
-        let view_size_y = self.screen_size.1 - self.vertical_margin;
+        let current_position = self.get_cursor_position();
+        let half_byte_delta = dx + (dy * self.block_size as isize * self.blocks_per_row as isize * 2);
+        let half_byte_position = current_position.global_byte_index * 2 + if current_position.high_byte {0} else {1};
 
-        let viewed_block_size = (self.block_size * 3 + 1) as isize;
-        let viewed_line_size = viewed_block_size * self.blocks_per_row as isize + self.blocks_per_row as isize - 3;
+        let new_half_byte_position = (half_byte_position as isize).saturating_add(half_byte_delta);
+        if new_half_byte_position < 0 || new_half_byte_position >= self.data.len() as isize * 2
+        {
+            return;
+        }
+        let new_global_byte_index = new_half_byte_position as usize / 2;
+        let new_high_byte = new_half_byte_position % 2 == 0;
 
-        let block_count = x / viewed_block_size;
-        let local_x = x - block_count * viewed_block_size;
-        if local_x % 3 == 2
+        let new_selected_row = new_global_byte_index / (self.block_size * self.blocks_per_row);
+        let min_visible_row = self.scroll;
+        let max_visible_row = self.scroll + (self.screen_size.1 - self.vertical_margin) as usize - 1;
+        let new_scroll = if new_selected_row < min_visible_row
         {
-            x += dx.signum();
+            new_selected_row
         }
-        while x % viewed_block_size == viewed_block_size - 1 || x % viewed_block_size == viewed_block_size - 2
+        else if new_selected_row > max_visible_row
         {
-            x += dx.signum();
+            new_selected_row - (self.screen_size.1 - self.vertical_margin) as usize + 1
         }
+        else
+        {
+            self.scroll
+        };
 
-        if x < 0
-        {
-            if self.scroll > 0 || y > 0
-            {
-                x = viewed_line_size - self.blocks_per_row as isize;
-                y -= 1;
-            }
-            else 
-            {
-                x = 0;
-            }
-        }
-        else if x > viewed_line_size - self.blocks_per_row as isize
-        {
-            x = 0;
-            y += 1;
-        }
-        if y >= (hex_view_lines as isize - 1)
-        {
-            y = hex_view_lines as isize - 1;
-        }
-        if y < 0
-        {
-            y = 0;
-            if self.scroll > 0
-            {
-                self.scroll -= 1;
-            }
-        }
-        else if y >= view_size_y as isize
-        {
-            y = view_size_y as isize - 1;
-            if self.scroll < hex_view_lines.saturating_sub(view_size_y as usize)
-            {
-                self.scroll += 1;
-            }
-        }
+        self.scroll = new_scroll;
 
-        let data_len = self.data.len() as isize;
-        let bytes_per_row = self.block_size as isize * self.blocks_per_row as isize;
-        let characters_in_last_row = (data_len % bytes_per_row) * 3 + (data_len % bytes_per_row) / self.block_size as isize - 2;
-        if y + self.scroll as isize == data_len / bytes_per_row 
-        {
-            x = x.min(characters_in_last_row);
-        }
-
-        self.cursor = (x as u16, y as u16);
+        self.cursor = self.get_expected_cursor_position(new_global_byte_index, new_high_byte).cursor.expect("The scroll should be adequate for the cursor to be visible");
     }
 
     pub(super) fn move_cursor_page_up(&mut self)
@@ -302,6 +279,10 @@ impl App
 
     pub(super) fn get_hex_view_lines(&self) -> usize
     {
+        if self.data.is_empty() || self.blocks_per_row == 0
+        {
+            return 0;
+        }
         let hex_view_lines = self.data.len() / (self.block_size * self.blocks_per_row) + if self.data.len() % (self.block_size * self.blocks_per_row) == 0 { 0 } else { 1 };
         hex_view_lines
     }
@@ -319,5 +300,52 @@ impl App
     {
         self.cursor = (0, 0);
         self.scroll = 0;
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::*;
+    #[test]
+    fn test_move_cursor()
+    {
+        let data = vec![0; 0x100];
+        let mut app = App::mockup(data);
+        app.screen_size = (80, 24);
+        app.resize_if_needed(80);
+        
+        app.move_cursor(1,0);
+        assert_eq!(app.cursor,(1, 0));
+        app.move_cursor(0,1);
+        assert_eq!(app.cursor,(1, 1));
+
+        app.move_cursor(0, 0);
+        assert_eq!(app.cursor,(1, 1));
+
+        app.move_cursor(0, -1);
+        assert_eq!(app.cursor,(1, 0));
+        app.move_cursor(-1, 0);
+        assert_eq!(app.cursor,(0, 0));
+
+        app.move_cursor(0, -1);
+        assert_eq!(app.cursor,(0, 0));
+        app.move_cursor(-1, 0);
+        assert_eq!(app.cursor,(0, 0));
+
+        let current_position = app.get_cursor_position();
+        assert_eq!(current_position.global_byte_index, 0);
+        assert_eq!(current_position.high_byte, true);
+
+        app.move_cursor(81, 0);
+        let current_position = app.get_cursor_position();
+        assert_eq!(current_position.global_byte_index, 40);
+        assert_eq!(current_position.high_byte, false);
+
+        app.move_cursor(-1, -1);
+        let bytes_per_line = app.block_size * app.blocks_per_row;
+        let current_position = app.get_cursor_position();
+        assert_eq!(current_position.global_byte_index, 40 - bytes_per_line);
+        assert_eq!(current_position.high_byte, true);
     }
 }

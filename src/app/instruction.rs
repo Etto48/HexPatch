@@ -4,10 +4,10 @@ use capstone::Insn;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Instruction {
-    mnemonic: String,
-    operands: String,
-    virtual_address: u64,
-    bytes: Vec<u8>,
+    pub(super) mnemonic: String,
+    pub(super) operands: String,
+    pub(super) virtual_address: u64,
+    pub(super) bytes: Vec<u8>,
 }
 
 impl Instruction {
