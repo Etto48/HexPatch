@@ -1,4 +1,6 @@
-pub mod app;
+mod app;
+pub use app::*;
+
 pub mod widgets;
 pub mod files;
 pub mod help;
@@ -17,5 +19,3 @@ pub mod run_command;
 pub mod cursor_position;
 pub mod color_settings;
 pub mod test;
-
-pub use app::App;

@@ -137,7 +137,7 @@ impl App
     {
         value = value.to_uppercase().next().unwrap(); 
 
-        if ('0'..='9').contains(&value) || ('A'..='F').contains(&value)
+        if value.is_ascii_hexdigit()
         {   
             let cursor_position = self.get_cursor_position();
 

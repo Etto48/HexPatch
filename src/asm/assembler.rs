@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::headers::header::Header;
+use crate::headers::Header;
 
 pub fn assemble(asm: &str, starting_virtual_address: u64, header: &Header) -> Result<Vec<u8>, Box<dyn Error>> {
     let encoder = header.get_encoder().map_err(|e| format!("Failed to get encoder: {}", e))?;

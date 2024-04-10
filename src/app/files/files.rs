@@ -2,7 +2,7 @@ use std::{error::Error, path::{Path, PathBuf}};
 
 use ratatui::{backend::Backend, Terminal};
 
-use crate::{app::{info_mode::InfoMode, notification::NotificationLevel, popup_state::PopupState, App}, headers::header::Header};
+use crate::{app::{info_mode::InfoMode, notification::NotificationLevel, popup_state::PopupState, App}, headers::Header};
 
 use super::path_result::PathResult;
 

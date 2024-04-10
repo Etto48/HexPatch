@@ -5,7 +5,7 @@ use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Bloc
 
 use super::{assembly::AssemblyLine, color_settings::ColorSettings, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
-use crate::{fuzzer::fuzzer::Fuzzer, headers::header::Header};
+use crate::{fuzzer::Fuzzer, headers::Header};
 
 pub struct App 
 {
@@ -87,7 +87,8 @@ impl App
 
         if app.path.is_file()
         {
-            app.open_file(&app.path.to_string_lossy().to_string(), Some(terminal)).map_err(|e| e.to_string())?;
+            let path = app.path.to_string_lossy().to_string();
+            app.open_file(&path, Some(terminal)).map_err(|e| e.to_string())?;
         }
         else
         {

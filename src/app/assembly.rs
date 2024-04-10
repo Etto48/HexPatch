@@ -4,7 +4,7 @@ use crate::asm::assembler::assemble;
 
 use super::{app::App, color_settings::ColorSettings, instruction::Instruction, notification::NotificationLevel};
 
-use crate::headers::header::{Header, Section};
+use crate::headers::{Header, Section};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SectionTag
