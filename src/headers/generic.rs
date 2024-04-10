@@ -95,6 +95,8 @@ impl GenericHeader
                 (symbol.address(), symbol.name().unwrap_or_default().to_string())
             }).collect();
 
+            let address_base = header.relative_address_base();
+
             // this is used only for pe files
             let (debug_data_directory, section_table) = match &header
             {
@@ -158,7 +160,7 @@ impl GenericHeader
                                             if let Some(address) = address
                                             {
                                                 let name = public_symbol.name.to_string().to_string();
-                                                symbols.push((address.0 as u64, name));
+                                                symbols.push((address.0 as u64 + address_base, name));
                                             }
                                         }
                                     }

@@ -5,7 +5,7 @@
 HexPatch is a binary patcher and editor with terminal user interface (TUI), it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
 
-## Supported file formats
+## Supported file formats and architectures
 
 The following file formats are supported:
 
