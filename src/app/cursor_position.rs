@@ -324,8 +324,7 @@ mod test
     {
         let data = vec![0; 0x100];
         let mut app = App::mockup(data);
-        app.screen_size = (80, 24);
-        app.resize_if_needed(80);
+        app.resize_to_size(80, 24);
         
         app.move_cursor(1,0, false);
         assert_eq!(app.cursor,(1, 0));
@@ -366,8 +365,7 @@ mod test
     {
         let data = vec![0; 0x100];
         let mut app = App::mockup(data);
-        app.screen_size = (0, 0);
-        app.resize_if_needed(0);
+        app.resize_to_size(0, 0);
 
         app.move_cursor(1, 0, false);
         assert_eq!(app.cursor, (0, 0));
@@ -384,8 +382,7 @@ mod test
     {
         let data = vec![0; 0x100];
         let mut app = App::mockup(data);
-        app.screen_size = (1, 1);
-        app.resize_if_needed(1);
+        app.resize_to_size(1, 1);
 
         app.move_cursor(1, 0, false);
         assert_eq!(app.cursor, (0, 0));
@@ -402,8 +399,7 @@ mod test
     {
         let data = vec![0x90, 0x90, 0x90, 0x48, 0x89, 0xd8, 0xeb, 0xfe, 0x90, 0x90, 0x90];
         let mut app = App::mockup(data);
-        app.screen_size = (80, 24);
-        app.resize_if_needed(80);
+        app.resize_to_size(80, 24);
 
         app.move_cursor_to_near_instruction(1);
         let current_position = app.get_cursor_position().global_byte_index;
