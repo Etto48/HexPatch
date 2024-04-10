@@ -608,7 +608,7 @@ mod test
         assert!(text_found);
 
         // move one byte forward
-        app.move_cursor(2,0);
+        app.move_cursor(2,0, false);
 
         app.patch("jmp rax");
         let expected_data = vec![0x90, 0xff, 0xe0, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];

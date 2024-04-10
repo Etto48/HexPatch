@@ -13,16 +13,16 @@ impl App
                 match event.code
                 {
                     KeyCode::Up => {
-                        self.move_cursor(0, -1);
+                        self.move_cursor(0, -1, false);
                     },
                     KeyCode::Down => {
-                        self.move_cursor(0, 1);
+                        self.move_cursor(0, 1, false);
                     },
                     KeyCode::Left => {
-                        self.move_cursor(-1, 0);
+                        self.move_cursor(-1, 0, false);
                     },
                     KeyCode::Right => {
-                        self.move_cursor(1, 0);
+                        self.move_cursor(1, 0, false);
                     },
                     KeyCode::PageUp => {
                         self.move_cursor_page_up();
@@ -99,16 +99,16 @@ impl App
                 match event.kind
                 {
                     event::MouseEventKind::ScrollUp => {
-                        self.move_cursor(0, -1);
+                        self.move_cursor(0, -1, false);
                     },
                     event::MouseEventKind::ScrollDown => {
-                        self.move_cursor(0, 1);
+                        self.move_cursor(0, 1, false);
                     },
                     event::MouseEventKind::ScrollLeft => {
-                        self.move_cursor(-1, 0);
+                        self.move_cursor(-1, 0, false);
                     },
                     event::MouseEventKind::ScrollRight => {
-                        self.move_cursor(1, 0);
+                        self.move_cursor(1, 0, false);
                     },
                     _ => {}
                 }

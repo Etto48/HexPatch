@@ -223,16 +223,21 @@ impl App
         }
     }
 
-    pub(super) fn move_cursor(&mut self, dx: isize, dy: isize)
+    pub(super) fn move_cursor(&mut self, dx: isize, dy: isize, best_effort: bool)
     {
         let current_position = self.get_cursor_position();
         let half_byte_delta = dx + (dy * self.block_size as isize * self.blocks_per_row as isize * 2);
         let half_byte_position = current_position.global_byte_index * 2 + if current_position.high_byte {0} else {1};
 
-        let new_half_byte_position = (half_byte_position as isize).saturating_add(half_byte_delta);
-        if new_half_byte_position < 0 || new_half_byte_position >= self.data.len() as isize * 2
+        let mut new_half_byte_position = (half_byte_position as isize).saturating_add(half_byte_delta);
+        if !best_effort && (new_half_byte_position < 0 || new_half_byte_position >= self.data.len() as isize * 2)
         {
             return;
+        }
+        else if best_effort
+        {
+            let max_half_byte_position = (self.data.len() as isize * 2 - 1).max(0);
+            new_half_byte_position = new_half_byte_position.clamp(0, max_half_byte_position);
         }
         let new_global_byte_index = new_half_byte_position as usize / 2;
         let new_high_byte = new_half_byte_position % 2 == 0;
@@ -260,46 +265,33 @@ impl App
 
     pub(super) fn move_cursor_page_up(&mut self)
     {
-        if self.scroll == 0
+        let screen_size_y = self.screen_size.1 as isize - self.vertical_margin as isize;
+        if screen_size_y > 0
         {
-            self.cursor.1 = 0;
+            self.move_cursor(0, -screen_size_y, true);
         }
-        self.scroll = self.scroll.saturating_sub((self.screen_size.1 - self.vertical_margin) as usize);
     }
 
     pub(super) fn move_cursor_page_down(&mut self)
     {
-        let hex_view_lines = self.get_hex_view_lines();
-        if self.scroll == hex_view_lines - (self.screen_size.1 - self.vertical_margin) as usize
+        let screen_size_y = self.screen_size.1 as isize - self.vertical_margin as isize;
+        if screen_size_y > 0
         {
-            self.cursor.1 = self.screen_size.1 - self.vertical_margin - 1;
+            self.move_cursor(0, screen_size_y, true);
         }
-        self.scroll = (self.scroll + (self.screen_size.1 - self.vertical_margin) as usize).min(hex_view_lines - (self.screen_size.1 - self.vertical_margin) as usize);
-    }
-
-    pub(super) fn get_hex_view_lines(&self) -> usize
-    {
-        if self.data.is_empty() || self.blocks_per_row == 0
-        {
-            return 0;
-        }
-        let hex_view_lines = self.data.len() / (self.block_size * self.blocks_per_row) + if self.data.len() % (self.block_size * self.blocks_per_row) == 0 { 0 } else { 1 };
-        hex_view_lines
     }
 
     pub(super) fn move_cursor_to_end(&mut self)
     {
-        let hex_view_lines = self.get_hex_view_lines();
-        self.scroll = (hex_view_lines as isize - (self.screen_size.1 as isize - self.vertical_margin as isize)).max(0) as usize;
-        let x = self.blocks_per_row as u16 * 3 * self.block_size as u16 + self.blocks_per_row as u16 - 3;
-        let y = (self.screen_size.1 - self.vertical_margin - 1).min(hex_view_lines as u16 - 1);
-        self.cursor = (x, y);
+        let bytes = self.data.len();
+
+        self.move_cursor((bytes as isize * 2) as isize, 0, true);
     }
 
     pub(super) fn move_cursor_to_start(&mut self)
     {
-        self.cursor = (0, 0);
-        self.scroll = 0;
+        let bytes = self.data.len();
+        self.move_cursor((bytes as isize * 2) as isize * -1, 0, true);
     }
 }
 
@@ -315,34 +307,34 @@ mod test
         app.screen_size = (80, 24);
         app.resize_if_needed(80);
         
-        app.move_cursor(1,0);
+        app.move_cursor(1,0, false);
         assert_eq!(app.cursor,(1, 0));
-        app.move_cursor(0,1);
+        app.move_cursor(0,1, false);
         assert_eq!(app.cursor,(1, 1));
 
-        app.move_cursor(0, 0);
+        app.move_cursor(0, 0, false);
         assert_eq!(app.cursor,(1, 1));
 
-        app.move_cursor(0, -1);
+        app.move_cursor(0, -1, false);
         assert_eq!(app.cursor,(1, 0));
-        app.move_cursor(-1, 0);
+        app.move_cursor(-1, 0, false);
         assert_eq!(app.cursor,(0, 0));
 
-        app.move_cursor(0, -1);
+        app.move_cursor(0, -1, false);
         assert_eq!(app.cursor,(0, 0));
-        app.move_cursor(-1, 0);
+        app.move_cursor(-1, 0, false);
         assert_eq!(app.cursor,(0, 0));
 
         let current_position = app.get_cursor_position();
         assert_eq!(current_position.global_byte_index, 0);
         assert_eq!(current_position.high_byte, true);
 
-        app.move_cursor(81, 0);
+        app.move_cursor(81, 0, false);
         let current_position = app.get_cursor_position();
         assert_eq!(current_position.global_byte_index, 40);
         assert_eq!(current_position.high_byte, false);
 
-        app.move_cursor(-1, -1);
+        app.move_cursor(-1, -1, false);
         let bytes_per_line = app.block_size * app.blocks_per_row;
         let current_position = app.get_cursor_position();
         assert_eq!(current_position.global_byte_index, 40 - bytes_per_line);
