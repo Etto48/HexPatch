@@ -19,10 +19,44 @@ impl App
                         self.move_cursor(0, 1, false);
                     },
                     KeyCode::Left => {
-                        self.move_cursor(-1, 0, false);
+                        if event.modifiers.contains(event::KeyModifiers::CONTROL)
+                        {
+                            match self.info_mode
+                            {
+                                super::info_mode::InfoMode::Text => 
+                                {
+                                    self.move_cursor(-16, 0, true);
+                                },
+                                super::info_mode::InfoMode::Assembly => 
+                                {
+                                    self.move_cursor_to_near_instruction(-1);
+                                },
+                            }
+                        }
+                        else
+                        {
+                            self.move_cursor(-1, 0, false);
+                        }
                     },
                     KeyCode::Right => {
-                        self.move_cursor(1, 0, false);
+                        if event.modifiers.contains(event::KeyModifiers::CONTROL)
+                        {
+                            match self.info_mode
+                            {
+                                super::info_mode::InfoMode::Text => 
+                                {
+                                    self.move_cursor(16, 0, true);
+                                },
+                                super::info_mode::InfoMode::Assembly => 
+                                {
+                                    self.move_cursor_to_near_instruction(1);
+                                },
+                            }
+                        }
+                        else
+                        {
+                            self.move_cursor(1, 0, false);
+                        }
                     },
                     KeyCode::PageUp => {
                         self.move_cursor_page_up();

@@ -303,6 +303,19 @@ impl App
         let bytes = self.data.len();
         self.move_cursor((bytes as isize * 2) as isize * -1, 0, true);
     }
+
+    pub(super) fn move_cursor_to_near_instruction(&mut self, instruction_count: isize)
+    {
+        let current_offset = self.get_cursor_position().global_byte_index;
+        if current_offset >= self.assembly_offsets.len()
+        {
+            return;
+        }
+        let current_instruction_index = self.assembly_offsets[current_offset];
+        let next_instruction_index = (current_instruction_index as isize + instruction_count).clamp(0, self.assembly_instructions.len().saturating_sub(1) as isize) as usize;
+        let target_address = self.assembly_instructions[next_instruction_index].ip();
+        self.jump_to(target_address as usize, false);
+    }
 }
 
 #[cfg(test)]
@@ -385,5 +398,42 @@ mod test
         assert_eq!(app.cursor, (0, 0));
         app.move_cursor(-1, 0, false);
         assert_eq!(app.cursor, (0, 0));
+    }
+
+    #[test]
+    fn test_move_to_near_instruction()
+    {
+        let data = vec![0x90, 0x90, 0x90, 0x48, 0x89, 0xd8, 0xeb, 0xfe, 0x90, 0x90, 0x90];
+        let mut app = App::mockup(data);
+        app.screen_size = (80, 24);
+        app.resize_if_needed(80);
+
+        app.move_cursor_to_near_instruction(1);
+        let current_position = app.get_cursor_position().global_byte_index;
+        assert_eq!(current_position, 1);
+
+        app.move_cursor_to_near_instruction(2);
+        let current_position = app.get_cursor_position().global_byte_index;
+        assert_eq!(current_position, 3);
+
+        app.move_cursor_to_near_instruction(-1);
+        let current_position = app.get_cursor_position().global_byte_index;
+        assert_eq!(current_position, 2);
+
+        app.move_cursor_to_near_instruction(4);
+        let current_position = app.get_cursor_position().global_byte_index;
+        assert_eq!(current_position, 9);
+
+        app.move_cursor_to_near_instruction(2);
+        let current_position = app.get_cursor_position().global_byte_index;
+        assert_eq!(current_position, 10);
+
+        app.move_cursor_to_near_instruction(100);
+        let current_position = app.get_cursor_position().global_byte_index;
+        assert_eq!(current_position, 10);
+
+        app.move_cursor_to_near_instruction(-100);
+        let current_position = app.get_cursor_position().global_byte_index;
+        assert_eq!(current_position, 0);
     }
 }
