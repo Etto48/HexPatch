@@ -25,9 +25,9 @@ impl App
         let mut current_line = Line::default();
         let mut local_block = 0;
         let mut local_byte = 0;
-        let mut byte_index = 0;
-        for b in bytes
+        for (byte_index, b) in bytes.iter().enumerate()
         {
+            let byte_index = byte_index as isize;
             let mut next_line = false;
             let hex_chars = Self::u8_to_hex(*b);
             let hex_high = hex_chars[0].to_string();
@@ -86,12 +86,11 @@ impl App
 
             if next_line
             {
-                let new_line = std::mem::replace(&mut current_line, Line::default());
+                let new_line = std::mem::take(&mut current_line);
                 ret.lines.push(new_line);
             }
-            byte_index += 1;
         }
-        if current_line.spans.len() > 0
+        if !current_line.spans.is_empty()
         {
             ret.lines.push(current_line);
         }
@@ -138,7 +137,7 @@ impl App
     {
         value = value.to_uppercase().next().unwrap(); 
 
-        if value >= '0' && value <= '9' || value >= 'A' && value <= 'F'
+        if ('0'..'9').contains(&value) || ('A'..'F').contains(&value)
         {   
             let cursor_position = self.get_cursor_position();
 
@@ -178,24 +177,16 @@ impl App
             if self.info_mode == InfoMode::Assembly
             {
                 let current_instruction = self.get_current_instruction();
-                let instruction_info = if let Some(instruction) = current_instruction
+                if let Some(AssemblyLine::Instruction(instruction)) = current_instruction
                 {
-                    if let AssemblyLine::Instruction(instruction) = instruction
-                    {
-                        let offset = instruction.file_address as isize - start_byte as isize;
-                        let length = instruction.instruction.len();
-                        Some(InstructionInfo { offset: offset, length })
-                    }
-                    else
-                    {
-                        None
-                    }
+                    let offset = instruction.file_address as isize - start_byte as isize;
+                    let length = instruction.instruction.len();
+                    Some(InstructionInfo { offset, length })
                 }
                 else
                 {
                     None
-                };
-                instruction_info
+                }
             }
             else
             {

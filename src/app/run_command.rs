@@ -110,7 +110,7 @@ impl App
 
     pub(super) fn run_command(&mut self, command: &str, scroll: usize) -> Result<(), Box<dyn Error>>
     {
-        let command_opt = self.find_commands(command).into_iter().skip(scroll).next();
+        let command_opt = self.find_commands(command).into_iter().nth(scroll);
         let command_enum = command_opt.expect("Scroll out of bounds for run_command.");
         self.popup = None;
         match command_enum
@@ -235,7 +235,7 @@ impl App
     pub(super) fn request_open(&mut self) -> Result<(), Box<dyn Error>>
     {
         let mut new_popup = None;
-        Self::open_dir(&mut new_popup, self.get_current_dir())?;
+        Self::open_dir(&mut new_popup, &self.get_current_dir())?;
         self.popup = new_popup;
         Ok(())
     }

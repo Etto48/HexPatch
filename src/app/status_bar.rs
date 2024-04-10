@@ -8,8 +8,10 @@ impl App
     {
         let mut status_bar = Text::default();
         status_bar.style = self.color_settings.status_bar;
-        let mut line = Line::default();
-        line.style = self.color_settings.status_bar;
+        let mut line = Line {
+            style: self.color_settings.status_bar,
+            ..Default::default()
+        };
         let max_len = self.screen_size.0 as usize;
         let current_position = self.get_cursor_position();
 

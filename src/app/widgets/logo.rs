@@ -32,6 +32,14 @@ impl Logo
     }
 }
 
+impl Default for Logo
+{
+    fn default() -> Self
+    {
+        Self::new()
+    }
+}
+
 impl Widget for Logo
 {
     fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer)

@@ -265,11 +265,10 @@ impl Header
 
     pub fn get_encoder(&self) -> Result<Keystone, KeystoneError>
     {
-        let ret = match self {
+        match self {
             Header::GenericHeader(header) => Self::get_encoder_for_arch(&header.architecture),
             Header::None => Keystone::new(Arch::X86, Mode::MODE_64),
-        };
-        ret
+        }
     }
 }
 

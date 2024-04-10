@@ -77,11 +77,11 @@ impl App
 
         if lines <= 0
         {
-            return 1;
+            1
         }
         else 
         {
-            return lines as usize;
+            lines as usize
         }
     }
 
@@ -131,19 +131,16 @@ impl App
                         }
 
                     }
+                    else if preview.is_empty() 
+                    {
+                        preview_string.spans.push(Span::styled("Preview", color_settings.placeholder));
+                    }
                     else 
                     {
-                        if preview.is_empty()
+                        for byte in preview.iter()
                         {
-                            preview_string.spans.push(Span::styled("Preview", color_settings.placeholder));
-                        }
-                        else 
-                        {
-                            for byte in preview.iter()
-                            {
-                                let style = Self::get_style_for_byte(color_settings, *byte);
-                                preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
-                            }       
+                            let style = Self::get_style_for_byte(color_settings, *byte);
+                            preview_string.spans.push(Span::styled(format!("{:02X} ", byte), style));
                         }
                     }
                 }
@@ -173,7 +170,7 @@ impl App
     fn get_line_from_string_and_cursor(color_settings: &ColorSettings, s: &str, cursor: usize, placeholder: &str, available_width: usize, show_cursor: bool) -> Line<'static>
     {
         let string = s.to_string();
-        if string.len() == 0
+        if string.is_empty()
         {
             return Line::from(vec![Span::raw(" "), Span::styled(placeholder.to_string(), color_settings.placeholder), Span::raw(" ")]);
         }
@@ -233,7 +230,7 @@ impl App
         let string = s.to_string();
         let line_count = &string.chars().filter(|c| *c == '\n').count() + 1;
         let char_for_line_count = line_count.to_string().len();
-        if string.len() == 0
+        if string.is_empty()
         {
             return (vec![Line::from(vec![Span::styled(Self::get_line_number_string(1, char_for_line_count), color_settings.patch_line_number), Span::raw(" "), Span::styled(placeholder.to_string(), color_settings.placeholder)]).left_aligned()], 0);
         }
@@ -274,7 +271,7 @@ impl App
         }
         if cursor == string.len()
         {
-            if current_line.len() == 0
+            if current_line.is_empty()
             {
                 current_line.push(' ');
             }
@@ -418,20 +415,18 @@ impl App
                 let max_symbols = self.get_scrollable_popup_line_count();
                 *height = max_symbols + 2 + 4;
                 let mut selection = *scroll;
-                let symbols_len = if symbols.len() > 0
+                let symbols_len = if !symbols.is_empty()
                 {
                     symbols.len()
                 }
-                else
+                else if let Some(symbol_table) = self.header.get_symbols()
                 {
-                    if let Some(symbol_table) = self.header.get_symbols()
-                    {
-                        symbol_table.len()
-                    }
-                    else 
-                    {
-                        0
-                    }   
+                    
+                    symbol_table.len()
+                }
+                else 
+                {
+                    0
                 };
                 let scroll = if *scroll as isize > symbols_len as isize - (max_symbols as isize)/2
                 {
@@ -451,9 +446,9 @@ impl App
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter", available_width, true);
                 if self.header.get_symbols().is_some()
                 {
-                    let symbols_as_lines = if symbols.len() > 0 || filter.len() == 0
+                    let symbols_as_lines = if !symbols.is_empty() || filter.is_empty()
                     {
-                        let additional_vector = if filter.len() == 0
+                        let additional_vector = if filter.is_empty()
                         {
                             if let Some(symbol_table) = self.header.get_symbols()
                             {
@@ -542,7 +537,7 @@ impl App
                 *popup_title = "Log";
                 let max_lines = self.get_scrollable_popup_line_count();
                 *height = max_lines + 4;
-                if self.log.len() > 0
+                if !self.log.is_empty()
                 {
                     if self.log.len() as isize - *scroll as isize > max_lines as isize
                     {
@@ -575,7 +570,7 @@ impl App
                 let available_width = width.saturating_sub(2);
                 let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width);
                 let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
-                let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines as usize));
+                let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines));
                 if skip_lines == 0
                 {
                     popup_text.lines.push(Line::raw(""));
@@ -585,7 +580,7 @@ impl App
                     popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
                 }
                 let editable_lines_count = editable_lines.len();
-                popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines as usize));
+                popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines));
                 for _ in 0..(available_editable_text_lines as isize - editable_lines_count as isize)
                 {
                     popup_text.lines.push(Line::raw(""));
@@ -617,7 +612,7 @@ impl App
                     ]
                 );
                 let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
-                let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines as usize));
+                let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines));
                 if skip_lines == 0
                 {
                     popup_text.lines.push(Line::raw(""));
@@ -627,7 +622,7 @@ impl App
                     popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
                 }
                 let editable_lines_count = editable_lines.len();
-                popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines as usize));
+                popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines));
                 if editable_lines_count as isize - skip_lines as isize > available_editable_text_lines as isize
                 {
                     popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));

@@ -96,7 +96,7 @@ impl App
 {
     pub(super) fn find_symbols(&self, filter: &str) -> Vec<(u64, String)>
     {
-        if filter.len() == 0
+        if filter.is_empty()
         {
             return Vec::new();
         }
@@ -105,11 +105,11 @@ impl App
         {
             let mut symbols: Vec<(u64, String)> = symbol_table.iter().filter(|(_, symbol)| symbol.contains(filter)).map(|(address, symbol)| (*address, symbol.clone())).collect();
             symbols.sort_by_key(|(_, symbol)| symbol.len());
-            return symbols;
+            symbols
         }
         else 
         {
-            return Vec::new();    
+            Vec::new()
         }
     }
 
@@ -165,7 +165,7 @@ impl App
         let mut line_offsets = vec![0; bytes.len()];
         let mut lines = Vec::new();
         let mut sections = header.get_sections();
-        if sections.len() == 0
+        if sections.is_empty()
         {
             sections.push(Section {
                 name: ".text".to_string(),
@@ -242,7 +242,8 @@ impl App
                     size: bytes.len() - current_byte
                 }
             ));
-            for _ in current_byte..bytes.len()
+            let initial_current_byte = current_byte;
+            for _ in initial_current_byte..bytes.len()
             {
                 line_offsets[current_byte] = lines.len() - 1;
                 current_byte += 1;
@@ -259,7 +260,7 @@ impl App
         let mut current_byte = 0;
         let decoder = header.get_decoder().expect("Failed to create decoder");
         let decoded = decoder.disasm_all(&bytes[starting_file_address..starting_file_address+section_size], starting_ip as u64).expect("Failed to disassemble");
-        for instruction in decoded.into_iter()
+        for instruction in decoded.iter()
         {
             let instruction_tag = InstructionTag
             {
@@ -284,7 +285,7 @@ impl App
             Ok(bytes) => Ok(bytes),
             Err(e) => 
             {
-                Err(format!("{}", e.to_string()))
+                Err(e.to_string())
             },
         }
     }
@@ -306,7 +307,7 @@ impl App
             }
             else
             {
-                self.get_cursor_position().global_byte_index as usize - current_ip as usize
+                self.get_cursor_position().global_byte_index - current_ip as usize
             };
             for (i, byte) in bytes.iter().enumerate()
             {
@@ -350,7 +351,7 @@ impl App
         let center_of_view = visible_lines / 2;
         let view_scroll = (current_scroll as isize - center_of_view as isize).clamp(0, (self.assembly_instructions.len() as isize - visible_lines as isize).max(0));
         
-        return view_scroll as usize;
+        view_scroll as usize
     }
 
     pub(super) fn get_current_instruction(&self) -> Option<&AssemblyLine>
@@ -360,14 +361,14 @@ impl App
         {
             return None;
         }
-        let current_istruction_index =  self.assembly_offsets[global_byte_index as usize];
-        Some(&self.assembly_instructions[current_istruction_index as usize])
+        let current_istruction_index =  self.assembly_offsets[global_byte_index];
+        Some(&self.assembly_instructions[current_istruction_index])
     }
 
     pub(super) fn get_instruction_at(&self, index: usize) -> &AssemblyLine
     {
         let current_istruction_index =  self.assembly_offsets[index];
-        &self.assembly_instructions[current_istruction_index as usize]
+        &self.assembly_instructions[current_istruction_index]
     }
 
     pub(super) fn edit_assembly(&mut self, modifyied_bytes: usize)
@@ -414,12 +415,12 @@ impl App
                 {
                     break;
                 }
-                let instruction = decoded.into_iter().next().unwrap();
+                let instruction = decoded.iter().next().unwrap();
                 ip_offset += instruction.len() as u64;
                 let old_instruction = self.get_instruction_at(current_byte);
                 let instruction_tag = InstructionTag
                 {
-                    instruction: Instruction::new(&instruction, self.header.get_symbols()),
+                    instruction: Instruction::new(instruction, self.header.get_symbols()),
                     file_address: current_byte as u64
                 };
                 let new_assembly_line = AssemblyLine::Instruction(instruction_tag.clone());
@@ -473,11 +474,11 @@ impl App
                     self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction.instruction, self.assembly_instructions[i].ip()));    
                 }
             }
-            for i in 0..instructions.len()
+            for instruction in instructions.iter()
             {
-                if let AssemblyLine::Instruction(instruction) = &instructions[i]
+                if let AssemblyLine::Instruction(instruction_tag) = instruction
                 {
-                    self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction.instruction, instructions[i].ip()));
+                    self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction_tag.instruction, instruction.ip()));
                 }
             }
 

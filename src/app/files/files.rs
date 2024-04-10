@@ -1,4 +1,4 @@
-use std::{error::Error, path::PathBuf};
+use std::{error::Error, path::{Path, PathBuf}};
 
 use ratatui::{backend::Backend, Terminal};
 
@@ -10,7 +10,7 @@ impl App
 {
     pub(in crate::app) fn go_to_path<B: Backend>(
         &mut self, 
-        currently_open_path: &PathBuf, 
+        currently_open_path: &Path, 
         path: &str, 
         scroll: usize, 
         popup: &mut Option<PopupState>,
@@ -22,11 +22,11 @@ impl App
         {
             return Err(format!("No files found that matches \"{}\"", path).into());
         }
-        let selected = contents.into_iter().skip(scroll).next().expect("Scroll out of bounds for go_to_path.");
+        let selected = contents.into_iter().nth(scroll).expect("Scroll out of bounds for go_to_path.");
 
         if selected.is_dir()
         {
-            Self::open_dir(popup, currently_open_path.join(selected.path()))?;
+            Self::open_dir(popup, &currently_open_path.join(selected.path()))?;
         }
         else
         {
@@ -50,7 +50,7 @@ impl App
         }
     }
 
-    pub(in crate::app) fn find_dir_contents(currently_open_path: &PathBuf, path: &str) -> Result<Vec<PathResult>, Box<dyn Error>>
+    pub(in crate::app) fn find_dir_contents(currently_open_path: &Path, path: &str) -> Result<Vec<PathResult>, Box<dyn Error>>
     {
         let mut ret = Vec::new();
 
@@ -74,16 +74,16 @@ impl App
         for entry in entries
         {
             let path = currently_open_path.join(entry);
-            if let Ok(path) = Self::path_canonicalize(path, Some(&currently_open_path))
+            if let Ok(path) = Self::path_canonicalize(&path, Some(currently_open_path))
             {
-                ret.push(PathResult::new(&path, &currently_open_path)?);
+                ret.push(PathResult::new(&path, currently_open_path)?);
             }
         }
 
         Ok(ret)
     }
 
-    pub(in crate::app) fn open_dir(popup: &mut Option<PopupState>, path: PathBuf) -> Result<(), Box<dyn Error>>
+    pub(in crate::app) fn open_dir(popup: &mut Option<PopupState>, path: &Path) -> Result<(), Box<dyn Error>>
     {
         let path = Self::path_canonicalize(path, None)?;
         *popup = Some(PopupState::Open { 
@@ -165,7 +165,7 @@ impl App
         Ok(())
     }
 
-    pub(in crate::app) fn path_canonicalize(path: PathBuf, base_path: Option<&PathBuf>) -> Result<PathBuf, Box<dyn Error>>
+    pub(in crate::app) fn path_canonicalize(path: &Path, base_path: Option<&Path>) -> Result<PathBuf, Box<dyn Error>>
     {
         let path_res = path.canonicalize();
         let mut path = match path_res
