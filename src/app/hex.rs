@@ -123,7 +123,7 @@ impl App
         let available_width = width.saturating_sub(18 + 2 + 2);
         let complessive_chars_per_block = block_characters_hex + block_characters_text;
         let blocks_per_row = (available_width + 2) / complessive_chars_per_block as u16;
-        blocks_per_row as usize
+        (blocks_per_row as usize).max(1)
     }
 
     pub(super) fn u8_to_hex(input: u8) -> [char; 2]
@@ -211,5 +211,47 @@ impl App
         self.dirty = false;
         self.log(NotificationLevel::Info, &format!("Saved to {}", self.path.to_string_lossy()));
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::*;
+
+    #[test]
+    fn resize()
+    {
+        let data = vec![0; 0x100];
+        let mut app = App::mockup(data);
+        app.screen_size = (80, 24);
+        app.resize_if_needed(80);
+        app.screen_size = (80, 50);
+        app.resize_if_needed(80);
+        app.screen_size = (40, 24);
+        app.resize_if_needed(40);
+        app.screen_size = (250, 250);
+        app.resize_if_needed(250);
+
+        app.screen_size = (80, 1);
+        app.resize_if_needed(80);
+        app.screen_size = (250, 1);
+        app.resize_if_needed(250);
+        app.screen_size = (40, 1);
+        app.resize_if_needed(40);
+        app.screen_size = (1, 1);
+        app.resize_if_needed(1);
+
+        app.screen_size = (1, 50);
+        app.resize_if_needed(1);
+        app.screen_size = (1, 250);
+        app.resize_if_needed(1);
+        app.screen_size = (1, 24);
+        app.resize_if_needed(1);
+        app.screen_size = (1, 1);
+        app.resize_if_needed(1);
+        
+        app.screen_size = (80, 24);
+        app.resize_if_needed(80);
     }
 }

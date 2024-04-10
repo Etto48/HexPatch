@@ -202,6 +202,12 @@ impl App
         {
             address = self.data.len().saturating_sub(1);
         }
+        if self.screen_size.1 <= self.vertical_margin
+        {
+            self.scroll = 0;
+            self.cursor = (0, 0);
+            return;
+        }
 
         let expected_cursor_position = self.get_expected_cursor_position(address, false);
         let CursorPosition { local_x, line_index, .. } = expected_cursor_position;
@@ -225,6 +231,10 @@ impl App
 
     pub(super) fn move_cursor(&mut self, dx: isize, dy: isize, best_effort: bool)
     {
+        if self.screen_size.1 <= self.vertical_margin
+        {
+            return;
+        }
         let current_position = self.get_cursor_position();
         let half_byte_delta = dx + (dy * self.block_size as isize * self.blocks_per_row as isize * 2);
         let half_byte_position = current_position.global_byte_index * 2 + if current_position.high_byte {0} else {1};
@@ -339,5 +349,41 @@ mod test
         let current_position = app.get_cursor_position();
         assert_eq!(current_position.global_byte_index, 40 - bytes_per_line);
         assert_eq!(current_position.high_byte, true);
+    }
+
+    #[test]
+    fn test_move_with_no_screen()
+    {
+        let data = vec![0; 0x100];
+        let mut app = App::mockup(data);
+        app.screen_size = (0, 0);
+        app.resize_if_needed(0);
+
+        app.move_cursor(1, 0, false);
+        assert_eq!(app.cursor, (0, 0));
+        app.move_cursor(0, 1, false);
+        assert_eq!(app.cursor, (0, 0));
+        app.move_cursor(0, -1, false);
+        assert_eq!(app.cursor, (0, 0));
+        app.move_cursor(-1, 0, false);
+        assert_eq!(app.cursor, (0, 0));
+    }
+
+    #[test]
+    fn test_move_with_small_screen()
+    {
+        let data = vec![0; 0x100];
+        let mut app = App::mockup(data);
+        app.screen_size = (1, 1);
+        app.resize_if_needed(1);
+
+        app.move_cursor(1, 0, false);
+        assert_eq!(app.cursor, (0, 0));
+        app.move_cursor(0, 1, false);
+        assert_eq!(app.cursor, (0, 0));
+        app.move_cursor(0, -1, false);
+        assert_eq!(app.cursor, (0, 0));
+        app.move_cursor(-1, 0, false);
+        assert_eq!(app.cursor, (0, 0));
     }
 }

@@ -1,6 +1,6 @@
 use std::{error::Error, path::PathBuf};
 
-use ratatui::{layout::Rect, text::{Line, Span, Text}, Frame};
+use ratatui::text::{Line, Span, Text};
 
 use super::{assembly::AssemblyLine, color_settings::ColorSettings, files::path_result::PathResult, run_command::Command, App};
 
@@ -60,7 +60,7 @@ pub enum PopupState
 impl App
 {
 
-    pub(super) fn get_scrollable_popup_line_count(&self) -> Result<usize, String>
+    pub(super) fn get_scrollable_popup_line_count(&self) -> usize
     {
         let screen_height = self.screen_size.1 as isize;
         let lines = match &self.popup
@@ -77,11 +77,11 @@ impl App
 
         if lines <= 0
         {
-            return Err("Screen too small".to_string());
+            return 1;
         }
         else 
         {
-            return Ok(lines as usize);
+            return lines as usize;
         }
     }
 
@@ -295,18 +295,17 @@ impl App
         (lines, selected_line)
     }
 
-    pub(super) fn fill_popup(&self, color_settings: &ColorSettings, popup_state: &PopupState, f: &Frame, popup_title: &mut &str, popup_text: &mut Text<'static>, popup_rect: &mut Rect) -> Result<(), Box<dyn Error>>
+    pub(super) fn fill_popup(&self, color_settings: &ColorSettings, popup_state: &PopupState, popup_title: &mut &str, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
     {
         match &popup_state
         {
             PopupState::Open { currently_open_path, path, cursor, results, scroll } =>
             {
                 *popup_title = "Open";
-                let available_width = 58;
-                let width = available_width + 2;
-                let max_results = self.get_scrollable_popup_line_count()?;
-                let height = max_results + 2 + 5;
-                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
+                let available_width = width.saturating_sub(2);
+                let max_results = self.get_scrollable_popup_line_count();
+                *height = max_results + 2 + 5;
+                
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
 
                 let (prefix, currently_open_path_text) = if let Some(parent) = currently_open_path.parent()
@@ -332,7 +331,7 @@ impl App
                             color_settings.path_dir
                         ).left_aligned(),
                         editable_string.left_aligned(), 
-                        Line::raw("─".repeat(width))
+                        Line::raw("─".repeat(*width))
                     ]
                 );
                 let skip = 0.max(*scroll as isize - max_results as isize / 2) as usize;
@@ -368,17 +367,15 @@ impl App
             PopupState::Run { command, cursor, results, scroll } =>
             {
                 *popup_title = "Run";
-                let available_width = 58;
-                let width = available_width + 2;
-                let max_results = self.get_scrollable_popup_line_count()?;
-                let height = max_results + 2 + 4;
-                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
+                let available_width = width.saturating_sub(2);
+                let max_results = self.get_scrollable_popup_line_count();
+                *height = max_results + 2 + 4;
                 let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command", available_width, true);
                 editable_string.spans.insert(0, Span::styled(" >", color_settings.menu_text));
                 popup_text.lines.extend(
                     vec![
                         editable_string.left_aligned(),
-                        Line::raw("─".repeat(width)),
+                        Line::raw("─".repeat(*width)),
                     ]
                 );
                 let skip = 0.max(*scroll as isize - max_results as isize / 2) as usize;
@@ -407,10 +404,8 @@ impl App
             PopupState::FindText { text, cursor } =>
             {
                 *popup_title = "Find Text";
-                let available_width = 58;
-                let width = available_width + 2;
-                let height = 3;
-                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16/2, width as u16, height as u16);
+                let available_width = width.saturating_sub(2);
+                *height = 3;
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width, true);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
@@ -419,10 +414,9 @@ impl App
             PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
             {
                 *popup_title = "Find Symbol";
-                let available_width = 58;
-                let width = available_width + 2;
-                let max_symbols = self.get_scrollable_popup_line_count()?;
-                let height = max_symbols + 2 + 4;
+                let available_width = width.saturating_sub(2);
+                let max_symbols = self.get_scrollable_popup_line_count();
+                *height = max_symbols + 2 + 4;
                 let mut selection = *scroll;
                 let symbols_len = if symbols.len() > 0
                 {
@@ -454,7 +448,6 @@ impl App
                 selection = selection.saturating_sub(scroll);
 
 
-                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16 / 2, width as u16, height as u16);
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter", available_width, true);
                 if self.header.get_symbols().is_some()
                 {
@@ -477,8 +470,8 @@ impl App
                         };
 
                         let symbol_to_line_lambda = |(i, (address, name)): (usize, &(u64, String))| {
-                            let short_name = name.chars().take(width-19).collect::<String>();
-                            let space_count = (width - short_name.len() - 19 + 1).clamp(0, width);
+                            let short_name = name.chars().take(width.saturating_sub(19)).collect::<String>();
+                            let space_count = (width.saturating_sub(short_name.len() + 19) + 1).clamp(0, *width);
                             let (style_sym, sytle_empty, style_addr) = if i == selection
                             {
                                 (color_settings.assembly_selected, color_settings.assembly_selected, color_settings.assembly_selected)
@@ -529,7 +522,7 @@ impl App
                     popup_text.lines.extend(
                         vec![
                             editable_string.left_aligned(),
-                            Line::raw("─".repeat(width)),
+                            Line::raw("─".repeat(*width)),
                         ]
                     );
                     popup_text.lines.extend(symbols_as_lines);
@@ -547,9 +540,8 @@ impl App
             PopupState::Log(scroll) =>
             {
                 *popup_title = "Log";
-                let max_lines = self.get_scrollable_popup_line_count()?;
-                let height = max_lines + 4;
-                *popup_rect = Rect::new(f.size().width / 2 - 30, f.size().height / 2 - height as u16 / 2, 60, height as u16);
+                let max_lines = self.get_scrollable_popup_line_count();
+                *height = max_lines + 4;
                 if self.log.len() > 0
                 {
                     if self.log.len() as isize - *scroll as isize > max_lines as isize
@@ -578,11 +570,9 @@ impl App
             PopupState::InsertText {text, cursor} =>
             {
                 *popup_title = "Text";
-                let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
-                let height = 3 + 2 + available_editable_text_lines as u16;
-                let available_width = 58;
-                let width = available_width as u16 + 2;
-                *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
+                let available_editable_text_lines = self.get_scrollable_popup_line_count();
+                *height = 3 + 2 + available_editable_text_lines;
+                let available_width = width.saturating_sub(2);
                 let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width);
                 let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
                 let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines as usize));
@@ -609,23 +599,21 @@ impl App
                     popup_text.lines.push(Line::raw(""));
                 }
                 let status = format!("{}B",text.as_bytes().len());
-                let padding = width as usize - status.len();
+                let padding = width.saturating_sub(status.len());
                 popup_text.lines.push(Line::styled(format!("{}{}",status, " ".repeat(padding)), color_settings.insert_text_status).left_aligned())
             }
             PopupState::Patch {assembly,preview,  cursor} =>
             {
                 *popup_title = "Patch";
-                let available_editable_text_lines = self.get_scrollable_popup_line_count()?;
-                let height = 6 + available_editable_text_lines as u16;
-                let available_width = 58;
-                let width = available_width as u16 + 2;
-                *popup_rect = Rect::new(f.size().width / 2 - width/2, f.size().height / 2 - height/2, width, height);
+                let available_editable_text_lines = self.get_scrollable_popup_line_count();
+                *height = 6 + available_editable_text_lines;
+                let available_width = width.saturating_sub(2);
                 let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly", available_width);
                 let preview_line = self.get_patch_preview(color_settings, preview);
                 popup_text.lines.extend(
                     vec![
                         preview_line.left_aligned(),
-                        Line::raw("─".repeat(width as usize)),
+                        Line::raw("─".repeat(*width)),
                     ]
                 );
                 let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
@@ -652,10 +640,8 @@ impl App
             PopupState::JumpToAddress {location: address, cursor} =>
             {
                 *popup_title = "Jump";
-                let available_width = 58;
-                let width = available_width + 2;
-                let height = 3;
-                *popup_rect = Rect::new(f.size().width / 2 - width as u16/2, f.size().height / 2 - height as u16/2, width as u16, height as u16);
+                let available_width = width.saturating_sub(2);
+                *height = 3;
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location", available_width, true);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
@@ -732,10 +718,8 @@ impl App
             },
             PopupState::Help(scroll) =>
             {
-                let max_lines = self.get_scrollable_popup_line_count()?;
-                let height = max_lines + 4;
-                let width = 50;
-                *popup_rect = Rect::new(f.size().width / 2 - width / 2, f.size().height / 2 - height as u16 / 2, width, height as u16);
+                let max_lines = self.get_scrollable_popup_line_count();
+                *height = max_lines + 4;
                 *popup_title = "Help";
                 if *scroll > 0
                 {
