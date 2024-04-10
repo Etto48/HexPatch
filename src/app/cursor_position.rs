@@ -347,18 +347,18 @@ mod test
 
         let current_position = app.get_cursor_position();
         assert_eq!(current_position.global_byte_index, 0);
-        assert_eq!(current_position.high_byte, true);
+        assert!(current_position.high_byte);
 
         app.move_cursor(81, 0, false);
         let current_position = app.get_cursor_position();
         assert_eq!(current_position.global_byte_index, 40);
-        assert_eq!(current_position.high_byte, false);
+        assert!(!current_position.high_byte);
 
         app.move_cursor(-1, -1, false);
         let bytes_per_line = app.block_size * app.blocks_per_row;
         let current_position = app.get_cursor_position();
         assert_eq!(current_position.global_byte_index, 40 - bytes_per_line);
-        assert_eq!(current_position.high_byte, true);
+        assert!(current_position.high_byte);
     }
 
     #[test]

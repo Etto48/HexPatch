@@ -649,14 +649,10 @@ mod test
         let app = App::mockup(data);
         for line in app.assembly_instructions.iter()
         {
-            match line
+            if let AssemblyLine::Instruction(instruction) = line
             {
-                AssemblyLine::Instruction(instruction) =>
-                {
-                    let contains_bad_instruction = instruction.instruction.to_string().contains(".byte");
-                    assert!(contains_bad_instruction, "Found {} instead of .byte ...", instruction.instruction.to_string());
-                },
-                _ => {}
+                let contains_bad_instruction = instruction.instruction.to_string().contains(".byte");
+                assert!(contains_bad_instruction, "Found {} instead of .byte ...", instruction.instruction);
             }
         }
 
