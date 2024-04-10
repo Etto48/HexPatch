@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 use super::fuzzer_entry::FuzzerEntry;
 
 pub struct Fuzzer

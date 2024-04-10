@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event;

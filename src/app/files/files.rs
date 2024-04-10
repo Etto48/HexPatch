@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 use std::{error::Error, path::{Path, PathBuf}};
 
 use ratatui::{backend::Backend, Terminal};
