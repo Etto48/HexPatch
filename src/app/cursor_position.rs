@@ -2,7 +2,7 @@ use super::{notification::NotificationLevel, App};
 
 pub struct CursorPosition
 {
-    pub cursor: (u16, u16),
+    pub cursor: Option<(u16, u16)>,
     pub local_x: usize,
     pub local_byte_index: usize,
     pub block_index: usize,
@@ -31,7 +31,7 @@ impl App
         if self.data.is_empty() || self.blocks_per_row == 0
         {
             return CursorPosition {
-                cursor: (0, 0),
+                cursor: Some((0, 0)),
                 local_x: 0,
                 local_byte_index: 0,
                 block_index: 0,
@@ -52,7 +52,7 @@ impl App
         let global_byte_index = line_byte_index + line_index * self.block_size * self.blocks_per_row;
 
         CursorPosition {
-            cursor: self.cursor,
+            cursor: Some(self.cursor),
             local_x,
             local_byte_index,
             block_index,
@@ -72,10 +72,19 @@ impl App
         let local_byte_index = global_byte_index % self.block_size;
         let local_x = (local_byte_index + local_block_index * self.block_size) * 3 + local_block_index;
         let cursor_x = local_x as u16 + if high_byte { 0 } else { 1 };
-        let cursor_y = (line_index - self.scroll) as u16;
+        let cursor_y = line_index as isize - self.scroll as isize;
+        let cursor =
+        if cursor_y < 0 || cursor_y >= self.screen_size.1 as isize - self.vertical_margin as isize
+        {
+            None
+        }
+        else
+        {
+            Some((cursor_x as u16, cursor_y as u16))
+        };
 
         CursorPosition {
-            cursor: (cursor_x, cursor_y),
+            cursor,
             local_x,
             local_byte_index,
             block_index,
@@ -246,7 +255,7 @@ impl App
 
         self.scroll = new_scroll;
 
-        self.cursor = self.get_expected_cursor_position(new_global_byte_index, new_high_byte).cursor;
+        self.cursor = self.get_expected_cursor_position(new_global_byte_index, new_high_byte).cursor.expect("The scroll should be adequate for the cursor to be visible");
     }
 
     pub(super) fn move_cursor_page_up(&mut self)
