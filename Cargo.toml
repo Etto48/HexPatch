@@ -17,7 +17,7 @@ capstone = "0.12.0"
 clap = { version = "4.5.1", features = ["derive"] }
 crossterm = "0.27.0"
 keystone-engine = "0.1.0"
-object = "0.34.0"
+object = "0.35.0"
 pathdiff = "0.2.1"
 pdb = "0.8.0"
 ratatui = "0.26.1"
