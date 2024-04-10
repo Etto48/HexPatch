@@ -31,9 +31,9 @@ impl LogLine
             NotificationLevel::Error => color_settings.log_error,
             _ => color_settings.log_info,
         };
-        line.spans.push(Span::styled(format!("{}", self.level), style));
+        line.spans.push(Span::styled(self.level.to_string(), style));
         line.spans.push(Span::styled(" ", color_settings.log_message));
-        line.spans.push(Span::styled(format!("{}", self.message), color_settings.log_message));
+        line.spans.push(Span::styled(self.message.clone(), color_settings.log_message));
         line.left_aligned()
     }
 }

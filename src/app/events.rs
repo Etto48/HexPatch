@@ -208,7 +208,7 @@ impl App
                         {
                             c = c.to_ascii_uppercase();
                         }
-                        if (max_len == None || string.len() < max_len.expect("Just checked")) &&
+                        if (max_len.is_none() || string.len() < max_len.expect("Just checked")) &&
                             (charset.is_none() || charset.expect("Just checked").contains(c))
                         {
                             string.insert(*cursor, c);
@@ -245,12 +245,9 @@ impl App
                     *scroll = len.saturating_sub(lines);
                 }
             }
-            else 
+            else if *scroll as isize >= len as isize
             {
-                if *scroll as isize >= len as isize
-                {
-                    *scroll = len.saturating_sub(1);
-                }    
+                *scroll = len.saturating_sub(1);  
             }
             
         }
@@ -268,7 +265,7 @@ impl App
             Some(PopupState::Open {currently_open_path, path, cursor, results, scroll: _scroll}) => 
             {
                 Self::handle_string_edit(path, cursor, &event, None, false, None, false)?;
-                *results = Self::find_dir_contents(&currently_open_path, &path)?;
+                *results = Self::find_dir_contents(currently_open_path, path)?;
             }
             Some(PopupState::Run {command, cursor, results, scroll: _scroll}) => 
             {
@@ -293,7 +290,7 @@ impl App
                 Self::handle_string_edit(assembly, cursor, &event, None, false, None, true)?;
                 if let Some(current_instruction) = self.get_current_instruction()
                 {
-                    *preview = self.bytes_from_assembly(&assembly, current_instruction.virtual_ip());
+                    *preview = self.bytes_from_assembly(assembly, current_instruction.virtual_ip());
                 }
             }
             Some(PopupState::JumpToAddress {location: address, cursor}) =>
@@ -333,7 +330,7 @@ impl App
                             Some(PopupState::Open { currently_open_path, path, cursor: _cursor, results: _results, scroll }) =>
                             {
                                 let mut new_popup = None;
-                                self.go_to_path(&currently_open_path, &path, *scroll, &mut new_popup, terminal)?;
+                                self.go_to_path(currently_open_path, path, *scroll, &mut new_popup, terminal)?;
                                 popup = new_popup;
                             }
                             Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
@@ -343,13 +340,13 @@ impl App
                             }
                             Some(PopupState::FindText { text, cursor: _cursor}) =>
                             {
-                                self.find_text(&text);
+                                self.find_text(text);
                                 // Maybe removing the popup is not a good idea, more testing needed
                                 popup = None;
                             }
                             Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
                             {
-                                self.jump_to_fuzzy_symbol(&filter, &symbols, *scroll);
+                                self.jump_to_fuzzy_symbol(filter, symbols, *scroll);
                                 popup = None;
                             }
                             Some(PopupState::Log(_)) =>
@@ -358,17 +355,17 @@ impl App
                             }
                             Some(PopupState::InsertText { text, cursor: _cursor }) =>
                             {
-                                self.insert_text(&text);
+                                self.insert_text(text);
                                 popup = None;
                             }
                             Some(PopupState::Patch {assembly, preview: _preview, cursor: _cursor}) =>
                             {
-                                self.patch(&assembly);
+                                self.patch(assembly);
                                 popup = None;
                             }
                             Some(PopupState::JumpToAddress {location, cursor: _cursor}) =>
                             {
-                                self.jump_to_symbol(&location);
+                                self.jump_to_symbol(location);
                                 popup = None;
                             }
                             Some(PopupState::Save(yes_selected)) =>

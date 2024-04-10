@@ -80,7 +80,7 @@ impl App
         }
         else
         {
-            Some((cursor_x as u16, cursor_y as u16))
+            Some((cursor_x, cursor_y as u16))
         };
 
         CursorPosition {
@@ -96,13 +96,13 @@ impl App
         }
     }
 
-    pub(super) fn jump_to_fuzzy_symbol(&mut self, symbol: &str, symbols: &Vec<(u64, String)>, scroll: usize)
+    pub(super) fn jump_to_fuzzy_symbol(&mut self, symbol: &str, symbols: &[(u64, String)], scroll: usize)
     {
         if symbol.is_empty()
         {
             if let Some(symbols) = self.header.get_symbols()
             {
-                if let Some(symbol) = symbols.iter().skip(scroll).next()
+                if let Some(symbol) = symbols.iter().nth(scroll)
                 {
                     let (address, name) = symbol;
                     let log_message = format!("Jumping to symbol {} at {:#X}", name, address);
@@ -141,9 +141,9 @@ impl App
 
     pub(super) fn jump_to_symbol(&mut self, symbol: &str)
     {
-        if symbol.starts_with("0x")
+        if let Some(address) = symbol.strip_prefix("0x")
         {
-            if let Ok(address) = usize::from_str_radix(&symbol[2..], 16)
+            if let Ok(address) = usize::from_str_radix(address, 16)
             {
                 self.log(NotificationLevel::Debug, &format!("Jumping to address: {:#X}", address));
                 self.jump_to(address, false);
@@ -153,9 +153,9 @@ impl App
                 self.log(NotificationLevel::Error, &format!("Invalid address: {}", symbol));
             }
         }
-        else if symbol.starts_with("v0x")
+        else if let Some(address) = symbol.strip_prefix("v0x")
         {
-            if let Ok(address) = usize::from_str_radix(&symbol[3..], 16)
+            if let Ok(address) = usize::from_str_radix(address, 16)
             {
                 self.log(NotificationLevel::Debug, &format!("Jumping to virtual address: {:#X}", address));
                 self.jump_to(address, true);
@@ -165,22 +165,19 @@ impl App
                 self.log(NotificationLevel::Error, &format!("Invalid virtual address: {}", symbol));
             }
         }
-        else
+        else if let Some(address) = self.header.symbol_to_address(symbol)
         {
-            if let Some(address) = self.header.symbol_to_address(symbol)
-            {
-                self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {:#X}", symbol, address));
-                self.jump_to(address as usize, true);
-            }
-            else if let Some(address) = self.header.get_sections().iter().find(|x|x.name == symbol).map(|x|x.file_offset)
-            {
-                self.log(NotificationLevel::Debug, &format!("Jumping to section {} at {:#X}", symbol, address));
-                self.jump_to(address as usize, false);
-            }
-            else 
-            {
-                self.log(NotificationLevel::Error, &format!("Symbol not found: {}", symbol));    
-            }
+            self.log(NotificationLevel::Debug, &format!("Jumping to symbol {} at {:#X}", symbol, address));
+            self.jump_to(address as usize, true);
+        }
+        else if let Some(address) = self.header.get_sections().iter().find(|x|x.name == symbol).map(|x|x.file_offset)
+        {
+            self.log(NotificationLevel::Debug, &format!("Jumping to section {} at {:#X}", symbol, address));
+            self.jump_to(address as usize, false);
+        }
+        else 
+        {
+            self.log(NotificationLevel::Error, &format!("Symbol not found: {}", symbol));    
         }
     }
 
@@ -225,7 +222,7 @@ impl App
         else
         {
             self.scroll = line_index - (self.screen_size.1 - self.vertical_margin - 1) as usize;
-            self.cursor = (local_x as u16, (self.screen_size.1 - self.vertical_margin - 1) as u16);
+            self.cursor = (local_x as u16, (self.screen_size.1 - self.vertical_margin - 1));
         }
     }
 
@@ -295,13 +292,13 @@ impl App
     {
         let bytes = self.data.len();
 
-        self.move_cursor((bytes as isize * 2) as isize, 0, true);
+        self.move_cursor(bytes as isize * 2, 0, true);
     }
 
     pub(super) fn move_cursor_to_start(&mut self)
     {
         let bytes = self.data.len();
-        self.move_cursor((bytes as isize * 2) as isize * -1, 0, true);
+        self.move_cursor(bytes as isize * 2 , 0, true);
     }
 
     pub(super) fn move_cursor_to_near_instruction(&mut self, instruction_count: isize)

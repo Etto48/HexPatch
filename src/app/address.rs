@@ -2,7 +2,7 @@ use ratatui::text::{Line, Span, Text};
 
 use super::App;
 
-impl <'a> App
+impl App
 {
     pub(super) fn get_address_view(&self, start_row: usize, end_row: usize) -> Text<'static>
     {

@@ -11,8 +11,7 @@ impl App
         let mut current_line = Line::default();
         let mut local_block = 0;
         let mut local_byte = 0;
-        let mut byte_index = 0;
-        for b in bytes
+        for (byte_index, b) in bytes.iter().enumerate()
         {
             let style = if byte_index == selected_byte_offset
             {
@@ -47,12 +46,11 @@ impl App
 
             if next_line
             {
-                let new_line = std::mem::replace(&mut current_line, Line::default());
+                let new_line = std::mem::take(&mut current_line);
                 ret.lines.push(new_line);
             }
-            byte_index += 1;
         }
-        if current_line.spans.len() > 0
+        if !current_line.spans.is_empty()
         {
             ret.lines.push(current_line);
         }
@@ -69,11 +67,8 @@ impl App
     {
         for (i,byte) in text.bytes().enumerate()
         {
-            if self.data.len() <= starting_from + i
-            {
-                return false;
-            }
-            else if self.data[starting_from + i] != byte
+            if self.data.len() <= starting_from + i || 
+                self.data[starting_from + i] != byte
             {
                 return false;
             }
@@ -93,7 +88,7 @@ impl App
 
     pub(super) fn find_text(&mut self, text: &str)
     {
-        if text.len() == 0 || self.data.len() == 0
+        if text.is_empty() || self.data.is_empty()
         {
             return;
         }
@@ -104,7 +99,7 @@ impl App
         }
         let mut search_here = self.get_cursor_position().global_byte_index;
         // find the next occurence of the text
-        if already_searched && Self::found_text_here(&self, search_here, text)
+        if already_searched && Self::found_text_here(self, search_here, text)
         {
             search_here += text.len();
         }
@@ -116,7 +111,7 @@ impl App
         while search_here < max_search_index
         {
             let actual_search_here = search_here % self.data.len();
-            if Self::found_text_here(&self, actual_search_here, text)
+            if Self::found_text_here(self, actual_search_here, text)
             {
                 self.jump_to(actual_search_here, false);
                 return;

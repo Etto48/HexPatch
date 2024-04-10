@@ -1,7 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
 use crossterm::event;
-use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders}};
+use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
 use super::{assembly::AssemblyLine, color_settings::ColorSettings, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
@@ -50,7 +50,7 @@ impl App
             text.lines.push(Line::styled(status.to_string(), color_settings.menu_text));
             let paragraph = ratatui::widgets::Paragraph::new(text)
                 .block(Block::default().borders(Borders::NONE));
-            let logo = Logo::new();
+            let logo = Logo::default();
             let logo_size = logo.get_size();
             f.render_widget(paragraph, size);
             if logo_size.0 < size.width && logo_size.1 < size.height
@@ -74,13 +74,16 @@ impl App
         Self::print_loading_status(&color_settings, &format!("Opening \"{}\"...", path), terminal)?;
         let path = PathBuf::from(path.as_ref());
 
-        let canonical_path = Self::path_canonicalize(path, None).map_err(|e| e.to_string())?;
+        let canonical_path = Self::path_canonicalize(&path, None).map_err(|e| e.to_string())?;
         let screen_size = Self::get_size(terminal)?;
 
-        let mut app = App::default();
-        app.path = canonical_path;
-        app.screen_size = screen_size;
-        app.color_settings = color_settings;
+        let mut app = App
+        {
+            path: canonical_path,
+            screen_size,
+            color_settings,
+            ..Default::default()
+        };
 
         if app.path.is_file()
         {
@@ -88,7 +91,7 @@ impl App
         }
         else
         {
-            Self::open_dir(&mut app.popup, app.path.clone()).map_err(|e| e.to_string())?;
+            Self::open_dir(&mut app.popup, &app.path).map_err(|e| e.to_string())?;
         }
 
         Ok(app)
@@ -99,7 +102,7 @@ impl App
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_if_needed(self.screen_size.0);
 
-        while self.needs_to_exit == false 
+        while !self.needs_to_exit
         {
             if event::poll(self.poll_time)?
             {
@@ -178,8 +181,6 @@ impl App
 
                 if let Some(popup_state) = &self.popup 
                 {
-                    let clear = ratatui::widgets::Clear::default();
-
                     let mut popup_text = Text::default();
                     let mut popup_title = "Popup";
 
@@ -196,7 +197,7 @@ impl App
                         let popup = ratatui::widgets::Paragraph::new(popup_text)
                             .block(Block::default().title(popup_title).borders(Borders::ALL))
                             .alignment(ratatui::layout::Alignment::Center);
-                        f.render_widget(clear, popup_rect);
+                        f.render_widget(Clear, popup_rect);
                         f.render_widget(popup, popup_rect);
                     }
                 }
