@@ -49,13 +49,13 @@ impl AssemblyLine
         }
     }
 
-    pub fn to_line(&self, color_settings: &ColorSettings, current_byte_index: usize, header: &Header) -> Line
+    pub fn to_line(&self, color_settings: &ColorSettings, current_byte_index: usize, header: &Header, address_min_width: usize) -> Line
     {
         match self
         {
             AssemblyLine::Instruction(instruction) => {
                 let selected = current_byte_index >= instruction.file_address as usize && current_byte_index < instruction.file_address as usize + instruction.instruction.len();
-                App::instruction_to_line(color_settings, instruction, selected, header)
+                App::instruction_to_line(color_settings, instruction, selected, header, address_min_width)
             },
             AssemblyLine::SectionTag(section) => 
             {
@@ -69,7 +69,7 @@ impl AssemblyLine
                 {
                     color_settings.assembly_address
                 };
-                line.spans.push(Span::styled(format!("{:16X}", section.file_address), address_style));
+                line.spans.push(Span::styled(format!("{:>address_min_width$X}", section.file_address), address_style));
                 line.spans.push(Span::raw(" "));
                 line.spans.push(Span::styled(format!("[{} ({}B)]", section.name, section.size), color_settings.assembly_section));
                 line.spans.push(Span::styled(format!(" @{:X}", section.virtual_address), color_settings.assembly_virtual_address));
@@ -113,11 +113,11 @@ impl App
         }
     }
 
-    fn instruction_to_line (color_settings: &ColorSettings, instruction: &InstructionTag, selected: bool, header: &Header) -> Line<'static>
+    fn instruction_to_line (color_settings: &ColorSettings, instruction: &InstructionTag, selected: bool, header: &Header, address_min_width: usize) -> Line<'static>
     {
         let symbol_table = header.get_symbols();
         let mut line = Line::default();
-        line.spans.push(Span::styled(format!("{:16X}",instruction.file_address), 
+        line.spans.push(Span::styled(format!("{:>address_min_width$X}",instruction.file_address), 
             if selected
             {
                 color_settings.assembly_selected
@@ -396,7 +396,6 @@ impl App
             let decoder = self.header.get_decoder().expect("Failed to create decoder");
             let mut offsets = Vec::new();
             let mut instructions = Vec::new();
-            let mut instruction_lines = Vec::new();
             let mut to_byte = self.data.len();
 
             let from_instruction = self.assembly_offsets[from_byte];
@@ -430,7 +429,6 @@ impl App
                     break;
                 }
                 instructions.push(new_assembly_line);
-                instruction_lines.push(Self::instruction_to_line(&self.color_settings, &instruction_tag, false, &self.header));
                 for _ in 0..instruction.len()
                 {
                     offsets.push(from_instruction + instructions.len() - 1);
@@ -511,7 +509,7 @@ mod test
                 file_address
             }
         );
-        let line = al.to_line(&ColorSettings::default(), 0, &Header::None);
+        let line = al.to_line(&ColorSettings::default(), 0, &Header::None, 0);
 
         let contains_mnemonic = line.spans.iter().any(|span| span.content.contains("mov"));
         assert!(contains_mnemonic);
@@ -535,7 +533,7 @@ mod test
             }
         );
 
-        let line = al.to_line(&ColorSettings::default(), 0, &Header::None);
+        let line = al.to_line(&ColorSettings::default(), 0, &Header::None, 0);
 
         let contains_section_name = line.spans.iter().any(|span| span.content.contains(".text"));
         assert!(contains_section_name);
