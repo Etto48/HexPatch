@@ -120,7 +120,11 @@ impl App
             }
 
             terminal.draw(|f| {
-                self.screen_size = (f.size().width, f.size().height);
+                let min_width = self.block_size as u16 * 3 + 17 + 3;
+                if f.size().width < min_width
+                {
+                    return;
+                }
                 let output_rect = Rect::new(0, f.size().height - 1, f.size().width, 1);
                 let address_rect = Rect::new(0, 0, 17, f.size().height - output_rect.height);
                 let hex_editor_rect = Rect::new(address_rect.width, 0, (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16, f.size().height - output_rect.height);
