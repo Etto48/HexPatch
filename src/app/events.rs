@@ -290,7 +290,7 @@ impl App
                 Self::handle_string_edit(assembly, cursor, &event, None, false, None, true)?;
                 if let Some(current_instruction) = self.get_current_instruction()
                 {
-                    *preview = self.bytes_from_assembly(assembly, current_instruction.virtual_ip());
+                    *preview = self.bytes_from_assembly(assembly, current_instruction.virtual_address());
                 }
             }
             Some(PopupState::JumpToAddress {location: address, cursor}) =>

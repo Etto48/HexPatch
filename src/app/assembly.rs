@@ -31,7 +31,7 @@ pub enum AssemblyLine
 
 impl AssemblyLine
 {
-    pub fn ip(&self) -> u64
+    pub fn file_address(&self) -> u64
     {
         match self
         {
@@ -40,12 +40,30 @@ impl AssemblyLine
         }
     }
 
-    pub fn virtual_ip(&self) -> u64
+    pub fn virtual_address(&self) -> u64
     {
         match self
         {
             AssemblyLine::Instruction(instruction) => instruction.instruction.ip(),
             AssemblyLine::SectionTag(section) => section.virtual_address
+        }
+    }
+
+    pub fn len(&self) -> usize
+    {
+        match self
+        {
+            AssemblyLine::Instruction(instruction) => instruction.instruction.len(),
+            AssemblyLine::SectionTag(section) => section.size
+        }
+    }
+
+    pub fn is_empty(&self) -> bool
+    {
+        match self
+        {
+            AssemblyLine::Instruction(instruction) => instruction.instruction.is_empty(),
+            AssemblyLine::SectionTag(section) => section.size == 0
         }
     }
 
@@ -376,8 +394,8 @@ impl App
         let current_instruction = self.get_current_instruction();
         if let Some(current_instruction) = current_instruction
         {
-            let from_byte = current_instruction.ip() as usize;
-            let virtual_address = current_instruction.virtual_ip();
+            let from_byte = current_instruction.file_address() as usize;
+            let virtual_address = current_instruction.virtual_address();
             let text_section = self.header.get_text_section();
             let (is_inside_text_section, maximum_code_byte) = 
             if let Some(text_section) = text_section 
@@ -426,7 +444,7 @@ impl App
                 let new_assembly_line = AssemblyLine::Instruction(instruction_tag.clone());
                 if old_instruction.is_same_instruction(&new_assembly_line) && current_byte - from_byte >= modifyied_bytes
                 {
-                    to_byte = old_instruction.ip() as usize;
+                    to_byte = old_instruction.file_address() as usize;
                     break;
                 }
                 instructions.push(new_assembly_line);
@@ -471,14 +489,14 @@ impl App
             {
                 if let AssemblyLine::Instruction(instruction) = &self.assembly_instructions[i]
                 {
-                    self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction.instruction, self.assembly_instructions[i].ip()));    
+                    self.log(NotificationLevel::Debug, &format!("Removing instruction \"{}\" at {:X}", instruction.instruction, self.assembly_instructions[i].file_address()));    
                 }
             }
             for instruction in instructions.iter()
             {
                 if let AssemblyLine::Instruction(instruction_tag) = instruction
                 {
-                    self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction_tag.instruction, instruction.ip()));
+                    self.log(NotificationLevel::Debug, &format!("Adding instruction \"{}\" at {:X}", instruction_tag.instruction, instruction.file_address()));
                 }
             }
 

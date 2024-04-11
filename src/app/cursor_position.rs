@@ -309,8 +309,16 @@ impl App
             return;
         }
         let current_instruction_index = self.assembly_offsets[current_offset];
-        let next_instruction_index = (current_instruction_index as isize + instruction_count).clamp(0, self.assembly_instructions.len().saturating_sub(1) as isize) as usize;
-        let target_address = self.assembly_instructions[next_instruction_index].ip();
+        let mut next_instruction_index = (current_instruction_index as isize + instruction_count).clamp(0, self.assembly_instructions.len().saturating_sub(1) as isize) as usize;
+        while instruction_count < 0 &&
+            next_instruction_index != 0 &&
+            next_instruction_index != current_instruction_index && 
+            self.assembly_instructions[next_instruction_index].file_address() == self.assembly_instructions[current_instruction_index].file_address()
+        {
+            next_instruction_index = next_instruction_index.saturating_sub(1);
+        }
+        
+        let target_address = self.assembly_instructions[next_instruction_index].file_address();
         self.jump_to(target_address as usize, false);
     }
 }

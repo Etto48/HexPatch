@@ -14,6 +14,7 @@ pub struct ColorSettings
     pub hex_end_of_line: Style,
     pub hex_whitespace: Style,
     pub hex_current_instruction: Style,
+    pub hex_current_section: Style,
     pub hex_default: Style,
 
     pub text_selected: Style,
@@ -87,6 +88,7 @@ impl Default for ColorSettings
             hex_end_of_line: Style::default().fg(Color::LightRed),
             hex_whitespace: Style::default().fg(Color::Rgb(244, 202, 183)),
             hex_current_instruction: Style::default().fg(Color::Black).bg(Color::Rgb(215, 170, 92)),
+            hex_current_section: Style::default().fg(Color::Black).bg(Color::Rgb(215, 170, 92)),
             hex_default: Style::default(),
 
             text_selected: Style::default().fg(Color::Black).bg(Color::White),

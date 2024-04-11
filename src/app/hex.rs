@@ -6,6 +6,7 @@ pub(super) struct InstructionInfo
 {
     pub offset: isize,
     pub length: usize,
+    pub is_section: bool,
 }
 
 impl App
@@ -36,14 +37,22 @@ impl App
 
             if let Some(instruction_info) = &instruction_info
             {
+                let used_style = if instruction_info.is_section
+                {
+                    color_settings.hex_current_section
+                }
+                else
+                {
+                    color_settings.hex_current_instruction
+                };
                 if byte_index >= instruction_info.offset && byte_index < instruction_info.offset + instruction_info.length as isize
                 {
                     let is_last_space = byte_index == instruction_info.offset + instruction_info.length as isize - 1;
                     if !is_last_space
                     {
-                        space_style = color_settings.hex_current_instruction;
+                        space_style = used_style;
                     }
-                    style = color_settings.hex_current_instruction;
+                    style = used_style;
                 }
             }
 
@@ -178,11 +187,12 @@ impl App
             if self.info_mode == InfoMode::Assembly
             {
                 let current_instruction = self.get_current_instruction();
-                if let Some(AssemblyLine::Instruction(instruction)) = current_instruction
+                if let Some(assembly_line) = current_instruction
                 {
-                    let offset = instruction.file_address as isize - start_byte as isize;
-                    let length = instruction.instruction.len();
-                    Some(InstructionInfo { offset, length })
+                    let offset = assembly_line.file_address() as isize - start_byte as isize;
+                    let length = assembly_line.len();
+                    let is_section = matches!(assembly_line, AssemblyLine::SectionTag(_));
+                    Some(InstructionInfo { offset, length, is_section})
                 }
                 else
                 {
