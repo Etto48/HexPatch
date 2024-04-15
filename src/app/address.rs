@@ -15,11 +15,11 @@ impl App
             line.spans.push(Span::styled(format!("{:16X}", i * self.block_size * self.blocks_per_row), 
             if i == selected_row
             {
-                self.color_settings.address_selected
+                self.settings.color.address_selected
             }
             else
             {
-                self.color_settings.address_default
+                self.settings.color.address_default
             }));
             ret.lines.push(line);
         }

@@ -138,28 +138,28 @@ impl App
 
         terminal = if let Some(terminal) = terminal
         {
-            Self::print_loading_status(&self.color_settings, &format!("Opening \"{}\"...", path), terminal)?;
+            Self::print_loading_status(&self.settings.color, &format!("Opening \"{}\"...", path), terminal)?;
             Some(terminal)
         } else {None};
         self.data = std::fs::read(&self.path)?;
         
         terminal = if let Some(terminal) = terminal
         {
-            Self::print_loading_status(&self.color_settings, "Decoding binary data...", terminal)?;
+            Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
             Some(terminal)
         } else {None};
         self.header = Header::parse_header(&self.data);
 
         terminal = if let Some(terminal) = terminal
         {
-            Self::print_loading_status(&self.color_settings, "Disassembling executable...", terminal)?;
+            Self::print_loading_status(&self.settings.color, "Disassembling executable...", terminal)?;
             Some(terminal)
         } else {None};
         (self.assembly_offsets, self.assembly_instructions) = Self::sections_from_bytes(&self.data, &self.header);
 
         if let Some(terminal) = terminal
         {
-            Self::print_loading_status(&self.color_settings, "Opening ui...", terminal)?;
+            Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
         }
         self.log_header_info();
 

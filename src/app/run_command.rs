@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span};
 
-use super::{color_settings::ColorSettings, notification::NotificationLevel, popup_state::PopupState, App};
+use super::{notification::NotificationLevel, popup_state::PopupState, settings::color_settings::ColorSettings, App};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command

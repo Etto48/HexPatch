@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span, Text};
 
-use super::{color_settings::ColorSettings, notification::NotificationLevel, App};
+use super::{notification::NotificationLevel, settings::color_settings::ColorSettings, App};
 
 impl App
 {
@@ -83,7 +83,7 @@ impl App
         let end_byte = std::cmp::min(end_byte, self.data.len());
         let bytes = &self.data[start_byte..end_byte];
         let selected_byte_offset = self.get_cursor_position().global_byte_index.saturating_sub(start_byte);
-        Self::bytes_to_styled_text(&self.color_settings, bytes, self.block_size, self.blocks_per_row, selected_byte_offset)
+        Self::bytes_to_styled_text(&self.settings.color, bytes, self.block_size, self.blocks_per_row, selected_byte_offset)
     }
 
     pub(super) fn find_text(&mut self, text: &str)
