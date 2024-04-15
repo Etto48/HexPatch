@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, color_settings::ColorSettings, info_mode::InfoMode, notification::NotificationLevel, App};
+use super::{assembly::AssemblyLine, info_mode::InfoMode, notification::NotificationLevel, settings::color_settings::ColorSettings, App};
 
 pub(super) struct InstructionInfo
 {
@@ -204,7 +204,7 @@ impl App
                 None
             }
         };
-        Self::bytes_to_styled_hex(&self.color_settings, bytes, self.block_size, self.blocks_per_row, selected_byte_index, high_byte, instruction_info)
+        Self::bytes_to_styled_hex(&self.settings.color, bytes, self.block_size, self.blocks_per_row, selected_byte_index, high_byte, instruction_info)
     }
 
     pub(super) fn save_data(&mut self) -> Result<(), std::io::Error>
