@@ -1,8 +1,9 @@
+#![allow(clippy::module_inception)]
 use std::path::{Path, PathBuf};
 
 use super::color_settings::ColorSettings;
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
 pub struct Settings
 {
     pub color: ColorSettings
@@ -73,17 +74,6 @@ impl Settings
         Some(())
     }
 
-}
-
-impl Default for Settings
-{
-    fn default() -> Self
-    {
-        Self
-        {
-            color: ColorSettings::default()
-        }
-    }
 }
 
 #[cfg(test)]
