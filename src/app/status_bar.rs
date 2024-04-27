@@ -7,29 +7,29 @@ impl App
     pub(super) fn build_status_bar(&self) -> Text<'static>
     {
         let mut status_bar = Text::default();
-        status_bar.style = self.color_settings.status_bar;
+        status_bar.style = self.settings.color.status_bar;
         let mut line = Line {
-            style: self.color_settings.status_bar,
+            style: self.settings.color.status_bar,
             ..Default::default()
         };
         let max_len = self.screen_size.0 as usize;
         let current_position = self.get_cursor_position();
 
-        line.spans.push(Span::styled(" ", self.color_settings.status_bar));
+        line.spans.push(Span::styled(" ", self.settings.color.status_bar));
 
         let (notification_str, notification_style) = match self.notificaiton
         {
-            super::notification::NotificationLevel::None => (" ", self.color_settings.status_bar),
-            super::notification::NotificationLevel::Debug => ("●", self.color_settings.status_debug),
-            super::notification::NotificationLevel::Info => ("●", self.color_settings.status_info),
-            super::notification::NotificationLevel::Warning => ("●", self.color_settings.status_warning),
-            super::notification::NotificationLevel::Error => ("●", self.color_settings.status_error),
+            super::notification::NotificationLevel::None => (" ", self.settings.color.status_bar),
+            super::notification::NotificationLevel::Debug => ("●", self.settings.color.status_debug),
+            super::notification::NotificationLevel::Info => ("●", self.settings.color.status_info),
+            super::notification::NotificationLevel::Warning => ("●", self.settings.color.status_warning),
+            super::notification::NotificationLevel::Error => ("●", self.settings.color.status_error),
         };
         line.spans.push(Span::styled(notification_str, notification_style));
-        line.spans.push(Span::styled(" ", self.color_settings.status_bar));
+        line.spans.push(Span::styled(" ", self.settings.color.status_bar));
         if self.notificaiton != super::notification::NotificationLevel::None
         {
-            line.spans.push(Span::styled(self.log[self.log.len() - 1].message.chars().take(max_len - 25).collect::<String>(), self.color_settings.status_bar));
+            line.spans.push(Span::styled(self.log[self.log.len() - 1].message.chars().take(max_len - 25).collect::<String>(), self.settings.color.status_bar));
         }
 
         let current_location_span = Span::styled(format!("{:16X} {} ",current_position.global_byte_index, 
@@ -40,7 +40,7 @@ impl App
         else
         {
             "L"
-        }), self.color_settings.status_bar);
+        }), self.settings.color.status_bar);
         let space_number = max_len as isize - line.width() as isize - current_location_span.width() as isize - 2;
         if space_number < 0
         {

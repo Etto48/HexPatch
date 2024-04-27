@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span};
 
-use super::{color_settings::ColorSettings, App};
+use super::{settings::color_settings::ColorSettings, App};
 
 #[derive(Debug, Clone)]
 pub struct HelpLine {

@@ -1,7 +1,9 @@
 use ratatui::style::{Color, Modifier, Style};
+use serde::{Deserialize, Serialize};
 
-use super::App;
+use crate::app::App;
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ColorSettings
 {
     pub address_selected: Style,
@@ -149,7 +151,7 @@ impl Default for ColorSettings
 
 impl App
 {
-    pub(super) fn get_style_for_byte(color_settings: &ColorSettings, byte: u8) -> Style
+    pub(in crate::app) fn get_style_for_byte(color_settings: &ColorSettings, byte: u8) -> Style
     {
         match byte
         {

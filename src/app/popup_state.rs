@@ -2,7 +2,7 @@ use std::{error::Error, path::PathBuf};
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, color_settings::ColorSettings, files::path_result::PathResult, run_command::Command, App};
+use super::{assembly::AssemblyLine, files::path_result::PathResult, run_command::Command, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
@@ -729,7 +729,7 @@ impl App
                         .iter()
                         .skip(*scroll)
                         .take(max_lines)
-                        .map(|h| h.to_line(&self.color_settings)
+                        .map(|h| h.to_line(&self.settings.color)
                     )
                 );
                 if self.help_list.len() as isize - *scroll as isize > max_lines as isize

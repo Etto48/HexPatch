@@ -2,7 +2,7 @@ use std::{error::Error, path::{Path, PathBuf}};
 
 use ratatui::text::{Line, Span};
 
-use crate::app::color_settings::ColorSettings;
+use crate::app::settings::color_settings::ColorSettings;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PathResult

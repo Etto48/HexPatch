@@ -298,7 +298,7 @@ impl App
     pub(super) fn move_cursor_to_start(&mut self)
     {
         let bytes = self.data.len();
-        self.move_cursor(bytes as isize * 2 , 0, true);
+        self.move_cursor(bytes as isize * -2 , 0, true);
     }
 
     pub(super) fn move_cursor_to_near_instruction(&mut self, instruction_count: isize)

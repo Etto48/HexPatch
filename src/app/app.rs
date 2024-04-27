@@ -4,7 +4,7 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
-use super::{assembly::AssemblyLine, color_settings::ColorSettings, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
 use crate::{fuzzer::Fuzzer, headers::Header};
 
@@ -28,7 +28,7 @@ pub struct App
     pub(super) needs_to_exit: bool,
     pub(super) screen_size: (u16, u16),
 
-    pub(super) color_settings: ColorSettings,
+    pub(super) settings: Settings,
 
     pub(super) popup: Option<PopupState>,
 
@@ -69,10 +69,10 @@ impl App
 
     pub fn new<B: Backend>(path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
-        let color_settings = ColorSettings::default();
+        let settings = Settings::load(None).unwrap_or_default();
         let path = path.to_string_lossy();
         let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
-        Self::print_loading_status(&color_settings, &format!("Opening \"{}\"...", path), terminal)?;
+        Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", path), terminal)?;
         let path = PathBuf::from(path.as_ref());
 
         let canonical_path = Self::path_canonicalize(&path, None).map_err(|e| e.to_string())?;
@@ -82,7 +82,7 @@ impl App
         {
             path: canonical_path,
             screen_size,
-            color_settings,
+            settings,
             ..Default::default()
         };
 
@@ -136,7 +136,7 @@ impl App
                 
                 let scrolled_amount = self.get_cursor_position().global_byte_index;
                 let total_amount = self.data.len();
-                let scrollbar = Scrollbar::new(scrolled_amount, total_amount, self.color_settings.scrollbar);
+                let scrollbar = Scrollbar::new(scrolled_amount, total_amount, self.settings.color.scrollbar);
 
                 if !self.data.is_empty()
                 {
@@ -172,7 +172,7 @@ impl App
                             let assembly_subview_lines = &self.assembly_instructions[assembly_start_index..assembly_end_index];
                             let mut assembly_subview = Text::default();
                             let address_min_width = assembly_subview_lines.last().map(|x| format!("{:X}",x.file_address()).len() + 1).unwrap_or(1);
-                            assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.color_settings, self.get_cursor_position().global_byte_index, &self.header, address_min_width)));
+                            assembly_subview.lines.extend(assembly_subview_lines.iter().map(|x| x.to_line(&self.settings.color, self.get_cursor_position().global_byte_index, &self.header, address_min_width)));
                             ratatui::widgets::Paragraph::new(assembly_subview)
                                 .block(Block::default().title("Assembly View").borders(Borders::TOP | Borders::RIGHT))
                         }
@@ -193,7 +193,7 @@ impl App
                     let mut popup_width = 60;
                     let mut popup_height = 5;
 
-                    let popup_result = self.fill_popup(&self.color_settings, popup_state, &mut popup_title, &mut popup_text, &mut popup_height, &mut popup_width);
+                    let popup_result = self.fill_popup(&self.settings.color, popup_state, &mut popup_title, &mut popup_text, &mut popup_height, &mut popup_width);
                     popup_height = popup_height.min(f.size().height.saturating_sub(2) as usize);
                     popup_width = popup_width.min(f.size().width.saturating_sub(1) as usize);
                     let popup_rect = Rect::new((f.size().width / 2).saturating_sub((popup_width / 2 + 1) as u16), (f.size().height / 2).saturating_sub((popup_height / 2) as u16), popup_width as u16, popup_height as u16);
@@ -237,7 +237,7 @@ impl Default for App
             needs_to_exit: false,
             screen_size: (0,0),
 
-            color_settings: ColorSettings::default(),
+            settings: Settings::default(),
 
             popup: None,
 
