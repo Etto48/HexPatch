@@ -1,12 +1,13 @@
 #![allow(clippy::module_inception)]
 use std::path::{Path, PathBuf};
 
-use super::color_settings::ColorSettings;
+use super::{color_settings::ColorSettings, key_settings::KeySettings};
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
 pub struct Settings
 {
-    pub color: ColorSettings
+    pub color: ColorSettings,
+    pub key: KeySettings,
 }
 
 impl Settings

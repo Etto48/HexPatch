@@ -371,5 +371,195 @@
       "add_modifier": "",
       "sub_modifier": ""
     }
+  },
+  "key": {
+    "up": {
+      "code": "Up",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "down": {
+      "code": "Down",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "left": {
+      "code": "Left",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "right": {
+      "code": "Right",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "next": {
+      "code": "Right",
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "previous": {
+      "code": "Left",
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "page_up": {
+      "code": "PageUp",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "page_down": {
+      "code": "PageDown",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "goto_start": {
+      "code": "Home",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "goto_end": {
+      "code": "End",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "quit": {
+      "code": {
+        "Char": "c"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "save_and_quit": {
+      "code": {
+        "Char": "x"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "save": {
+      "code": {
+        "Char": "s"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "open": {
+      "code": {
+        "Char": "o"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "help": {
+      "code": {
+        "Char": "h"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "log": {
+      "code": {
+        "Char": "l"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "run": {
+      "code": {
+        "Char": " "
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "find_text": {
+      "code": {
+        "Char": "/"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "find_symbol": {
+      "code": {
+        "Char": "s"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "patch_text": {
+      "code": {
+        "Char": "t"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "patch_assembly": {
+      "code": {
+        "Char": "p"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "jump": {
+      "code": {
+        "Char": "j"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "change_view": {
+      "code": {
+        "Char": "v"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "confirm": {
+      "code": "Enter",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "close_popup": {
+      "code": "Esc",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "new_line": {
+      "code": "Enter",
+      "modifiers": "SHIFT",
+      "kind": "Press",
+      "state": ""
+    },
+    "clear_log": {
+      "code": "Delete",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    }
   }
 }
