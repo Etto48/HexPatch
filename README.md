@@ -44,7 +44,6 @@ The following architectures are supported:
 
 - Log
     ![Log](./assets/log.png)
-    Press `DELETE` to clear the log.
 
 - Text view
     ![Text view](./assets/text_view.png)
@@ -70,7 +69,6 @@ The following architectures are supported:
 
 - Patch
     ![Patch](./assets/patch.png)
-    Create a new line with `SHIFT + ENTER`.
 
 ## Known issues
 
