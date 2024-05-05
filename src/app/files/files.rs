@@ -118,7 +118,7 @@ impl App
             self.log(NotificationLevel::Info, "No header found. Assuming 64-bit.");
         }
         
-        self.log(NotificationLevel::Info, "Press H for a list of commands.");
+        self.log(NotificationLevel::Info, &format!("Press {} for a list of commands.", Self::key_event_to_string(self.settings.key.help)));
     }
 
     pub(in crate::app) fn open_file<B: Backend>(&mut self, path: &str, mut terminal: Option<&mut Terminal<B>>) -> Result<(), Box<dyn Error>>
