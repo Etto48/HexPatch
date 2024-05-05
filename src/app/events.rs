@@ -344,7 +344,7 @@ impl App
                         Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
                         {
                             self.run_command(command, *scroll)?;
-                            popup = self.popup.clone();
+                            popup.clone_from(&self.popup);
                         }
                         Some(PopupState::FindText { text, cursor: _cursor}) =>
                         {
