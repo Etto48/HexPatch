@@ -9,8 +9,12 @@ authors = ["Ettore Ricci"]
 edition = "2021"
 readme = "README.md"
 license-file = "LICENSE"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
 
 [dependencies]
 capstone = "0.12.0"
