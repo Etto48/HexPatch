@@ -82,6 +82,7 @@ impl App
         {
             path: canonical_path,
             screen_size,
+            help_list: Self::help_list(&settings.key),
             settings,
             ..Default::default()
         };
@@ -223,7 +224,7 @@ impl Default for App
             commands: Fuzzer::new(&Command::get_commands()),
             header: Header::None,
             log: Vec::new(),
-            help_list: Self::help_list(),
+            help_list: Self::help_list(&Settings::default().key),
             notificaiton: NotificationLevel::None,
             data: Vec::new(),
             dirty: false,

@@ -220,7 +220,7 @@ impl App
         }
     }
 
-    pub(super) fn request_quit_without_save(&mut self)
+    pub(super) fn request_save_and_quit(&mut self)
     {
         if self.dirty
         {

@@ -1,7 +1,7 @@
-use crossterm::event::{self, KeyCode, KeyModifiers};
+use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{backend::Backend, Terminal};
 
-use super::{popup_state::PopupState, App};
+use super::{popup_state::PopupState, settings::key_settings::KeySettings, App};
 
 impl App
 {
@@ -10,123 +10,127 @@ impl App
         match event
         {
             event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
-                match event.code
+                if event == self.settings.key.up
                 {
-                    KeyCode::Up => {
-                        self.move_cursor(0, -1, false);
-                    },
-                    KeyCode::Down => {
-                        self.move_cursor(0, 1, false);
-                    },
-                    KeyCode::Left => {
-                        if event.modifiers.contains(event::KeyModifiers::CONTROL)
-                        {
-                            match self.info_mode
-                            {
-                                super::info_mode::InfoMode::Text => 
-                                {
-                                    self.move_cursor(-16, 0, true);
-                                },
-                                super::info_mode::InfoMode::Assembly => 
-                                {
-                                    self.move_cursor_to_near_instruction(-1);
-                                },
-                            }
-                        }
-                        else
-                        {
-                            self.move_cursor(-1, 0, false);
-                        }
-                    },
-                    KeyCode::Right => {
-                        if event.modifiers.contains(event::KeyModifiers::CONTROL)
-                        {
-                            match self.info_mode
-                            {
-                                super::info_mode::InfoMode::Text => 
-                                {
-                                    self.move_cursor(16, 0, true);
-                                },
-                                super::info_mode::InfoMode::Assembly => 
-                                {
-                                    self.move_cursor_to_near_instruction(1);
-                                },
-                            }
-                        }
-                        else
-                        {
-                            self.move_cursor(1, 0, false);
-                        }
-                    },
-                    KeyCode::PageUp => {
-                        self.move_cursor_page_up();
-                    },
-                    KeyCode::PageDown => {
-                        self.move_cursor_page_down();
-                    },
-                    KeyCode::Home => 
+                    self.move_cursor(0, -1, false);
+                }
+                else if event == self.settings.key.down 
+                {
+                    self.move_cursor(0, 1, false);
+                }
+                else if event == self.settings.key.left 
+                {
+                        self.move_cursor(-1, 0, false);
+                }
+                else if event == self.settings.key.right
+                {
+                    self.move_cursor(1, 0, false);
+                }
+                else if event == self.settings.key.next
+                {
+                    match self.info_mode
                     {
-                        self.move_cursor_to_start();
+                        super::info_mode::InfoMode::Text => 
+                        {
+                            self.move_cursor(16, 0, true);
+                        },
+                        super::info_mode::InfoMode::Assembly => 
+                        {
+                            self.move_cursor_to_near_instruction(1);
+                        },
                     }
-                    KeyCode::End => 
+                }
+                else if event == self.settings.key.previous
+                {
+                    match self.info_mode
                     {
-                        self.move_cursor_to_end();
+                        super::info_mode::InfoMode::Text => 
+                        {
+                            self.move_cursor(-16, 0, true);
+                        },
+                        super::info_mode::InfoMode::Assembly => 
+                        {
+                            self.move_cursor_to_near_instruction(-1);
+                        },
                     }
-                    KeyCode::Char(c) if event.modifiers.contains(event::KeyModifiers::CONTROL) => {
-                        match c
-                        {
-                            'c' => {
-                                self.request_quit();
-                            },
-                            's' => {
-                                self.request_save();
-                            },
-                            'x' => {
-                                self.request_quit_without_save();
-                            },
-                            'o' => {
-                                self.request_open()?;
-                            },
-                            _ => {}
-                        }
-                    },
-                    KeyCode::Char(c) => {
-                        match c
-                        {
-                            '0'..='9' | 'A'..='F' | 'a'..='f' => {
-                                self.edit_data(c);
-                            },
-                            'h' => {
-                                self.request_popup_help();
-                            },
-                            'l' => {
-                                self.request_popup_log();
-                            },
-                            ' ' => {
-                                self.request_popup_run();
-                            }
-                            '/' => {
-                                self.request_popup_find_text();
-                            }
-                            's' => {
-                                self.request_popup_find_symbol();
-                            },
-                            't' => {
-                                self.request_popup_text();
-                            },
-                            'p' => {
-                                self.request_popup_patch();
-                            },
-                            'j' => {
-                                self.request_popup_jump();
-                            },
-                            'v' => {
-                                self.request_view_change();
-                            }
-                            _ => {}
-                        }
-                    },
-                    _ => {}
+                }
+                else if event == self.settings.key.page_up
+                {
+                    self.move_cursor_page_up();
+                }
+                else if event == self.settings.key.page_down
+                {
+                    self.move_cursor_page_down();
+                }
+                else if event == self.settings.key.goto_start
+                {
+                    self.move_cursor_to_start();
+                }
+                else if event == self.settings.key.goto_end
+                {
+                    self.move_cursor_to_end();
+                }
+                else if event == self.settings.key.quit
+                {
+                    self.request_quit();
+                }
+                else if event == self.settings.key.save
+                {
+                    self.request_save();
+                }
+                else if event == self.settings.key.save_and_quit
+                {
+                    self.request_save_and_quit();
+                }
+                else if event == self.settings.key.open
+                {
+                    self.request_open()?;
+                }
+                else if event == self.settings.key.help
+                {
+                    self.request_popup_help();
+                }
+                else if event == self.settings.key.log
+                {
+                    self.request_popup_log();
+                }
+                else if event == self.settings.key.run
+                {
+                    self.request_popup_run();
+                }
+                else if event == self.settings.key.find_text
+                {
+                    self.request_popup_find_text();
+                }
+                else if event == self.settings.key.find_symbol
+                {
+                    self.request_popup_find_symbol();
+                }
+                else if event == self.settings.key.patch_text
+                {
+                    self.request_popup_text();
+                }
+                else if event == self.settings.key.patch_assembly
+                {
+                    self.request_popup_patch();
+                }
+                else if event == self.settings.key.jump
+                {
+                    self.request_popup_jump();
+                }
+                else if event == self.settings.key.change_view
+                {
+                    self.request_view_change();
+                }
+                else if let KeyCode::Char(c) = event.code
+                {
+                    match c
+                    {
+                        '0'..='9' | 'A'..='F' | 'a'..='f' => {
+                            self.edit_data(c);
+                        },
+                        _ => {}
+                    }
                 }
             },
             event::Event::Mouse(event) => {
@@ -160,72 +164,77 @@ impl App
         cursor: &mut usize, 
         event: &event::Event, 
         charset: Option<&str>, 
-        capitalize: bool, 
         max_len: Option<usize>, 
-        multiline: bool
+        multiline: bool,
+        key_settings: &KeySettings
     ) -> Result<(), Box<dyn std::error::Error>>
     {
         match event
         {
             event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
-                match event.code
+                if *event == KeyEvent::new(KeyCode::Backspace, KeyModifiers::empty())
                 {
-                    KeyCode::Backspace => {
-                        if *cursor > 0
-                        {
-                            string.remove(*cursor - 1);
-                            *cursor -= 1;
-                        }
-                    },
-                    KeyCode::Delete => {
-                        if *cursor < string.len()
-                        {
-                            string.remove(*cursor);
-                        }
-                    },
-                    KeyCode::Left => {
-                        if *cursor > 0
-                        {
-                            *cursor -= 1;
-                        }
-                    },
-                    KeyCode::Right => {
-                        if *cursor < string.len()
-                        {
-                            *cursor += 1;
-                        }
-                    },
-                    KeyCode::Up if multiline => {
-                        let line = string.chars().rev().skip(string.len() - *cursor).take_while(|c| *c != '\n').count();
-                        *cursor = cursor.saturating_sub(line + 1);
-                    },
-                    KeyCode::Down if multiline => {
-                        let line = string.chars().skip(*cursor).take_while(|c| *c != '\n').count();
-                        *cursor = cursor.saturating_add(line + 1).min(string.len());
-                    },
-                    KeyCode::Char(mut c) => {
-                        if capitalize
-                        {
-                            c = c.to_ascii_uppercase();
-                        }
-                        if (max_len.is_none() || string.len() < max_len.expect("Just checked")) &&
-                            (charset.is_none() || charset.expect("Just checked").contains(c))
-                        {
-                            string.insert(*cursor, c);
-                            *cursor += 1;
-                        }
-                    },
-                    KeyCode::End => {
-                        *cursor = string.len();
-                    },
-                    KeyCode::Home => {
-                        *cursor = 0;
-                    },
-                    KeyCode::Enter if multiline && event.modifiers.contains(KeyModifiers::SHIFT) => {
-                        string.insert(*cursor, '\n');
+                    if *cursor > 0
+                    {
+                        string.remove(*cursor - 1);
+                        *cursor -= 1;
+                    }
+                }
+                else if *event == KeyEvent::new(KeyCode::Delete, KeyModifiers::empty())
+                {
+                    if *cursor < string.len()
+                    {
+                        string.remove(*cursor);
+                    }
+                }
+                else if *event == KeyEvent::new(KeyCode::Left, KeyModifiers::empty())
+                {
+                    if *cursor > 0
+                    {
+                        *cursor -= 1;
+                    }
+                }
+                else if *event == KeyEvent::new(KeyCode::Right, KeyModifiers::empty())
+                {
+                    if *cursor < string.len()
+                    {
                         *cursor += 1;
-                    },
-                    _ => {}
+                    }
+                }
+                else if *event == KeyEvent::new(KeyCode::Up, KeyModifiers::empty()) &&
+                multiline
+                {
+                    let line = string.chars().rev().skip(string.len() - *cursor).take_while(|c| *c != '\n').count();
+                    *cursor = cursor.saturating_sub(line + 1);
+                }
+                else if *event == KeyEvent::new(KeyCode::Down, KeyModifiers::empty()) &&
+                multiline
+                {
+                    let line = string.chars().skip(*cursor).take_while(|c| *c != '\n').count();
+                    *cursor = cursor.saturating_add(line + 1).min(string.len());
+                }
+                else if *event == KeyEvent::new(KeyCode::Home, KeyModifiers::empty())
+                {
+                    *cursor = 0;
+                }
+                else if *event == KeyEvent::new(KeyCode::End, KeyModifiers::empty())
+                {
+                    *cursor = string.len();
+                }
+                else if *event == key_settings.new_line &&
+                multiline
+                {
+                    string.insert(*cursor, '\n');
+                    *cursor += 1;
+                }
+                else if let KeyCode::Char(c) = event.code
+                {
+                    if (max_len.is_none() || string.len() < max_len.expect("Just checked")) &&
+                        (charset.is_none() || charset.expect("Just checked").contains(c))
+                    {
+                        string.insert(*cursor, c);
+                        *cursor += 1;
+                    }
                 }
             },
             _ => {}
@@ -264,30 +273,30 @@ impl App
         {
             Some(PopupState::Open {currently_open_path, path, cursor, results, scroll: _scroll}) => 
             {
-                Self::handle_string_edit(path, cursor, &event, None, false, None, false)?;
+                Self::handle_string_edit(path, cursor, &event, None, None, false, &self.settings.key)?;
                 *results = Self::find_dir_contents(currently_open_path, path)?;
             }
             Some(PopupState::Run {command, cursor, results, scroll: _scroll}) => 
             {
-                Self::handle_string_edit(command, cursor, &event, None, false, None, false)?;
+                Self::handle_string_edit(command, cursor, &event, None, None, false, &self.settings.key)?;
                 *results = self.find_commands(command);
             }
             Some(PopupState::FindText {text, cursor}) =>
             {
-                Self::handle_string_edit(text, cursor, &event, None, false, None, false)?;
+                Self::handle_string_edit(text, cursor, &event, None, None, false, &self.settings.key)?;
             }
             Some(PopupState::FindSymbol {filter, symbols, cursor, scroll: _scroll}) =>
             {
-                Self::handle_string_edit(filter, cursor, &event, None, false, None, false)?;
+                Self::handle_string_edit(filter, cursor, &event, None, None, false, &self.settings.key)?;
                 *symbols = self.find_symbols(filter);
             }
             Some(PopupState::InsertText { text, cursor }) =>
             {
-                Self::handle_string_edit(text, cursor, &event, None, false, None, true)?;
+                Self::handle_string_edit(text, cursor, &event, None, None, true, &self.settings.key)?;
             }
             Some(PopupState::Patch {assembly, preview, cursor}) =>
             {
-                Self::handle_string_edit(assembly, cursor, &event, None, false, None, true)?;
+                Self::handle_string_edit(assembly, cursor, &event, None, None, true, &self.settings.key)?;
                 if let Some(current_instruction) = self.get_current_instruction()
                 {
                     *preview = self.bytes_from_assembly(assembly, current_instruction.virtual_address());
@@ -295,7 +304,7 @@ impl App
             }
             Some(PopupState::JumpToAddress {location: address, cursor}) =>
             {
-                Self::handle_string_edit(address, cursor, &event, None, false, None, false)?;
+                Self::handle_string_edit(address, cursor, &event, None, None, false, &self.settings.key)?;
             }
             _ => {}
         }
@@ -303,187 +312,198 @@ impl App
         match event
         {
             event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
-                match event.code
+                if event == self.settings.key.left || event == self.settings.key.right
                 {
-                    KeyCode::Left |
-                    KeyCode::Right => {
-                        match &mut popup
+                    match &mut popup
+                    {
+                        Some(PopupState::Save(yes_selected)) =>
                         {
-                            Some(PopupState::Save(yes_selected)) =>
-                            {
-                                *yes_selected = !*yes_selected;
-                            }
-                            Some(PopupState::SaveAndQuit(yes_selected)) =>
-                            {
-                                *yes_selected = !*yes_selected;
-                            }
-                            Some(PopupState::QuitDirtySave(yes_selected)) =>
-                            {
-                                *yes_selected = !*yes_selected;
-                            },
-                            _ => {}
+                            *yes_selected = !*yes_selected;
                         }
-                    },
-                    KeyCode::Enter if !event.modifiers.contains(KeyModifiers::SHIFT) => {
-                        match &mut popup
+                        Some(PopupState::SaveAndQuit(yes_selected)) =>
                         {
-                            Some(PopupState::Open { currently_open_path, path, cursor: _cursor, results: _results, scroll }) =>
-                            {
-                                let mut new_popup = None;
-                                self.go_to_path(currently_open_path, path, *scroll, &mut new_popup, terminal)?;
-                                popup = new_popup;
-                            }
-                            Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
-                            {
-                                self.run_command(command, *scroll)?;
-                                popup = self.popup.clone();
-                            }
-                            Some(PopupState::FindText { text, cursor: _cursor}) =>
-                            {
-                                self.find_text(text);
-                                // Maybe removing the popup is not a good idea, more testing needed
-                                popup = None;
-                            }
-                            Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
-                            {
-                                self.jump_to_fuzzy_symbol(filter, symbols, *scroll);
-                                popup = None;
-                            }
-                            Some(PopupState::Log(_)) =>
-                            {
-                                popup = None;
-                            }
-                            Some(PopupState::InsertText { text, cursor: _cursor }) =>
-                            {
-                                self.insert_text(text);
-                                popup = None;
-                            }
-                            Some(PopupState::Patch {assembly, preview: _preview, cursor: _cursor}) =>
-                            {
-                                self.patch(assembly);
-                                popup = None;
-                            }
-                            Some(PopupState::JumpToAddress {location, cursor: _cursor}) =>
-                            {
-                                self.jump_to_symbol(location);
-                                popup = None;
-                            }
-                            Some(PopupState::Save(yes_selected)) =>
-                            {
-                                if *yes_selected
-                                {
-                                    self.save_data()?;
-                                }
-                                popup = None;
-                            },
-                            Some(PopupState::SaveAndQuit(yes_selected)) =>
-                            {
-                                if *yes_selected
-                                {
-                                    self.save_data()?;
-                                    self.needs_to_exit = true;
-                                }
-                                popup = None;
-                            },
-                            Some(PopupState::QuitDirtySave(yes_selected)) =>
-                            {
-                                if *yes_selected
-                                {
-                                    self.save_data()?;
-                                    self.needs_to_exit = true;
-                                }
-                                else
-                                {
-                                    self.needs_to_exit = true;
-                                }
-                                popup = None;
-                            },
-                            Some(PopupState::Help(_)) => 
-                            {
-                                popup = None;
-                            }
-                            None => {}
+                            *yes_selected = !*yes_selected;
                         }
-                    },
-                    KeyCode::Down => {
-                        match &mut popup
+                        Some(PopupState::QuitDirtySave(yes_selected)) =>
                         {
-                            Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results, scroll }) =>
-                            {
-                                Self::handle_popup_scroll(scroll, results.len(), None, 1);
-                            }
-                            Some(PopupState::Run { command: _command, cursor: _cursor, results, scroll }) =>
-                            {
-                                Self::handle_popup_scroll(scroll, results.len(), None, 1);
-                            }
-                            Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
-                            {
-                                if symbols.is_empty()
-                                {
-                                    if let Some(symbols) = self.header.get_symbols()
-                                    {
-                                        Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
-                                    }
-                                    else
-                                    {
-                                        *scroll = 0;
-                                    }
-                                }
-                                else
-                                {
-                                    Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
-                                }
-                            },
-                            Some(PopupState::Log(scroll)) =>
-                            {
-                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), -1);
-                            }
-                            Some(PopupState::Help(scroll)) =>
-                            {
-                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()), 1);
-                            }
-                            _ => {}
-                        }
-                    },
-                    KeyCode::Up => {
-                        match &mut popup
+                            *yes_selected = !*yes_selected;
+                        },
+                        _ => {}
+                    }
+                }
+                else if event == self.settings.key.confirm
+                {
+                    match &mut popup
+                    {
+                        Some(PopupState::Open { currently_open_path, path, cursor: _cursor, results: _results, scroll }) =>
                         {
-                            Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results, scroll }) =>
-                            {
-                                Self::handle_popup_scroll(scroll, results.len(), None, -1);
-                            }
-                            Some(PopupState::Run { command: _command, cursor: _cursor, results: _results, scroll }) =>
-                            {
-                                Self::handle_popup_scroll(scroll, _results.len(), None, -1);
-                            }
-                            Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
-                            {
-                                Self::handle_popup_scroll(scroll, symbols.len(), None, -1);
-                            },
-                            Some(PopupState::Log(scroll)) =>
-                            {
-                                Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), 1);
-                            }
-                            Some(PopupState::Help(scroll)) =>
-                            {
-                                Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()), -1);
-                            }
-                            _ => {}
+                            let mut new_popup = None;
+                            self.go_to_path(currently_open_path, path, *scroll, &mut new_popup, terminal)?;
+                            popup = new_popup;
                         }
-                    },
-                    KeyCode::Esc => {
-                        if !self.path.is_dir() // Prevent closing the open file popup if no file is open
+                        Some(PopupState::Run { command, cursor: _cursor, results: _results, scroll }) =>
+                        {
+                            self.run_command(command, *scroll)?;
+                            popup = self.popup.clone();
+                        }
+                        Some(PopupState::FindText { text, cursor: _cursor}) =>
+                        {
+                            self.find_text(text);
+                            // Maybe removing the popup is not a good idea, more testing needed
+                            popup = None;
+                        }
+                        Some(PopupState::FindSymbol {filter, symbols, cursor: _cursor, scroll}) =>
+                        {
+                            self.jump_to_fuzzy_symbol(filter, symbols, *scroll);
+                            popup = None;
+                        }
+                        Some(PopupState::Log(_)) =>
                         {
                             popup = None;
                         }
-                        else 
+                        Some(PopupState::InsertText { text, cursor: _cursor }) =>
                         {
-                            self.needs_to_exit = true;    
+                            self.insert_text(text);
+                            popup = None;
                         }
-                    },
-                    KeyCode::Char(_) | 
-                    KeyCode::Backspace | 
-                    KeyCode::Delete => {
+                        Some(PopupState::Patch {assembly, preview: _preview, cursor: _cursor}) =>
+                        {
+                            self.patch(assembly);
+                            popup = None;
+                        }
+                        Some(PopupState::JumpToAddress {location, cursor: _cursor}) =>
+                        {
+                            self.jump_to_symbol(location);
+                            popup = None;
+                        }
+                        Some(PopupState::Save(yes_selected)) =>
+                        {
+                            if *yes_selected
+                            {
+                                self.save_data()?;
+                            }
+                            popup = None;
+                        },
+                        Some(PopupState::SaveAndQuit(yes_selected)) =>
+                        {
+                            if *yes_selected
+                            {
+                                self.save_data()?;
+                                self.needs_to_exit = true;
+                            }
+                            popup = None;
+                        },
+                        Some(PopupState::QuitDirtySave(yes_selected)) =>
+                        {
+                            if *yes_selected
+                            {
+                                self.save_data()?;
+                                self.needs_to_exit = true;
+                            }
+                            else
+                            {
+                                self.needs_to_exit = true;
+                            }
+                            popup = None;
+                        },
+                        Some(PopupState::Help(_)) => 
+                        {
+                            popup = None;
+                        }
+                        None => {}
+                    }
+                }
+                else if event == self.settings.key.down
+                {
+                    match &mut popup
+                    {
+                        Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results, scroll }) =>
+                        {
+                            Self::handle_popup_scroll(scroll, results.len(), None, 1);
+                        }
+                        Some(PopupState::Run { command: _command, cursor: _cursor, results, scroll }) =>
+                        {
+                            Self::handle_popup_scroll(scroll, results.len(), None, 1);
+                        }
+                        Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
+                        {
+                            if symbols.is_empty()
+                            {
+                                if let Some(symbols) = self.header.get_symbols()
+                                {
+                                    Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
+                                }
+                                else
+                                {
+                                    *scroll = 0;
+                                }
+                            }
+                            else
+                            {
+                                Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
+                            }
+                        },
+                        Some(PopupState::Log(scroll)) =>
+                        {
+                            Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), -1);
+                        }
+                        Some(PopupState::Help(scroll)) =>
+                        {
+                            Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()), 1);
+                        }
+                        _ => {}
+                    }
+                }
+                else if event == self.settings.key.up
+                {
+                    match &mut popup
+                    {
+                        Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results, scroll }) =>
+                        {
+                            Self::handle_popup_scroll(scroll, results.len(), None, -1);
+                        }
+                        Some(PopupState::Run { command: _command, cursor: _cursor, results: _results, scroll }) =>
+                        {
+                            Self::handle_popup_scroll(scroll, _results.len(), None, -1);
+                        }
+                        Some(PopupState::FindSymbol { filter: _filter, symbols, cursor: _cursor, scroll }) =>
+                        {
+                            Self::handle_popup_scroll(scroll, symbols.len(), None, -1);
+                        },
+                        Some(PopupState::Log(scroll)) =>
+                        {
+                            Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), 1);
+                        }
+                        Some(PopupState::Help(scroll)) =>
+                        {
+                            Self::handle_popup_scroll(scroll, self.help_list.len(), Some(self.get_scrollable_popup_line_count()), -1);
+                        }
+                        _ => {}
+                    }
+                }
+                else if event == self.settings.key.close_popup
+                {
+                    if !self.path.is_dir() // if no file is open, close the program instead of the popup
+                    {
+                        popup = None;
+                    }
+                    else 
+                    {
+                        self.needs_to_exit = true;    
+                    }
+                }
+                else if event == self.settings.key.clear_log
+                {
+                    if let Some(PopupState::Log(scroll)) = &mut popup
+                    {
+                        *scroll = 0;
+                        self.log.clear();
+                    }
+                }
+                else if let KeyCode::Char(_) | KeyCode::Backspace | KeyCode::Delete = event.code
+                {
+                    if event.modifiers.is_empty()
+                    {
                         match &mut popup
                         {
                             Some(PopupState::Open { currently_open_path: _currently_open_path, path: _path, cursor: _cursor, results: _results, scroll }) => 
@@ -498,16 +518,9 @@ impl App
                             {
                                 *scroll = 0;
                             }
-                            Some(PopupState::Log(scroll)) if event.code == KeyCode::Delete =>
-                            {
-                                *scroll = 0;
-                                self.log.clear();
-                            }
                             _ => {}
-                        
                         }
                     }
-                    _ => {}
                 }
             },
             event::Event::Resize(width, height) =>
