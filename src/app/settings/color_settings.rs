@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::app::App;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct ColorSettings
 {
     pub address_selected: Style,
