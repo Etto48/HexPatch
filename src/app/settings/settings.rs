@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use super::{color_settings::ColorSettings, key_settings::KeySettings};
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
+#[serde(default)]
 pub struct Settings
 {
     pub color: ColorSettings,
@@ -86,6 +87,17 @@ mod test
     fn test_settings_load()
     {
         let settings = Settings::load(Some(Path::new("test/default_settings.json")));
+        if let Err(e) = settings
+        {
+            panic!("Could not load settings: {}", e);
+        }
+        assert_eq!(settings.unwrap(), Settings::default());
+    }
+
+    #[test]
+    fn test_settings_partial_load()
+    {
+        let settings = Settings::load(Some(Path::new("test/partial_default_settings.json")));
         if let Err(e) = settings
         {
             panic!("Could not load settings: {}", e);
