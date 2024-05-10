@@ -55,29 +55,59 @@ impl App
     {
         let mut ret = Vec::new();
 
-        let entries = std::fs::read_dir(currently_open_path)?;
+        let input_path_as_path = Path::new(path);
+
+        let (selected_dir, file_name) = if input_path_as_path.is_absolute()
+        {
+            if input_path_as_path.is_dir()
+            {
+                (input_path_as_path.canonicalize().expect("The path exists"), "".to_string())
+            }
+            else if let Some(parent) = input_path_as_path.parent()
+            {
+                if parent.is_dir()
+                {
+                    (parent.canonicalize().expect("The parent exists"), input_path_as_path.file_name().map_or("".into(), |name| name.to_string_lossy().to_string()))
+                }
+                else
+                {
+                    (currently_open_path.to_path_buf(), path.to_string())
+                }
+            }
+            else
+            {
+                (currently_open_path.to_path_buf(), path.to_string())
+            }
+        }
+        else
+        {
+            (currently_open_path.to_path_buf(), path.to_string())
+        };
+        
+
+        let entries = std::fs::read_dir(&selected_dir)?;
         let mut entries = entries
             .filter_map(|entry| entry.ok())
-            .map(|entry| entry.path().strip_prefix(currently_open_path)
+            .map(|entry| entry.path().strip_prefix(&selected_dir)
                 .expect("The entry should be a child of the currently open path.").to_string_lossy().to_string())
             .collect::<Vec<_>>();
 
 
-        if currently_open_path.parent().is_some()
+        if selected_dir.parent().is_some() && !input_path_as_path.is_absolute()
         {
             entries.insert(0, "..".into());
         }
 
         let entries = entries
             .into_iter()
-            .filter(|entry| entry.to_lowercase().starts_with(&path.to_lowercase()));
+            .filter(|entry| entry.to_lowercase().starts_with(&file_name.to_lowercase()));
 
         for entry in entries
         {
-            let path = currently_open_path.join(entry);
-            if let Ok(path) = Self::path_canonicalize(&path, Some(currently_open_path))
+            let path = selected_dir.join(entry);
+            if let Ok(path) = Self::path_canonicalize(&path, Some(&selected_dir))
             {
-                ret.push(PathResult::new(&path, currently_open_path)?);
+                ret.push(PathResult::new(&path, &selected_dir)?);
             }
         }
 
@@ -86,7 +116,7 @@ impl App
 
     pub(in crate::app) fn open_dir(popup: &mut Option<PopupState>, path: &Path) -> Result<(), Box<dyn Error>>
     {
-        let path = Self::path_canonicalize(path, None)?;
+        let path = dunce::canonicalize(path)?;
         *popup = Some(PopupState::Open { 
             currently_open_path: path.clone(),
             path: "".into(), 

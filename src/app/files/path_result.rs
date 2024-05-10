@@ -47,7 +47,7 @@ impl PathResult
         {
             color_settings.path_file
         };
-        let path = pathdiff::diff_paths(&self.path, base_path).unwrap_or(self.path.clone());
+        let path = pathdiff::diff_paths(dunce::canonicalize(&self.path).unwrap_or(self.path.clone()), dunce::canonicalize(base_path).unwrap_or(base_path.into())).unwrap_or(self.path.clone());
         ret.spans.push(Span::styled(path.to_string_lossy().to_string(), style));
 
         ret.left_aligned()
