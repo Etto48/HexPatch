@@ -98,7 +98,7 @@ impl App
             self.text_last_searched_string = text.to_string();
         }
         let mut search_here = self.get_cursor_position().global_byte_index;
-        // find the next occurence of the text
+        // find the next occurrence of the text
         if already_searched && Self::found_text_here(self, search_here, text)
         {
             search_here += text.len();

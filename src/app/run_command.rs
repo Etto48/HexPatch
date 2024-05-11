@@ -247,7 +247,7 @@ impl App
 
     pub(super) fn request_popup_log(&mut self)
     {
-        self.notificaiton.reset();
+        self.notification.reset();
         self.popup = Some(PopupState::Log(0));
     }
 
