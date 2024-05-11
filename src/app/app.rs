@@ -69,7 +69,19 @@ impl App
 
     pub fn new<B: Backend>(path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
-        let settings = Settings::load(None).unwrap_or_default();
+        let mut log = Vec::new();
+        let mut notification = NotificationLevel::None;
+        let settings = match Settings::load_or_create(None)
+        {
+            Ok(settings) => settings,
+            Err(e) => {
+                log.push(LogLine { level: NotificationLevel::Error, message: 
+                    format!("Error loading settings: {e}") 
+                });
+                notification = NotificationLevel::Error;
+                Settings::default()
+            },
+        };
         let path = path.to_string_lossy();
         let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
         Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", path), terminal)?;
@@ -84,6 +96,8 @@ impl App
             screen_size,
             help_list: Self::help_list(&settings.key),
             settings,
+            log,
+            notification,
             ..Default::default()
         };
 
