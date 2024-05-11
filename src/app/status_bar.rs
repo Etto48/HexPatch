@@ -17,7 +17,7 @@ impl App
 
         line.spans.push(Span::styled(" ", self.settings.color.status_bar));
 
-        let (notification_str, notification_style) = match self.notificaiton
+        let (notification_str, notification_style) = match self.notification
         {
             super::notification::NotificationLevel::None => (" ", self.settings.color.status_bar),
             super::notification::NotificationLevel::Debug => ("●", self.settings.color.status_debug),
@@ -27,7 +27,7 @@ impl App
         };
         line.spans.push(Span::styled(notification_str, notification_style));
         line.spans.push(Span::styled(" ", self.settings.color.status_bar));
-        if self.notificaiton != super::notification::NotificationLevel::None
+        if self.notification != super::notification::NotificationLevel::None
         {
             line.spans.push(Span::styled(self.log[self.log.len() - 1].message.chars().take(max_len - 25).collect::<String>(), self.settings.color.status_bar));
         }

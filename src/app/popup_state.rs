@@ -467,7 +467,7 @@ impl App
                         let symbol_to_line_lambda = |(i, (address, name)): (usize, &(u64, String))| {
                             let short_name = name.chars().take(width.saturating_sub(19)).collect::<String>();
                             let space_count = (width.saturating_sub(short_name.len() + 19) + 1).clamp(0, *width);
-                            let (style_sym, sytle_empty, style_addr) = if i == selection
+                            let (style_sym, style_empty, style_addr) = if i == selection
                             {
                                 (color_settings.assembly_selected, color_settings.assembly_selected, color_settings.assembly_selected)
                             }
@@ -477,7 +477,7 @@ impl App
                             };
                             Line::from(vec![
                             Span::styled(short_name, style_sym), 
-                            Span::styled(" ".repeat(space_count), sytle_empty), 
+                            Span::styled(" ".repeat(space_count), style_empty), 
                             Span::styled(format!("{:16X}", address), style_addr)]).left_aligned()
                         };
                         let symbol_line_iter = symbols.iter().skip(scroll).take(max_symbols).enumerate().map(symbol_to_line_lambda);
