@@ -6,7 +6,7 @@ use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Bloc
 
 use super::{assembly::AssemblyLine, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
-use crate::{fuzzer::Fuzzer, headers::Header};
+use crate::{args::Args, fuzzer::Fuzzer, headers::Header};
 
 pub struct App 
 {
@@ -67,7 +67,7 @@ impl App
         terminal.size().map_err(|e| e.to_string()).map(|s| (s.width, s.height))
     }
 
-    pub fn new<B: Backend>(path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
+    pub fn new<B: Backend>(args: Args, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
         let mut log = Vec::new();
         let mut notification = NotificationLevel::None;
@@ -82,7 +82,7 @@ impl App
                 Settings::default()
             },
         };
-        let path = path.to_string_lossy();
+        let path = args.path.to_string_lossy();
         let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
         Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", path), terminal)?;
         let path = PathBuf::from(path.as_ref());
