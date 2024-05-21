@@ -42,7 +42,7 @@ impl App
 {
     pub(super) fn log(&mut self, level: NotificationLevel, message: &str)
     {
-        self.notificaiton.bump_notification_level(level);
+        self.notification.bump_notification_level(level);
         self.log.push(LogLine::new(level, message.to_string()));
     }
 }

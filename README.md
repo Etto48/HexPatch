@@ -1,9 +1,19 @@
 # ![Logo](./assets/logo.svg) HexPatch
 
-[![Rust](https://github.com/Etto48/HexPatch/actions/workflows/rust.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/rust.yml) [![Rust-Clippy Analyze](https://github.com/Etto48/HexPatch/actions/workflows/rust-clippy.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/rust-clippy.yml)
+[![Rust](https://github.com/Etto48/HexPatch/actions/workflows/rust.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/rust.yml) [![Clippy](https://github.com/Etto48/HexPatch/actions/workflows/rust-clippy.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/rust-clippy.yml)
 
 HexPatch is a binary patcher and editor with terminal user interface (TUI), it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
+
+## Installation
+
+You will need the Rust toolchain, you can get it [here](https://www.rust-lang.org/tools/install).
+
+```bash
+git clone https://github.com/Etto48/HexPatch.git
+cd HexPatch
+cargo install --path .
+```
 
 ## Supported file formats and architectures
 

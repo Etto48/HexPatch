@@ -1,9 +1,10 @@
 #![allow(clippy::module_inception)]
-use std::path::{Path, PathBuf};
+use std::{io, path::{Path, PathBuf}};
 
 use super::{color_settings::ColorSettings, key_settings::KeySettings};
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
+#[serde(default)]
 pub struct Settings
 {
     pub color: ColorSettings,
@@ -12,29 +13,34 @@ pub struct Settings
 
 impl Settings
 {
-    pub fn load(path: Option<&Path>) -> Result<Settings, String>
+    pub fn load(path: Option<&Path>) -> Result<Settings, io::Error>
     {
         let path = match path
         {
             Some(path) => path.to_path_buf(),
-            None => Self::get_default_settings_path().ok_or("Could not get default settings path")?
+            None => Self::get_default_settings_path().ok_or(
+                io::Error::new(io::ErrorKind::Other, "Could not get default settings path")
+            )?
         };
 
         if !path.exists()
         {
-            return Err("Settings file does not exist".to_string())
+            return Err(io::Error::new(io::ErrorKind::NotFound, "Settings file not found"));
         }
 
         let settings = match std::fs::read_to_string(&path)
         {
             Ok(settings) => settings,
-            Err(e) => return Err(format!("Could not read settings file: {}", e))
+            Err(e) => return Err(e)
         };
 
         Ok(match serde_json::from_str(&settings)
         {
             Ok(settings) => settings,
-            Err(e) => return Err(format!("Could not parse settings file: {}", e))
+            Err(e) => return Err(io::Error::new(
+                io::ErrorKind::InvalidData, 
+                format!("Could not parse settings file: {}", e))
+            )
         })
     }
 
@@ -45,7 +51,7 @@ impl Settings
         {
             "windows" => home.join("AppData").join("Local"),
             _ => home.join(".config")
-        }.join("HexPatch").join("settings.toml"))
+        }.join("HexPatch").join("settings.json"))
     }
 
     pub fn load_or_create(path: Option<&Path>) -> Result<Settings, String>
@@ -54,9 +60,16 @@ impl Settings
         {
             Ok(settings) => Ok(settings),
             Err(e) => {
-                let settings = Settings::default();
-                settings.save(path).ok_or(format!("Could not save default settings: {}", e))?;
-                Ok(settings)
+                if e.kind() != io::ErrorKind::NotFound
+                {
+                    Err(format!("Could not load settings: {}", e))
+                }
+                else
+                {
+                    let settings = Settings::default();
+                    settings.save(path).ok_or(format!("Could not save default settings: {}", e))?;
+                    Ok(settings)
+                }
             }
         }
     }
@@ -86,6 +99,17 @@ mod test
     fn test_settings_load()
     {
         let settings = Settings::load(Some(Path::new("test/default_settings.json")));
+        if let Err(e) = settings
+        {
+            panic!("Could not load settings: {}", e);
+        }
+        assert_eq!(settings.unwrap(), Settings::default());
+    }
+
+    #[test]
+    fn test_settings_partial_load()
+    {
+        let settings = Settings::load(Some(Path::new("test/partial_default_settings.json")));
         if let Err(e) = settings
         {
             panic!("Could not load settings: {}", e);

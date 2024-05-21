@@ -1,0 +1,479 @@
+{
+  "color": {
+    "address_selected": {
+      "fg": "Black",
+      "bg": "White",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "address_default": {
+      "fg": "DarkGray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_selected": {
+      "fg": "Black",
+      "bg": "White",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_null": {
+      "fg": "DarkGray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_alphanumeric": {
+      "fg": "#CC9871",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_symbol": {
+      "fg": "#CC9871",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "DIM",
+      "sub_modifier": ""
+    },
+    "hex_end_of_line": {
+      "fg": "LightRed",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_whitespace": {
+      "fg": "#F4CAB7",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_current_instruction": {
+      "fg": "Black",
+      "bg": "#D7AA5C",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_current_section": {
+      "fg": "Black",
+      "bg": "#D7AA5C",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hex_default": {
+      "fg": null,
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "text_selected": {
+      "fg": "Black",
+      "bg": "White",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_symbol": {
+      "fg": "LightGreen",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_selected": {
+      "fg": "Black",
+      "bg": "White",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_address": {
+      "fg": "DarkGray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_virtual_address": {
+      "fg": "DarkGray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "DIM",
+      "sub_modifier": ""
+    },
+    "assembly_nop": {
+      "fg": "DarkGray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_bad": {
+      "fg": "LightRed",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_section": {
+      "fg": "LightBlue",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_entry_point": {
+      "fg": "Yellow",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "assembly_default": {
+      "fg": "#CC9871",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "patch_patched_less_or_equal": {
+      "fg": "Green",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "patch_patched_greater": {
+      "fg": "Yellow",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "patch_old_instruction": {
+      "fg": "Red",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "patch_old_rest": {
+      "fg": "DarkGray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "patch_line_number": {
+      "fg": "DarkGray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "help_command": {
+      "fg": "LightGreen",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "hep_description": {
+      "fg": "Gray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "yes": {
+      "fg": "Green",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "yes_selected": {
+      "fg": "Black",
+      "bg": "Green",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "no": {
+      "fg": "Red",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "no_selected": {
+      "fg": "Black",
+      "bg": "Red",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "menu_text": {
+      "fg": "White",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "menu_text_selected": {
+      "fg": "Black",
+      "bg": "White",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "insert_text_status": {
+      "fg": "Black",
+      "bg": "#FFDFA8",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "command_name": {
+      "fg": "LightGreen",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "command_description": {
+      "fg": "Gray",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "command_selected": {
+      "fg": "Black",
+      "bg": "White",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "path_dir": {
+      "fg": "Blue",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "path_file": {
+      "fg": "Yellow",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "path_selected": {
+      "fg": "Black",
+      "bg": "White",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "log_info": {
+      "fg": "LightBlue",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "log_debug": {
+      "fg": "LightGreen",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "log_warning": {
+      "fg": "Yellow",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "log_error": {
+      "fg": "Red",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "status_warning": {
+      "fg": "Yellow",
+      "bg": "#FFDFA8",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "status_error": {
+      "fg": "Red",
+      "bg": "#FFDFA8",
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    }
+  },
+  "key": {
+    "page_up": {
+      "code": "PageUp",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "page_down": {
+      "code": "PageDown",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "goto_start": {
+      "code": "Home",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "goto_end": {
+      "code": "End",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "quit": {
+      "code": {
+        "Char": "c"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "save_and_quit": {
+      "code": {
+        "Char": "x"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "open": {
+      "code": {
+        "Char": "o"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "help": {
+      "code": {
+        "Char": "h"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "log": {
+      "code": {
+        "Char": "l"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "run": {
+      "code": {
+        "Char": " "
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "find_text": {
+      "code": {
+        "Char": "/"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "find_symbol": {
+      "code": {
+        "Char": "s"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "patch_text": {
+      "code": {
+        "Char": "t"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "patch_assembly": {
+      "code": {
+        "Char": "p"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "jump": {
+      "code": {
+        "Char": "j"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "change_view": {
+      "code": {
+        "Char": "v"
+      },
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "confirm": {
+      "code": "Enter",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "close_popup": {
+      "code": "Esc",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "new_line": {
+      "code": "Enter",
+      "modifiers": "SHIFT",
+      "kind": "Press",
+      "state": ""
+    },
+    "clear_log": {
+      "code": "Delete",
+      "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    }
+  }
+}
