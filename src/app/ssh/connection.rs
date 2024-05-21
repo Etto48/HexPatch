@@ -1,10 +1,14 @@
-use std::{error::Error, io::{Read, Write}, net::TcpStream, path::Path};
+use std::{error::Error, fmt::Display, io::{Read, Write}, net::TcpStream, path::{Path, PathBuf}};
 
 use ssh2::Session;
 
+use crate::app::files::file::File;
+
+#[derive(Clone)]
 pub struct Connection
 {
-    session: Session
+    session: Session,
+    connection_str: String
 }
 
 impl Connection
@@ -49,8 +53,14 @@ impl Connection
         }
 
         Ok(Self {
-            session
+            session,
+            connection_str: connection_str.to_string()
         })
+    }
+
+    pub fn canonicalize(&self, path: &Path) -> Result<PathBuf, Box<dyn Error>>
+    {
+        Ok(self.session.sftp()?.realpath(path)?)
     }
 
     pub fn read(&self, path: &Path) -> Result<Vec<u8>, Box<dyn Error>>
@@ -75,5 +85,47 @@ impl Connection
         remote_file.close()?;
         remote_file.wait_close()?;
         Ok(())
+    }
+
+    pub fn ls(&self, path: &Path) -> Result<Vec<File>, Box<dyn Error>>
+    {
+        Ok(self.session.sftp()?
+            .readdir(path)?
+            .into_iter()
+            .map(|(entry_path, entry_stat)| File {
+                path: entry_path,
+                is_dir: entry_stat.is_dir()
+            }).collect())
+    }
+
+    pub fn is_file(&self, path: &Path) -> bool
+    {
+        if let Ok(sftp) = self.session.sftp()
+        {
+            if let Ok(stat) = sftp.stat(path)
+            {
+                return stat.is_file()
+            }
+        }
+        false
+    }
+
+    pub fn is_dir(&self, path: &Path) -> bool
+    {
+        if let Ok(sftp) = self.session.sftp()
+        {
+            if let Ok(stat) = sftp.stat(path)
+            {
+                return stat.is_dir()
+            }
+        }
+        false
+    }
+}
+
+impl Display for Connection
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.connection_str)
     }
 }

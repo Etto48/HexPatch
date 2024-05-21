@@ -4,13 +4,13 @@ use std::{path::PathBuf, time::Duration};
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
-use super::{assembly::AssemblyLine, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
 use crate::{args::Args, fuzzer::Fuzzer, headers::Header};
 
 pub struct App 
 {
-    pub(super) path: PathBuf,
+    pub(super) filesystem: FileSystem,
     pub(super) commands: Fuzzer,
     pub(super) header: Header,
     pub(super) log: Vec<LogLine>,
@@ -87,12 +87,21 @@ impl App
         Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", path), terminal)?;
         let path = PathBuf::from(path.as_ref());
 
-        let canonical_path = Self::path_canonicalize(&path, None).map_err(|e| e.to_string())?;
+        let filesystem = if let Some(connection_str) = args.ssh
+        {
+            FileSystem::new_remote(&path, &connection_str)
+                .map_err(|e|e.to_string())?
+        }
+        else
+        {
+            FileSystem::new_local(&path)
+                .map_err(|e|e.to_string())?
+        };
         let screen_size = Self::get_size(terminal)?;
 
         let mut app = App
         {
-            path: canonical_path,
+            filesystem,
             screen_size,
             help_list: Self::help_list(&settings.key),
             settings,
@@ -101,14 +110,14 @@ impl App
             ..Default::default()
         };
 
-        if app.path.is_file()
+        if app.filesystem.is_file(app.filesystem.pwd())
         {
-            let path = app.path.to_string_lossy().to_string();
+            let path = app.filesystem.pwd().to_string_lossy().to_string();
             app.open_file(&path, Some(terminal)).map_err(|e| e.to_string())?;
         }
         else
         {
-            Self::open_dir(&mut app.popup, &app.path).map_err(|e| e.to_string())?;
+            Self::open_dir(&mut app.popup, app.filesystem.pwd()).map_err(|e| e.to_string())?;
         }
 
         Ok(app)
@@ -234,7 +243,7 @@ impl Default for App
 {
     fn default() -> Self {
         App{
-            path: PathBuf::new(),
+            filesystem: FileSystem::default(),
             commands: Fuzzer::new(&Command::get_commands()),
             header: Header::None,
             log: Vec::new(),

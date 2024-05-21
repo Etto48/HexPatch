@@ -25,7 +25,7 @@ impl App
         }
         let selected = contents.into_iter().nth(scroll).expect("Scroll out of bounds for go_to_path.");
 
-        if selected.is_dir()
+        if self.filesystem.is_dir(selected.path())
         {
             Self::open_dir(popup, &currently_open_path.join(selected.path()))?;
         }
@@ -40,10 +40,10 @@ impl App
 
     pub(in crate::app) fn get_current_dir(&self) -> PathBuf
     {
-        let current_path = self.path.clone();
-        if current_path.is_dir()
+        let current_path = self.filesystem.pwd();
+        if self.filesystem.is_dir(current_path)
         {
-            current_path
+            current_path.to_path_buf()
         }
         else 
         {

@@ -483,11 +483,11 @@ impl App
                 }
                 else if event == self.settings.key.close_popup
                 {
-                    if !self.path.is_dir() // if no file is open, close the program instead of the popup
+                    if self.filesystem.is_file(self.filesystem.pwd()) // if no file is open, close the program instead of the popup
                     {
                         popup = None;
                     }
-                    else 
+                    else
                     {
                         self.needs_to_exit = true;    
                     }
