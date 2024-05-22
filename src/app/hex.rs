@@ -1,6 +1,8 @@
+use std::error::Error;
+
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, info_mode::InfoMode, notification::NotificationLevel, settings::color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, files::filesystem::FileSystem, info_mode::InfoMode, notification::NotificationLevel, settings::color_settings::ColorSettings, App};
 
 pub(super) struct InstructionInfo
 {
@@ -207,11 +209,18 @@ impl App
         Self::bytes_to_styled_hex(&self.settings.color, bytes, self.block_size, self.blocks_per_row, selected_byte_index, high_byte, instruction_info)
     }
 
-    pub(super) fn save_data(&mut self) -> Result<(), std::io::Error>
+    pub(super) fn save_data(&mut self) -> Result<(), Box<dyn Error>>
     {
-        std::fs::write(&self.path, &self.data)?;
+        self.filesystem.write(self.filesystem.pwd(), &self.data)?;
         self.dirty = false;
-        self.log(NotificationLevel::Info, &format!("Saved to {}", self.path.to_string_lossy()));
+        match &self.filesystem
+        {
+            FileSystem::Local { path } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {}", path));},
+            FileSystem::Remote { path, connection } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path, connection));},
+        }
+        
         Ok(())
     }
 }

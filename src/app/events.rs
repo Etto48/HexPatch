@@ -273,13 +273,21 @@ impl App
         {
             Some(PopupState::Open {currently_open_path, path, cursor, results, scroll: _scroll}) => 
             {
+                let old_path = path.clone();
                 Self::handle_string_edit(path, cursor, &event, None, None, false, &self.settings.key)?;
-                *results = Self::find_dir_contents(currently_open_path, path)?;
+                if old_path != *path || results.is_empty()
+                {
+                    *results = Self::find_dir_contents(currently_open_path, path, &self.filesystem)?;
+                }
             }
             Some(PopupState::Run {command, cursor, results, scroll: _scroll}) => 
             {
+                let old_command = command.clone();
                 Self::handle_string_edit(command, cursor, &event, None, None, false, &self.settings.key)?;
-                *results = self.find_commands(command);
+                if old_command != *command || results.is_empty()
+                {
+                    *results = self.find_commands(command);
+                }
             }
             Some(PopupState::FindText {text, cursor}) =>
             {
@@ -287,8 +295,12 @@ impl App
             }
             Some(PopupState::FindSymbol {filter, symbols, cursor, scroll: _scroll}) =>
             {
+                let old_filter = filter.clone();
                 Self::handle_string_edit(filter, cursor, &event, None, None, false, &self.settings.key)?;
-                *symbols = self.find_symbols(filter);
+                if old_filter != *filter || symbols.is_empty()
+                {
+                    *symbols = self.find_symbols(filter);
+                }
             }
             Some(PopupState::InsertText { text, cursor }) =>
             {
@@ -483,11 +495,11 @@ impl App
                 }
                 else if event == self.settings.key.close_popup
                 {
-                    if !self.path.is_dir() // if no file is open, close the program instead of the popup
+                    if self.filesystem.is_file(self.filesystem.pwd()) // if no file is open, close the program instead of the popup
                     {
                         popup = None;
                     }
-                    else 
+                    else
                     {
                         self.needs_to_exit = true;    
                     }

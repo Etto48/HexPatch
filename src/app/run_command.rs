@@ -235,7 +235,7 @@ impl App
     pub(super) fn request_open(&mut self) -> Result<(), Box<dyn Error>>
     {
         let mut new_popup = None;
-        Self::open_dir(&mut new_popup, &self.get_current_dir())?;
+        Self::open_dir(&mut new_popup, &self.get_current_dir(), &mut self.filesystem)?;
         self.popup = new_popup;
         Ok(())
     }

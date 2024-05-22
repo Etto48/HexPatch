@@ -1,16 +1,16 @@
 #![allow(clippy::module_inception)]
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
-use super::{assembly::AssemblyLine, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::LogLine, notification::NotificationLevel, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
-use crate::{fuzzer::Fuzzer, headers::Header};
+use crate::{args::Args, fuzzer::Fuzzer, headers::Header};
 
 pub struct App 
 {
-    pub(super) path: PathBuf,
+    pub(super) filesystem: FileSystem,
     pub(super) commands: Fuzzer,
     pub(super) header: Header,
     pub(super) log: Vec<LogLine>,
@@ -67,7 +67,7 @@ impl App
         terminal.size().map_err(|e| e.to_string()).map(|s| (s.width, s.height))
     }
 
-    pub fn new<B: Backend>(path: PathBuf, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
+    pub fn new<B: Backend>(args: Args, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
         let mut log = Vec::new();
         let mut notification = NotificationLevel::None;
@@ -82,17 +82,23 @@ impl App
                 Settings::default()
             },
         };
-        let path = path.to_string_lossy();
-        let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
-        Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", path), terminal)?;
-        let path = PathBuf::from(path.as_ref());
+        Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", args.path), terminal)?;
 
-        let canonical_path = Self::path_canonicalize(&path, None).map_err(|e| e.to_string())?;
+        let filesystem = if let Some(connection_str) = args.ssh
+        {
+            FileSystem::new_remote(&args.path, &connection_str)
+                .map_err(|e|format!("Failed to connect to {connection_str}: {e}"))?
+        }
+        else
+        {
+            FileSystem::new_local(&args.path)
+                .map_err(|e|e.to_string())?
+        };
         let screen_size = Self::get_size(terminal)?;
 
         let mut app = App
         {
-            path: canonical_path,
+            filesystem,
             screen_size,
             help_list: Self::help_list(&settings.key),
             settings,
@@ -101,14 +107,15 @@ impl App
             ..Default::default()
         };
 
-        if app.path.is_file()
+        if app.filesystem.is_file(app.filesystem.pwd())
         {
-            let path = app.path.to_string_lossy().to_string();
+            let path = app.filesystem.pwd().to_string();
             app.open_file(&path, Some(terminal)).map_err(|e| e.to_string())?;
         }
         else
         {
-            Self::open_dir(&mut app.popup, &app.path).map_err(|e| e.to_string())?;
+            let dir = app.filesystem.pwd().to_string();
+            Self::open_dir(&mut app.popup, &dir, &mut app.filesystem).map_err(|e| e.to_string())?;
         }
 
         Ok(app)
@@ -234,7 +241,7 @@ impl Default for App
 {
     fn default() -> Self {
         App{
-            path: PathBuf::new(),
+            filesystem: FileSystem::default(),
             commands: Fuzzer::new(&Command::get_commands()),
             header: Header::None,
             log: Vec::new(),

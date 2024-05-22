@@ -18,4 +18,5 @@ pub mod info_mode;
 pub mod run_command;
 pub mod cursor_position;
 pub mod settings;
+pub mod ssh;
 pub mod mockup;
