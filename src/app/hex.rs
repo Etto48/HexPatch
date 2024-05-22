@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, files::filesystem::FileSystem, info_mode::InfoMode, notification::NotificationLevel, settings::color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, files::{filesystem::FileSystem, str_path::path_parent}, info_mode::InfoMode, notification::NotificationLevel, settings::color_settings::ColorSettings, App};
 
 pub(super) struct InstructionInfo
 {
@@ -211,6 +211,11 @@ impl App
 
     pub(super) fn save_as(&mut self, path: &str) -> Result<(), Box<dyn Error>>
     {
+        if let Some(parent) = path_parent(path)
+        {
+            self.filesystem.mkdirs(parent)?;
+        };
+        
         self.filesystem.create(path)?;
         self.filesystem.write(path, &self.data)?;
         self.filesystem.cd(&self.filesystem.canonicalize(path)?);

@@ -86,6 +86,16 @@ impl FileSystem
             Self::Remote { connection, .. } => connection.read(path)
         }
     }
+    
+    pub fn mkdirs(&self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        match self
+        {
+            Self::Local { .. } => std::fs::create_dir_all(path)?,
+            Self::Remote { connection, .. } => connection.mkdirs(path)?
+        }
+        Ok(())
+    }
 
     pub fn create(&self, path: &str) -> Result<(), Box<dyn Error>>
     {
