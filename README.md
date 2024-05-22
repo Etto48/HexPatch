@@ -4,6 +4,7 @@
 
 HexPatch is a binary patcher and editor with terminal user interface (TUI), it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
+Also, it can edit remote files via SSH.
 
 ## Installation
 
@@ -14,6 +15,10 @@ git clone https://github.com/Etto48/HexPatch.git
 cd HexPatch
 cargo install --path .
 ```
+
+## SSH configuration
+
+In order to connect via SSH, the client must be set up with keypair authentication and you must have a key in your `~/.ssh` directory.
 
 ## Supported file formats and architectures
 

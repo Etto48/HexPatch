@@ -1,38 +1,42 @@
-use std::{error::Error, path::{Path, PathBuf}};
+use std::error::Error;
 
 use ratatui::text::{Line, Span};
 
 use crate::app::settings::color_settings::ColorSettings;
 
+use super::{filesystem::FileSystem, str_path::path_diff};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PathResult
 {
-    path: PathBuf,
+    path: String,
+    is_dir: bool
 }
 
 impl PathResult
 {
-    pub fn new(path: &Path, base_path: &Path) -> Result<Self, Box<dyn Error>>
+    pub fn new(path: &str, filesystem: &FileSystem) -> Result<Self, Box<dyn Error>>
     {
-        let path = base_path.join(path).canonicalize()?;
-
+        let path = filesystem.canonicalize(path)?;
+        let is_dir = filesystem.is_dir(&path);
         Ok(Self
         {
             path,
+            is_dir
         })
     }
 
-    pub fn path(&self) -> &Path
+    pub fn path(&self) -> &str
     {
         &self.path
     }
 
     pub fn is_dir(&self) -> bool
     {
-        self.path.is_dir()
+        self.is_dir
     }
 
-    pub fn to_line(&self, color_settings: &ColorSettings, is_selected: bool, base_path: &Path) -> Line<'static>
+    pub fn to_line(&self, color_settings: &ColorSettings, is_selected: bool, base_path: &str) -> Line<'static>
     {
         let mut ret = Line::raw("");
         let style = if is_selected
@@ -47,8 +51,8 @@ impl PathResult
         {
             color_settings.path_file
         };
-        let path = pathdiff::diff_paths(dunce::canonicalize(&self.path).unwrap_or(self.path.clone()), dunce::canonicalize(base_path).unwrap_or(base_path.into())).unwrap_or(self.path.clone());
-        ret.spans.push(Span::styled(path.to_string_lossy().to_string(), style));
+        let path = path_diff(&self.path, base_path);
+        ret.spans.push(Span::styled(path.to_string(), style));
 
         ret.left_aligned()
     }

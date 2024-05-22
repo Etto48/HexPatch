@@ -4,6 +4,8 @@ use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
 use keystone_engine::{Arch, Keystone, KeystoneError, Mode};
 use object::Architecture;
 
+use crate::app::files::filesystem::FileSystem;
+
 use super::generic::GenericHeader;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -32,9 +34,9 @@ pub enum Header
 
 impl Header
 {
-    pub fn parse_header(bytes: &[u8]) -> Header
+    pub fn parse_header(bytes: &[u8], file_path: &str, filesystem: &FileSystem) -> Header
     {
-        let header = GenericHeader::parse_header(bytes);
+        let header = GenericHeader::parse_header(bytes, file_path, filesystem);
         match header
         {
             Some(header) => Header::GenericHeader(header),
@@ -282,7 +284,7 @@ mod test
     fn test_parse_elf()
     {
         let data = include_bytes!("../../test/elf.bin");
-        let header = Header::parse_header(data);
+        let header = Header::parse_header(data, "./elf.bin", &FileSystem::new_local(".").unwrap());
         if let Header::GenericHeader(header) = header
         {
             assert_eq!(header.file_type, FileType::Elf64);
@@ -299,7 +301,7 @@ mod test
     fn test_parse_pe()
     {
         let data = include_bytes!("../../test/pe.bin");
-        let header = Header::parse_header(data);
+        let header = Header::parse_header(data, "./pe.bin", &FileSystem::new_local(".").unwrap());
         if let Header::GenericHeader(header) = header
         {
             assert_eq!(header.file_type, FileType::Pe64);
@@ -316,7 +318,7 @@ mod test
     fn test_parse_macho()
     {
         let data = include_bytes!("../../test/macho.bin");
-        let header = Header::parse_header(data);
+        let header = Header::parse_header(data, "./macho.bin", &FileSystem::new_local(".").unwrap());
         if let Header::GenericHeader(header) = header
         {
             assert_eq!(header.file_type, FileType::MachO64);

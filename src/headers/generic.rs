@@ -1,7 +1,9 @@
-use std::{collections::HashMap, fs::File};
+use std::{collections::HashMap, io::Write};
 
 use object::{Object, ObjectSection, ObjectSymbol};
 use pdb::FallibleIterator;
+
+use crate::app::files::{filesystem::FileSystem, str_path::{path_is_absolute, path_join, path_parent}};
 
 use super::header::Section;
 
@@ -49,7 +51,7 @@ impl GenericHeader
         name.to_string()
     }
 
-    pub fn parse_header(bytes: &[u8]) -> Option<Self>
+    pub fn parse_header(bytes: &[u8], file_path: &str, filesystem: &FileSystem) -> Option<Self>
     {
         let header = object::File::parse(bytes);
         if let Ok(header) = header
@@ -141,10 +143,22 @@ impl GenericHeader
                     }
                     if let Some(pdb_file_path) = pdb_file_path
                     {
-                        let file = File::open(pdb_file_path);
+                        let pdb_absolute_path = if path_is_absolute(&pdb_file_path)
+                        {
+                            pdb_file_path
+                        }
+                        else
+                        {
+                            path_join(path_parent(file_path).unwrap_or("./"), &pdb_file_path, filesystem.separator())
+                        };
+                        let file = filesystem.read(&pdb_absolute_path);
                         if let Ok(file) = file
                         {
-                            let pdb = pdb::PDB::open(file);
+                            // TODO: maybe there is a better way to do this without writing to a file
+                            let mut tmp_file = tempfile::tempfile().expect("Failed to create a temporary file");
+                            tmp_file.write_all(&file).expect("Failed to write to a temporary file");
+
+                            let pdb = pdb::PDB::open(tmp_file);
                             if let Ok(mut pdb) = pdb
                             {
                                 let symbol_table = pdb.global_symbols();

@@ -101,6 +101,7 @@ impl App
             HelpLine::new(&Self::key_event_to_string(key_settings.goto_end), "Scroll to end"),
             HelpLine::new(&Self::key_event_to_string(key_settings.run), "Run command"),
             HelpLine::new(&Self::key_event_to_string(key_settings.save), "Save"),
+            HelpLine::new(&Self::key_event_to_string(key_settings.save_as), "Save as"),
             HelpLine::new(&Self::key_event_to_string(key_settings.save_and_quit), "Save and quit"),
             HelpLine::new(&Self::key_event_to_string(key_settings.quit), "Quit"),
             HelpLine::new(&Self::key_event_to_string(key_settings.open), "Open file"),
