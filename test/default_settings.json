@@ -449,6 +449,14 @@
       "kind": "Press",
       "state": ""
     },
+    "save_as": {
+      "code": {
+        "Char": "a"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
     "save": {
       "code": {
         "Char": "s"

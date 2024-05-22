@@ -71,7 +71,7 @@ impl App
     {
         let mut log = Vec::new();
         let mut notification = NotificationLevel::None;
-        let settings = match Settings::load_or_create(None)
+        let settings = match Settings::load_or_create(args.config.as_deref())
         {
             Ok(settings) => settings,
             Err(e) => {
