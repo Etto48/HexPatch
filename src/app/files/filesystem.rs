@@ -87,6 +87,20 @@ impl FileSystem
         }
     }
 
+    pub fn create(&self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        match self
+        {
+            Self::Local { .. } => {
+                std::fs::File::create(path)?;
+            },
+            Self::Remote { connection, .. } => {
+                connection.create(path)?;
+            }
+        }
+        Ok(())
+    }
+
     pub fn write(&self, path: &str, data: &[u8]) -> Result<(), Box<dyn Error>>
     {
         match self

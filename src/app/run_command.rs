@@ -10,6 +10,7 @@ pub enum Command
     Quit,
     QuitWithoutSave,
     QuitWithSave,
+    SaveAs,
     Save,
     Help,
     Open,
@@ -35,6 +36,7 @@ impl Command
             "dquit",
             "xquit",
             "save",
+            "saveas",
             "help",
             "open",
             "log",
@@ -55,6 +57,7 @@ impl Command
             "dquit" => Command::QuitWithoutSave,
             "xquit" => Command::QuitWithSave,
             "save" => Command::Save,
+            "saveas" => Command::SaveAs,
             "help" => Command::Help,
             "open" => Command::Open,
             "log" => Command::Log,
@@ -82,6 +85,7 @@ impl Command
             Command::Quit => Line::from(vec![Span::styled("quit", s0), Span::styled(" Quit the program.", s1)]),
             Command::QuitWithoutSave => Line::from(vec![Span::styled("dquit", s0), Span::styled(" Quit the program without saving.", s1)]),
             Command::QuitWithSave => Line::from(vec![Span::styled("xquit", s0), Span::styled(" Save and quit the program.", s1)]),
+            Command::SaveAs => Line::from(vec![Span::styled("saveas", s0), Span::styled(" Save the current file as a new file.", s1)]),
             Command::Save => Line::from(vec![Span::styled("save", s0), Span::styled(" Save the current file.", s1)]),
             Command::Help => Line::from(vec![Span::styled("help", s0), Span::styled(" Display the help page.", s1)]),
             Command::Open => Line::from(vec![Span::styled("open", s0), Span::styled(" Open a file.", s1)]),
@@ -123,6 +127,9 @@ impl App
             }
             Command::QuitWithSave => {
                 self.quit(Some(true))?;
+            }
+            Command::SaveAs => {
+                self.request_popup_save_as();
             }
             Command::Save => {
                 if self.dirty
@@ -238,6 +245,17 @@ impl App
         Self::open_dir(&mut new_popup, &self.get_current_dir(), &mut self.filesystem)?;
         self.popup = new_popup;
         Ok(())
+    }
+
+    pub(super) fn request_popup_save_as(&mut self)
+    {
+        let path = self.filesystem.pwd().to_string();
+        let cursor = path.len();
+        self.popup = Some(PopupState::SaveAs { 
+                path, 
+                cursor
+            }
+        );
     }
 
     pub(super) fn request_popup_help(&mut self)

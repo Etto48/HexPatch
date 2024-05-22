@@ -135,6 +135,12 @@ impl Connection
         Ok(remote_file)
     }
 
+    pub fn create(&self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        self.runtime.block_on(self.sftp.create(path))?;
+        Ok(())
+    }
+
     pub fn write(&self, path: &str, data: &[u8]) -> Result<(), Box<dyn Error>>
     {
         self.runtime.block_on(self.sftp.write(path, data))?;

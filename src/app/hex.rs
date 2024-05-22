@@ -209,6 +209,22 @@ impl App
         Self::bytes_to_styled_hex(&self.settings.color, bytes, self.block_size, self.blocks_per_row, selected_byte_index, high_byte, instruction_info)
     }
 
+    pub(super) fn save_as(&mut self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        self.filesystem.create(path)?;
+        self.filesystem.write(path, &self.data)?;
+        self.filesystem.cd(&self.filesystem.canonicalize(path)?);
+        self.dirty = false;
+        match &self.filesystem
+        {
+            FileSystem::Local { path } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {}", path));},
+            FileSystem::Remote { path, connection } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path, connection));},
+        }
+        Ok(())
+    }
+
     pub(super) fn save_data(&mut self) -> Result<(), Box<dyn Error>>
     {
         self.filesystem.write(self.filesystem.pwd(), &self.data)?;

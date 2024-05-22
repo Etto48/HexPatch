@@ -53,6 +53,10 @@ pub enum PopupState
     },
     QuitDirtySave(bool),
     SaveAndQuit(bool),
+    SaveAs{
+        path: String,
+        cursor: usize,
+    },
     Save(bool),
     Help(usize)
 }
@@ -664,6 +668,16 @@ impl App
                 {
                     popup_text.lines[2].spans[2].style = color_settings.no_selected;
                 }
+            },
+            PopupState::SaveAs { path, cursor } =>
+            {
+                *popup_title = "Save As";
+                let available_width = width.saturating_sub(2);
+                *height = 3;
+                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
+                popup_text.lines.extend(
+                    vec![editable_string.left_aligned()]
+                );
             },
             PopupState::Save(yes_selected) =>
             {

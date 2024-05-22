@@ -21,6 +21,7 @@ pub struct KeySettings
 
     pub quit: KeyEvent,
     pub save_and_quit: KeyEvent,
+    pub save_as: KeyEvent,
     pub save: KeyEvent,
     pub open: KeyEvent,
 
@@ -64,6 +65,7 @@ impl Default for KeySettings
 
             quit: KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL),
             save_and_quit: KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL),
+            save_as: KeyEvent::new(KeyCode::Char('a'), KeyModifiers::CONTROL),
             save: KeyEvent::new(KeyCode::Char('s'), KeyModifiers::CONTROL),
             open: KeyEvent::new(KeyCode::Char('o'), KeyModifiers::CONTROL),
 
