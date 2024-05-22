@@ -51,7 +51,7 @@ impl Settings
         {
             "windows" => home.join("AppData").join("Local"),
             _ => home.join(".config")
-        }.join("HexPatch").join("settings.toml"))
+        }.join("HexPatch").join("settings.json"))
     }
 
     pub fn load_or_create(path: Option<&Path>) -> Result<Settings, String>
