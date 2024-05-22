@@ -79,7 +79,7 @@ impl Connection
         let (hostname, port) = 
         if let Some((hostname, port)) = host.split_once(':')
         {
-            if let Some(port) = port.parse::<u16>().ok()
+            if let Ok(port) = port.parse::<u16>()
             {
                 (hostname, port)
             }

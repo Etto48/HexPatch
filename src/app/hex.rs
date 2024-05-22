@@ -211,7 +211,7 @@ impl App
 
     pub(super) fn save_data(&mut self) -> Result<(), Box<dyn Error>>
     {
-        self.filesystem.write(&self.filesystem.pwd(), &self.data)?;
+        self.filesystem.write(self.filesystem.pwd(), &self.data)?;
         self.dirty = false;
         match &self.filesystem
         {

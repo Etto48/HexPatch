@@ -309,7 +309,7 @@ impl App
                 {
                     (
                         ".../",
-                        path_diff(&currently_open_path, parent)
+                        path_diff(currently_open_path, parent)
                     )
                 }
                 else

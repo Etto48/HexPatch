@@ -42,7 +42,7 @@ impl FileSystem
         match self
         {
             Self::Local { path } |
-            Self::Remote { path, .. } => &path
+            Self::Remote { path, .. } => path
         }
     }
 

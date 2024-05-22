@@ -114,7 +114,8 @@ impl App
         }
         else
         {
-            Self::open_dir(&mut app.popup, &app.filesystem.pwd().to_owned(), &mut app.filesystem).map_err(|e| e.to_string())?;
+            let dir = app.filesystem.pwd().to_string();
+            Self::open_dir(&mut app.popup, &dir, &mut app.filesystem).map_err(|e| e.to_string())?;
         }
 
         Ok(app)

@@ -1,6 +1,6 @@
 pub fn path_is_absolute(path: &str) -> bool
 {
-    path.starts_with("/") || path.starts_with("\\")
+    path.starts_with('/') || path.starts_with('\\')
 }
 
 pub fn path_is_root(path: &str) -> bool

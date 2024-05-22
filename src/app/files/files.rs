@@ -31,7 +31,7 @@ impl App
         }
         else
         {
-            self.open_file(&selected.path(), Some(terminal))?;
+            self.open_file(selected.path(), Some(terminal))?;
             *popup = None;
         }
         
