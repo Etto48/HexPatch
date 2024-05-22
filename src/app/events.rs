@@ -20,7 +20,7 @@ impl App
                 }
                 else if event == self.settings.key.left 
                 {
-                        self.move_cursor(-1, 0, false);
+                    self.move_cursor(-1, 0, false);
                 }
                 else if event == self.settings.key.right
                 {
@@ -73,6 +73,10 @@ impl App
                 else if event == self.settings.key.quit
                 {
                     self.request_quit();
+                }
+                else if event == self.settings.key.save_as
+                {
+                    self.request_popup_save_as();
                 }
                 else if event == self.settings.key.save
                 {
@@ -318,6 +322,10 @@ impl App
             {
                 Self::handle_string_edit(address, cursor, &event, None, None, false, &self.settings.key)?;
             }
+            Some(PopupState::SaveAs {path, cursor}) =>
+            {
+                Self::handle_string_edit(path, cursor, &event, None, None, false, &self.settings.key)?;
+            }
             _ => {}
         }
 
@@ -386,6 +394,11 @@ impl App
                         Some(PopupState::JumpToAddress {location, cursor: _cursor}) =>
                         {
                             self.jump_to_symbol(location);
+                            popup = None;
+                        }
+                        Some(PopupState::SaveAs { path, cursor: _ }) =>
+                        {
+                            self.save_as(path)?;
                             popup = None;
                         }
                         Some(PopupState::Save(yes_selected)) =>

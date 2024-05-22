@@ -3,7 +3,7 @@ use std::{error::Error, fmt::Display, path::PathBuf};
 use russh::client::{self, Handler};
 use russh_sftp::client::SftpSession;
 
-use crate::app::files::str_path::path_join;
+use crate::app::files::str_path::{path_join, path_parent};
 
 pub struct SSHClient;
 impl Handler for SSHClient
@@ -133,6 +133,33 @@ impl Connection
     {
         let remote_file = self.runtime.block_on(self.sftp.read(path))?;
         Ok(remote_file)
+    }
+
+    pub fn mkdirs(&self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        self.runtime.block_on(async {
+            let mut paths = vec![path];
+            let mut current = path;
+            while let Some(parent) = path_parent(current)
+            {
+                paths.push(parent);
+                current = parent;
+            }
+            paths.reverse();
+            for path in paths
+            {
+                if self.sftp.read_dir(path).await.is_ok() {continue};
+                self.sftp.create_dir(path).await?;
+            }
+            Ok::<(), Box<dyn Error>>(())
+        })?;
+        Ok(())
+    }
+
+    pub fn create(&self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        self.runtime.block_on(self.sftp.create(path))?;
+        Ok(())
     }
 
     pub fn write(&self, path: &str, data: &[u8]) -> Result<(), Box<dyn Error>>
