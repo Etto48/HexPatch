@@ -1,15 +1,15 @@
-use std::{error::Error, path::PathBuf};
+use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, files::path_result::PathResult, run_command::Command, settings::color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, files::{path_result::PathResult, str_path::{path_diff, path_parent}}, run_command::Command, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
 {
     Open
     {
-        currently_open_path: PathBuf,
+        currently_open_path: String,
         path: String,
         cursor: usize,
         results: Vec<PathResult>,
@@ -305,18 +305,18 @@ impl App
                 
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
 
-                let (prefix, currently_open_path_text) = if let Some(parent) = currently_open_path.parent()
+                let (prefix, currently_open_path_text) = if let Some(parent) = path_parent(currently_open_path)
                 {
                     (
                         ".../",
-                        currently_open_path.strip_prefix(parent).expect("I just checked").to_string_lossy()
+                        path_diff(&currently_open_path, parent)
                     )
                 }
                 else
                 {
                     (
                         "",
-                        currently_open_path.to_string_lossy()
+                        currently_open_path.as_str()
                     )
                 };
                 

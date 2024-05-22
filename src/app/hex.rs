@@ -216,9 +216,9 @@ impl App
         match &self.filesystem
         {
             FileSystem::Local { path } => 
-                {self.log(NotificationLevel::Info, &format!("Saved to {}", path.to_string_lossy()));},
+                {self.log(NotificationLevel::Info, &format!("Saved to {}", path));},
             FileSystem::Remote { path, connection } => 
-                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path.to_string_lossy(), connection));},
+                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path, connection));},
         }
         
         Ok(())

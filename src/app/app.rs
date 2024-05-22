@@ -1,5 +1,5 @@
 #![allow(clippy::module_inception)]
-use std::{path::PathBuf, time::Duration};
+use std::time::Duration;
 
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
@@ -82,19 +82,16 @@ impl App
                 Settings::default()
             },
         };
-        let path = args.path.to_string_lossy();
-        let path = shellexpand::full(&path).map_err(|e| e.to_string())?;
-        Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", path), terminal)?;
-        let path = PathBuf::from(path.as_ref());
+        Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", args.path), terminal)?;
 
         let filesystem = if let Some(connection_str) = args.ssh
         {
-            FileSystem::new_remote(&path, &connection_str)
-                .map_err(|e|e.to_string())?
+            FileSystem::new_remote(&args.path, &connection_str)
+                .map_err(|e|format!("Failed to connect to {connection_str}: {e}"))?
         }
         else
         {
-            FileSystem::new_local(&path)
+            FileSystem::new_local(&args.path)
                 .map_err(|e|e.to_string())?
         };
         let screen_size = Self::get_size(terminal)?;
@@ -112,12 +109,12 @@ impl App
 
         if app.filesystem.is_file(app.filesystem.pwd())
         {
-            let path = app.filesystem.pwd().to_string_lossy().to_string();
+            let path = app.filesystem.pwd().to_string();
             app.open_file(&path, Some(terminal)).map_err(|e| e.to_string())?;
         }
         else
         {
-            Self::open_dir(&mut app.popup, app.filesystem.pwd()).map_err(|e| e.to_string())?;
+            Self::open_dir(&mut app.popup, &app.filesystem.pwd().to_owned(), &mut app.filesystem).map_err(|e| e.to_string())?;
         }
 
         Ok(app)

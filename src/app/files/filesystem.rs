@@ -1,35 +1,43 @@
-use std::{error::Error, path::{Path, PathBuf}};
+use std::{error::Error, path::Path};
 
 use crate::app::ssh::connection::Connection;
 
-use super::file::File;
+use super::str_path::{path_join, path_parent};
 
-#[derive(Clone)]
 pub enum FileSystem
 {
     Local{
-        path: PathBuf
+        path: String
     },
     Remote{
-        path: PathBuf,
+        path: String,
         connection: Connection
     }
 }
 
 impl FileSystem
 {
-    pub fn new_local(path: &Path) -> Result<Self, Box<dyn Error>>
+    pub fn new_local(path: &str) -> Result<Self, Box<dyn Error>>
     {
-        Ok(Self::Local { path: path.canonicalize()? })
+        Ok(Self::Local { path: Path::new(path).canonicalize().map(|path|path.to_string_lossy().to_string())? })
     }
 
-    pub fn new_remote(path: &Path, connection_str: &str) -> Result<Self, Box<dyn Error>>
+    pub fn new_remote(path: &str, connection_str: &str) -> Result<Self, Box<dyn Error>>
     {
         let connection = Connection::new(connection_str)?;
         Ok(Self::Remote { path: connection.canonicalize(path)?, connection })
     }
 
-    pub fn pwd(&self) -> &Path
+    pub fn separator(&self) -> char
+    {
+        match self
+        {
+            Self::Local { .. } => std::path::MAIN_SEPARATOR,
+            Self::Remote { connection, .. } => connection.separator()
+        }
+    }
+
+    pub fn pwd(&self) -> &str
     {
         match self
         {
@@ -38,7 +46,7 @@ impl FileSystem
         }
     }
 
-    pub fn cd(&mut self, path: &Path)
+    pub fn cd(&mut self, path: &str)
     {
         match self
         {
@@ -47,7 +55,7 @@ impl FileSystem
         }
     }
 
-    pub fn ls(&self, path: &Path) -> Result<Vec<File>, Box<dyn Error>>
+    pub fn ls(&self, path: &str) -> Result<Vec<String>, Box<dyn Error>>
     {
         let mut ret = match self
         {
@@ -57,26 +65,20 @@ impl FileSystem
                 for f in dir
                 {
                     let f = f?;
-                    ret.push(File{
-                        path: f.path(),
-                        is_dir: f.file_type()?.is_dir()
-                    })
+                    ret.push(f.path().to_string_lossy().to_string())
                 }
                 Ok(ret)
             }
             Self::Remote { connection, .. } => connection.ls(path)
         }?;
-        if path.parent().is_some()
+        if path_parent(path).is_some()
         {
-            ret.insert(0, File{
-                path: path.join(".."),
-                is_dir: true
-            });
+            ret.insert(0,path_join(path,"..", self.separator()));
         }
         Ok(ret)
     }
 
-    pub fn read(&self, path: &Path) -> Result<Vec<u8>, Box<dyn Error>>
+    pub fn read(&self, path: &str) -> Result<Vec<u8>, Box<dyn Error>>
     {
         match self
         {
@@ -85,7 +87,7 @@ impl FileSystem
         }
     }
 
-    pub fn write(&self, path: &Path, data: &[u8]) -> Result<(), Box<dyn Error>>
+    pub fn write(&self, path: &str, data: &[u8]) -> Result<(), Box<dyn Error>>
     {
         match self
         {
@@ -94,24 +96,32 @@ impl FileSystem
         }
     }
 
-    pub fn is_file(&self, path: &Path) -> bool
+    pub fn is_file(&self, path: &str) -> bool
     {
         match self
         {
-            Self::Local { .. } => path.is_file(),
+            Self::Local { .. } => Path::new(path).is_file(),
             Self::Remote { connection, .. } => connection.is_file(path)
         }
     }
 
-    pub fn is_dir(&self, path: &Path) -> bool
+    pub fn is_dir(&self, path: &str) -> bool
     {
         match self
         {
-            Self::Local { .. } => path.is_dir(),
+            Self::Local { .. } => Path::new(path).is_dir(),
             Self::Remote { connection, .. } => connection.is_dir(path)
         }
     }
 
+    pub fn canonicalize(&self, path: &str) -> Result<String, Box<dyn Error>>
+    {
+        match self
+        {
+            Self::Local { .. } => Ok(Path::new(path).canonicalize().map(|path|path.to_string_lossy().to_string())?),
+            Self::Remote { connection, .. } => connection.canonicalize(path)
+        }
+    }
 }
 
 impl Default for FileSystem
