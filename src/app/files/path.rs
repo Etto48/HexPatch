@@ -63,7 +63,7 @@ pub fn diff<'a>(full_path: &'a str, prefix_path: &str) -> &'a str
 {
     if full_path == prefix_path
     {
-        return ".";
+        "."
     }
     else if let Some(unprefixed_path) = full_path.strip_prefix(prefix_path)
     {
@@ -73,7 +73,7 @@ pub fn diff<'a>(full_path: &'a str, prefix_path: &str) -> &'a str
     {
         if unprefixed_path_reverse_logic.split(|c| c == '/' || c == '\\').filter(|s|!s.is_empty()).count() == 1
         {
-            return "..";
+            ".."
         }
         else
         {
