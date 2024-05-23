@@ -2,7 +2,7 @@ use std::{error::Error, path::Path};
 
 use crate::app::ssh::connection::Connection;
 
-use super::str_path::{path_join, path_parent};
+use super::path;
 
 pub enum FileSystem
 {
@@ -71,9 +71,9 @@ impl FileSystem
             }
             Self::Remote { connection, .. } => connection.ls(path)
         }?;
-        if path_parent(path).is_some()
+        if path::parent(path).is_some()
         {
-            ret.insert(0,path_join(path,"..", self.separator()));
+            ret.insert(0,path::join(path,"..", self.separator()));
         }
         Ok(ret)
     }

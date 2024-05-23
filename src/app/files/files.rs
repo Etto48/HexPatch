@@ -5,7 +5,7 @@ use ratatui::{backend::Backend, Terminal};
 
 use crate::{app::{info_mode::InfoMode, notification::NotificationLevel, popup_state::PopupState, App}, headers::Header};
 
-use super::{filesystem::FileSystem, path_result::PathResult, str_path::{path_diff, path_filename, path_is_absolute, path_join, path_parent}};
+use super::{filesystem::FileSystem, path_result::PathResult, path};
 
 impl App
 {
@@ -47,24 +47,24 @@ impl App
         }
         else 
         {
-            path_parent(current_path).expect("A file should have a parent directory.").to_owned()
+            path::parent(current_path).expect("A file should have a parent directory.").to_owned()
         }
     }
 
     pub(in crate::app) fn find_dir_contents(currently_open_path: &str, path: &str, filesystem: &FileSystem) -> Result<Vec<PathResult>, Box<dyn Error>>
     {
         let mut ret = Vec::new();
-        let (selected_dir, file_name) = if path_is_absolute(path)
+        let (selected_dir, file_name) = if path::is_absolute(path)
         {
             if filesystem.is_dir(path)
             {
                 (filesystem.canonicalize(path)?, "".to_string())
             }
-            else if let Some(parent) = path_parent(path)
+            else if let Some(parent) = path::parent(path)
             {
                 if filesystem.is_dir(parent)
                 {
-                    (filesystem.canonicalize(parent)?, path_filename(path).map_or("".into(), |name| name.to_string()))
+                    (filesystem.canonicalize(parent)?, path::filename(path).map_or("".into(), |name| name.to_string()))
                 }
                 else
                 {
@@ -84,7 +84,7 @@ impl App
         let entries = filesystem.ls(&selected_dir)?;
         let entries = entries
             .into_iter()
-            .map(|entry| path_diff(&entry, &selected_dir).to_string())
+            .map(|entry| path::diff(&entry, &selected_dir).to_string())
             .collect::<Vec<_>>();
 
         let entries = entries
@@ -93,7 +93,7 @@ impl App
 
         for entry in entries
         {
-            if let Ok(result) = PathResult::new(&path_join(&selected_dir, &entry, filesystem.separator()), filesystem)
+            if let Ok(result) = PathResult::new(&path::join(&selected_dir, &entry, filesystem.separator()), filesystem)
             {
                 ret.push(result);
             }

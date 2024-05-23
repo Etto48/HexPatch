@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, files::{path_result::PathResult, str_path::{path_diff, path_parent}}, run_command::Command, settings::color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, files::{path_result::PathResult, path}, run_command::Command, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
@@ -309,11 +309,11 @@ impl App
                 
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
 
-                let (prefix, currently_open_path_text) = if let Some(parent) = path_parent(currently_open_path)
+                let (prefix, currently_open_path_text) = if let Some(parent) = path::parent(currently_open_path)
                 {
                     (
                         ".../",
-                        path_diff(currently_open_path, parent)
+                        path::diff(currently_open_path, parent)
                     )
                 }
                 else

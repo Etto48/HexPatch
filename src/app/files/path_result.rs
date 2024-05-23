@@ -4,7 +4,7 @@ use ratatui::text::{Line, Span};
 
 use crate::app::settings::color_settings::ColorSettings;
 
-use super::{filesystem::FileSystem, str_path::path_diff};
+use super::{filesystem::FileSystem, path};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PathResult
@@ -51,7 +51,7 @@ impl PathResult
         {
             color_settings.path_file
         };
-        let path = path_diff(&self.path, base_path);
+        let path = path::diff(&self.path, base_path);
         ret.spans.push(Span::styled(path.to_string(), style));
 
         ret.left_aligned()

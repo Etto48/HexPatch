@@ -3,7 +3,7 @@ use std::{collections::HashMap, io::Write};
 use object::{Object, ObjectSection, ObjectSymbol};
 use pdb::FallibleIterator;
 
-use crate::app::files::{filesystem::FileSystem, str_path::{path_is_absolute, path_join, path_parent}};
+use crate::app::files::{filesystem::FileSystem, path};
 
 use super::header::Section;
 
@@ -143,13 +143,13 @@ impl GenericHeader
                     }
                     if let Some(pdb_file_path) = pdb_file_path
                     {
-                        let pdb_absolute_path = if path_is_absolute(&pdb_file_path)
+                        let pdb_absolute_path = if path::is_absolute(&pdb_file_path)
                         {
                             pdb_file_path
                         }
                         else
                         {
-                            path_join(path_parent(file_path).unwrap_or("./"), &pdb_file_path, filesystem.separator())
+                            path::join(path::parent(file_path).unwrap_or("./"), &pdb_file_path, filesystem.separator())
                         };
                         let file = filesystem.read(&pdb_absolute_path);
                         if let Ok(file) = file
