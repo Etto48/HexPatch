@@ -3,7 +3,7 @@ use std::{error::Error, fmt::Display, path::PathBuf};
 use russh::client::{self, Handler};
 use russh_sftp::client::SftpSession;
 
-use crate::app::files::str_path::{path_join, path_parent};
+use crate::app::files::path;
 
 pub struct SSHClient;
 impl Handler for SSHClient
@@ -140,7 +140,7 @@ impl Connection
         self.runtime.block_on(async {
             let mut paths = vec![path];
             let mut current = path;
-            while let Some(parent) = path_parent(current)
+            while let Some(parent) = path::parent(current)
             {
                 paths.push(parent);
                 current = parent;
@@ -172,7 +172,7 @@ impl Connection
     {
         let dir = self.runtime.block_on(self.sftp.read_dir(path))?;
         dir.into_iter().map(|entry| {
-            Ok(path_join(path,&entry.file_name(), self.separator()).to_string())
+            Ok(path::join(path,&entry.file_name(), self.separator()).to_string())
         }).collect()
     }
 
