@@ -4,7 +4,7 @@ description = """
 HexPatch is a binary patcher and editor with terminal user interface (TUI),
 it's capable of disassembling instructions and assembling patches. 
 It supports a variety of architectures and file formats."""
-version = "1.2.0"
+version = "1.2.1"
 authors = ["Ettore Ricci"]
 edition = "2021"
 readme = "README.md"
