@@ -16,9 +16,24 @@ cd HexPatch
 cargo install --path .
 ```
 
-## SSH configuration
+## SSH connection
 
-In order to connect via SSH, the client must be set up with keypair authentication and you must have a key in your `~/.ssh` directory.
+In order to connect via SSH, you can specify a connection string in the arguments like this:
+
+```bash
+hex-patch --ssh <user>@<host>[:<port>] [--password <password>]
+```
+
+If you don't specify a password, the client must be set up with keypair authentication and you must have a key in your `~/.ssh` directory.
+
+Keys are searched in the following order:
+
+- id_rsa
+- id_ed25519
+- id_ecdsa
+- id_dsa
+
+The first key found will be used.
 
 ## Supported file formats and architectures
 
