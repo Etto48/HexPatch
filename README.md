@@ -18,10 +18,10 @@ cargo install --path .
 
 ## SSH connection
 
-In order to connect via SSH, you can specify a connection string in the arguments like this:
+In order to connect via SSH, you can use the following command:
 
 ```bash
-hex-patch --ssh <user>@<host>[:<port>] [--password <password>]
+hex-patch --ssh <user>@<host>[:<port>] [--password <password>] [additional arguments]
 ```
 
 If you don't specify a password, the client must be set up with keypair authentication and you must have a key in your `~/.ssh` directory.
