@@ -63,7 +63,7 @@ impl Connection
         }
     }
 
-    pub fn new(connection_str: &str) -> Result<Self, Box<dyn Error>>
+    pub fn new(connection_str: &str, password: Option<&str>) -> Result<Self, Box<dyn Error>>
     {
         let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
         let (username, host) = 
@@ -96,11 +96,21 @@ impl Connection
         let config = client::Config::default();
 
         let mut session = runtime.block_on(client::connect(config.into(), (hostname, port), SSHClient{}))?;
-        let (private_key, _public_key) = Self::get_key_files()?;
-        let keypair = russh_keys::load_secret_key(private_key, None)?;
-        if !runtime.block_on(session.authenticate_publickey(username, keypair.into()))?
+        if let Some(password) = password
         {
-            return Err("Authentication failed".into())
+            if !runtime.block_on(session.authenticate_password(username, password))?
+            {
+                return Err("Authentication failed".into())
+            }
+        }
+        else
+        {
+            let (private_key, _public_key) = Self::get_key_files()?;
+            let keypair = russh_keys::load_secret_key(private_key, None)?;
+            if !runtime.block_on(session.authenticate_publickey(username, keypair.into()))?
+            {
+                return Err("Authentication failed".into())
+            }
         }
 
         let channel = runtime.block_on(session.channel_open_session())?;

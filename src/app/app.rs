@@ -84,10 +84,10 @@ impl App
         };
         Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", args.path), terminal)?;
 
-        let filesystem = if let Some(connection_str) = args.ssh
+        let filesystem = if let Some(ssh) = &args.ssh
         {
-            FileSystem::new_remote(&args.path, &connection_str)
-                .map_err(|e|format!("Failed to connect to {connection_str}: {e}"))?
+            FileSystem::new_remote(&args.path, ssh, args.password.as_deref())
+                .map_err(|e|format!("Failed to connect to {}: {e}", ssh))?
         }
         else
         {

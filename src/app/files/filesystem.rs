@@ -22,9 +22,9 @@ impl FileSystem
         Ok(Self::Local { path: Path::new(path).canonicalize().map(|path|path.to_string_lossy().to_string())? })
     }
 
-    pub fn new_remote(path: &str, connection_str: &str) -> Result<Self, Box<dyn Error>>
+    pub fn new_remote(path: &str, connection_str: &str, password: Option<&str>) -> Result<Self, Box<dyn Error>>
     {
-        let connection = Connection::new(connection_str)?;
+        let connection = Connection::new(connection_str, password)?;
         Ok(Self::Remote { path: connection.canonicalize(path)?, connection })
     }
 
