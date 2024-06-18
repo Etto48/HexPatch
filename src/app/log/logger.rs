@@ -12,11 +12,7 @@ pub struct Logger {
 impl Logger {
     pub fn new() -> Self
     {
-        Logger
-        {
-            log: Vec::new(),
-            notification: NotificationLevel::None,
-        }
+        Self::default()
     }
 
     pub fn log(&mut self, level: NotificationLevel, message: &str)
@@ -54,6 +50,17 @@ impl Logger {
     pub fn reset_notification_level(&mut self)
     {
         self.notification.reset();
+    }
+}
+
+impl Default for Logger
+{
+    fn default() -> Self
+    {
+        Self {
+            log: Vec::new(),
+            notification: NotificationLevel::None,
+        }
     }
 }
 
