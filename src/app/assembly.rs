@@ -2,7 +2,7 @@ use ratatui::text::{Line, Span};
 
 use crate::asm::assembler::assemble;
 
-use super::{app::App, instruction::Instruction, notification::NotificationLevel, settings::color_settings::ColorSettings};
+use super::{app::App, instruction::Instruction, log::NotificationLevel, settings::color_settings::ColorSettings};
 
 use crate::headers::{Header, Section};
 

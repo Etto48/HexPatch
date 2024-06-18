@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span, Text};
 
-use super::App;
+use super::{log::NotificationLevel, App};
 
 impl App
 {
@@ -17,19 +17,19 @@ impl App
 
         line.spans.push(Span::styled(" ", self.settings.color.status_bar));
 
-        let (notification_str, notification_style) = match self.notification
+        let (notification_str, notification_style) = match self.logger.get_notification_level()
         {
-            super::notification::NotificationLevel::None => (" ", self.settings.color.status_bar),
-            super::notification::NotificationLevel::Debug => ("●", self.settings.color.status_debug),
-            super::notification::NotificationLevel::Info => ("●", self.settings.color.status_info),
-            super::notification::NotificationLevel::Warning => ("●", self.settings.color.status_warning),
-            super::notification::NotificationLevel::Error => ("●", self.settings.color.status_error),
+            NotificationLevel::None => (" ", self.settings.color.status_bar),
+            NotificationLevel::Debug => ("●", self.settings.color.status_debug),
+            NotificationLevel::Info => ("●", self.settings.color.status_info),
+            NotificationLevel::Warning => ("●", self.settings.color.status_warning),
+            NotificationLevel::Error => ("●", self.settings.color.status_error),
         };
         line.spans.push(Span::styled(notification_str, notification_style));
         line.spans.push(Span::styled(" ", self.settings.color.status_bar));
-        if self.notification != super::notification::NotificationLevel::None
+        if self.logger.get_notification_level() != NotificationLevel::None
         {
-            line.spans.push(Span::styled(self.log[self.log.len() - 1].message.chars().take(max_len - 25).collect::<String>(), self.settings.color.status_bar));
+            line.spans.push(Span::styled(self.logger[self.logger.len() - 1].message.chars().take(max_len - 25).collect::<String>(), self.settings.color.status_bar));
         }
 
         let current_location_span = Span::styled(format!("{:16X} {} ",current_position.global_byte_index, 

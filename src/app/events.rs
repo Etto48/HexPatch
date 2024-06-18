@@ -470,7 +470,7 @@ impl App
                         },
                         Some(PopupState::Log(scroll)) =>
                         {
-                            Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), -1);
+                            Self::handle_popup_scroll(scroll, self.logger.len(), Some(self.get_scrollable_popup_line_count()), -1);
                         }
                         Some(PopupState::Help(scroll)) =>
                         {
@@ -497,7 +497,7 @@ impl App
                         },
                         Some(PopupState::Log(scroll)) =>
                         {
-                            Self::handle_popup_scroll(scroll, self.log.len(), Some(self.get_scrollable_popup_line_count()), 1);
+                            Self::handle_popup_scroll(scroll, self.logger.len(), Some(self.get_scrollable_popup_line_count()), 1);
                         }
                         Some(PopupState::Help(scroll)) =>
                         {
@@ -522,7 +522,7 @@ impl App
                     if let Some(PopupState::Log(scroll)) = &mut popup
                     {
                         *scroll = 0;
-                        self.log.clear();
+                        self.logger.clear();
                     }
                 }
                 else if let KeyCode::Char(_) | KeyCode::Backspace | KeyCode::Delete = event.code

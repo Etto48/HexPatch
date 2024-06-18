@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span};
 
-use super::{notification::NotificationLevel, popup_state::PopupState, settings::color_settings::ColorSettings, App};
+use super::{log::NotificationLevel, popup_state::PopupState, settings::color_settings::ColorSettings, App};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command
@@ -265,7 +265,7 @@ impl App
 
     pub(super) fn request_popup_log(&mut self)
     {
-        self.notification.reset();
+        self.logger.reset_notification_level();
         self.popup = Some(PopupState::Log(0));
     }
 

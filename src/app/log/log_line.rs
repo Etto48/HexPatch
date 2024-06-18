@@ -1,17 +1,18 @@
 use ratatui::text::{Line, Span};
 
-use super::{notification::NotificationLevel, settings::color_settings::ColorSettings, App};
+use crate::app::settings::color_settings::ColorSettings;
+use super::notification::NotificationLevel;
 
 #[derive(Debug, Clone)]
 pub struct LogLine
 {
-    pub(super) level: NotificationLevel,
-    pub(super) message: String,
+    pub level: NotificationLevel,
+    pub message: String,
 }
 
 impl LogLine
 {
-    pub(super) fn new(level: NotificationLevel, message: String) -> Self
+    pub fn new(level: NotificationLevel, message: String) -> Self
     {
         LogLine
         {
@@ -20,7 +21,7 @@ impl LogLine
         }
     }
 
-    pub(super) fn to_line(&self, color_settings: &ColorSettings) -> Line<'static>
+    pub fn to_line(&self, color_settings: &ColorSettings) -> Line<'static>
     {
         let mut line = Line::default();
         let style = match self.level
@@ -35,14 +36,5 @@ impl LogLine
         line.spans.push(Span::styled(" ", color_settings.log_message));
         line.spans.push(Span::styled(self.message.clone(), color_settings.log_message));
         line.left_aligned()
-    }
-}
-
-impl App
-{
-    pub(super) fn log(&mut self, level: NotificationLevel, message: &str)
-    {
-        self.notification.bump_notification_level(level);
-        self.log.push(LogLine::new(level, message.to_string()));
     }
 }

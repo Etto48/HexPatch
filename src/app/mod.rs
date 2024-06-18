@@ -6,7 +6,6 @@ pub mod files;
 pub mod help;
 pub mod instruction;
 pub mod status_bar;
-pub mod notification;
 pub mod log;
 pub mod assembly;
 pub mod address;

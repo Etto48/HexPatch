@@ -13,9 +13,8 @@ pub struct App
     pub(super) filesystem: FileSystem,
     pub(super) commands: Fuzzer,
     pub(super) header: Header,
-    pub(super) log: Vec<LogLine>,
+    pub(super) logger: Logger,
     pub(super) help_list: Vec<HelpLine>,
-    pub(super) notification: NotificationLevel,
     pub(super) dirty: bool,
     pub(super) data: Vec<u8>,
     pub(super) assembly_offsets: Vec<usize>,
@@ -69,16 +68,13 @@ impl App
 
     pub fn new<B: Backend>(args: Args, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
-        let mut log = Vec::new();
-        let mut notification = NotificationLevel::None;
-        let settings = match Settings::load_or_create(args.config.as_deref())
+        let mut logger = Logger::new();
+        let mut settings = match Settings::load_or_create(args.config.as_deref())
         {
             Ok(settings) => settings,
             Err(e) => {
-                log.push(LogLine { level: NotificationLevel::Error, message: 
-                    format!("Error loading settings: {e}") 
-                });
-                notification = NotificationLevel::Error;
+                logger.log(NotificationLevel::Error, 
+                    &format!("Error loading settings: {e}"));
                 Settings::default()
             },
         };
@@ -102,8 +98,7 @@ impl App
             screen_size,
             help_list: Self::help_list(&settings.key),
             settings,
-            log,
-            notification,
+            logger,
             ..Default::default()
         };
 
@@ -244,9 +239,8 @@ impl Default for App
             filesystem: FileSystem::default(),
             commands: Fuzzer::new(&Command::get_commands()),
             header: Header::None,
-            log: Vec::new(),
+            logger: Logger::new(),
             help_list: Self::help_list(&Settings::default().key),
-            notification: NotificationLevel::None,
             data: Vec::new(),
             dirty: false,
             assembly_offsets: Vec::new(),

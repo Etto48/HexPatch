@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span, Text};
 
-use super::{notification::NotificationLevel, settings::color_settings::ColorSettings, App};
+use super::{log::NotificationLevel, settings::color_settings::ColorSettings, App};
 
 impl App
 {

@@ -1,4 +1,4 @@
-use super::{notification::NotificationLevel, App};
+use super::{log::NotificationLevel, App};
 
 pub struct CursorPosition
 {
