@@ -69,7 +69,7 @@ impl App
     pub fn new<B: Backend>(args: Args, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
         let mut logger = Logger::new();
-        let mut settings = match Settings::load_or_create(args.config.as_deref())
+        let settings = match Settings::load_or_create(args.config.as_deref())
         {
             Ok(settings) => settings,
             Err(e) => {
