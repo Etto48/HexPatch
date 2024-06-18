@@ -41,7 +41,7 @@ impl Logger {
         self.log.len()
     }
 
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item = &'a LogLine> + DoubleEndedIterator + ExactSizeIterator
+    pub fn iter(&self) -> impl Iterator<Item = &LogLine> + DoubleEndedIterator + ExactSizeIterator
     {
         self.log.iter()
     }
