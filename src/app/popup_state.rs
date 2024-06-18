@@ -541,9 +541,9 @@ impl App
                 *popup_title = "Log";
                 let max_lines = self.get_scrollable_popup_line_count();
                 *height = max_lines + 4;
-                if !self.log.is_empty()
+                if !self.logger.is_empty()
                 {
-                    if self.log.len() as isize - *scroll as isize > max_lines as isize
+                    if self.logger.len() as isize - *scroll as isize > max_lines as isize
                     {
                         popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
                     }
@@ -552,7 +552,7 @@ impl App
                         popup_text.lines.push(Line::raw(""));
                     }
                     // take the last 8 lines skipping "scroll" lines from the bottom
-                    for line in self.log.iter().rev().skip(*scroll).take(max_lines).rev()
+                    for line in self.logger.iter().rev().skip(*scroll).take(max_lines).rev()
                     {
                         popup_text.lines.push(line.to_line(color_settings));
                     }

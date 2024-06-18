@@ -3,7 +3,7 @@ use std::error::Error;
 
 use ratatui::{backend::Backend, Terminal};
 
-use crate::{app::{info_mode::InfoMode, notification::NotificationLevel, popup_state::PopupState, App}, headers::Header};
+use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, headers::Header};
 
 use super::{filesystem::FileSystem, path_result::PathResult, path};
 

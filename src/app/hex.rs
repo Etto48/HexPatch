@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, files::{filesystem::FileSystem, path}, info_mode::InfoMode, notification::NotificationLevel, settings::color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, files::{filesystem::FileSystem, path}, info_mode::InfoMode, log::NotificationLevel, settings::color_settings::ColorSettings, App};
 
 pub(super) struct InstructionInfo
 {
