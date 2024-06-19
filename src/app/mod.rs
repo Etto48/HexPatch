@@ -19,3 +19,4 @@ pub mod cursor_position;
 pub mod settings;
 pub mod ssh;
 pub mod mockup;
+pub mod plugins;

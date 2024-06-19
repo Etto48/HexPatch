@@ -4,12 +4,13 @@ use std::time::Duration;
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
-use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin::Plugin, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
 use crate::{args::Args, fuzzer::Fuzzer, headers::Header};
 
 pub struct App 
 {
+    pub(super) plugins: Vec<Plugin>,
     pub(super) filesystem: FileSystem,
     pub(super) commands: Fuzzer,
     pub(super) header: Header,
@@ -69,13 +70,22 @@ impl App
     pub fn new<B: Backend>(args: Args, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
         let mut logger = Logger::new();
-        let settings = match Settings::load_or_create(args.config.as_deref())
+        let mut settings = match Settings::load_or_create(args.config.as_deref())
         {
             Ok(settings) => settings,
             Err(e) => {
                 logger.log(NotificationLevel::Error, 
                     &format!("Error loading settings: {e}"));
                 Settings::default()
+            },
+        };
+        let plugins = match Plugin::load_plugins(&mut logger, &mut settings, None)
+        {
+            Ok(plugins) => plugins,
+            Err(e) => {
+                logger.log(NotificationLevel::Error, 
+                    &format!("Error loading plugins: {e}"));
+                Vec::new()
             },
         };
         Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", args.path), terminal)?;
@@ -94,6 +104,7 @@ impl App
 
         let mut app = App
         {
+            plugins,
             filesystem,
             screen_size,
             help_list: Self::help_list(&settings.key),
@@ -236,6 +247,7 @@ impl Default for App
 {
     fn default() -> Self {
         App{
+            plugins: Vec::new(),
             filesystem: FileSystem::default(),
             commands: Fuzzer::new(&Command::get_commands()),
             header: Header::None,

@@ -21,11 +21,14 @@ build = "build.rs"
 winres = "0.1"
 
 [dependencies]
+bitflags = { version = "2.5.0", features = ["std"] }
 capstone = "0.12"
 clap = { version = "4.5", features = ["derive"] }
 crossterm = { version = "0.27", features = ["serde"] }
 dirs = "5.0"
 keystone-engine = "0.1"
+macro_rules_attribute = "0.2.0"
+mlua = { version = "0.9.8", features = ["lua54", "vendored"] }
 object = "0.36"
 pathdiff = "0.2"
 pdb = "0.8"
