@@ -1,6 +1,6 @@
-use mlua::{Lua, UserDataMethods};
+use mlua::{FromLua, IntoLua, Lua, UserDataMethods};
 
-use crate::app::settings::{color_settings::ColorSettings, key_settings::KeySettings, Settings};
+use crate::app::settings::{color_settings::ColorSettings, key_settings::KeySettings, settings_value::SettingsValue, Settings};
 
 pub fn register_vec_u8(lua: &Lua) -> mlua::Result<()> 
 {
@@ -38,6 +38,41 @@ pub fn register_settings(lua: &Lua) -> mlua::Result<()>
     {
         ColorSettings::register_userdata(data);
         KeySettings::register_userdata(data);
+        data.add_method("get_custom", 
+            |_lua, this, key: String| 
+            Ok(this.custom.get(&key).cloned())
+        );
+        data.add_method_mut("set_custom", 
+            |lua, this, (key, value): (String, mlua::Value)| 
+            {
+                if let Some(old_value) = this.custom.get_mut(&key)
+                {
+                    let old_value_copy = old_value.clone();
+                    *old_value = SettingsValue::from_lua(value, lua)?;
+                    old_value_copy.into_lua(lua)
+                }
+                else
+                {
+                    this.custom.insert(key, SettingsValue::from_lua(value, lua)?);
+                    Ok(mlua::Value::Nil)
+                }
+            }
+        );
+    })?;
+    Ok(())
+}
+
+pub fn register_logger(lua: &Lua) -> mlua::Result<()> 
+{
+    lua.register_userdata_type(|data: &mut mlua::UserDataRegistry<crate::app::log::logger::Logger>| 
+    {
+        data.add_method_mut("log", 
+            |_lua, this, (level, message): (u8, String)| 
+            {
+                this.log(level.into(), &message);
+                Ok(())
+            }
+        );
     })?;
     Ok(())
 }

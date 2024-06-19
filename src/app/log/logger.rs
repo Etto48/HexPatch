@@ -4,6 +4,7 @@ use crate::app::App;
 
 use super::{log_line::LogLine, notification::NotificationLevel};
 
+#[derive(Debug, Clone)]
 pub struct Logger {
     pub(super) log: Vec<LogLine>,
     pub(super) notification: NotificationLevel,
@@ -50,6 +51,15 @@ impl Logger {
     pub fn reset_notification_level(&mut self)
     {
         self.notification.reset();
+    }
+
+    pub fn merge(&mut self, other: &Self)
+    {
+        for log_line in &other.log
+        {
+            self.log.push(log_line.clone());
+        }
+        self.notification.bump_notification_level(other.notification);
     }
 }
 

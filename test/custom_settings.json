@@ -1,0 +1,8 @@
+{
+    "custom": {
+        "plugin1.value1": "value1",
+        "plugin1.value2": 2,
+        "plugin2.value1": 3.0,
+        "plugin2.value2": true
+    }
+}

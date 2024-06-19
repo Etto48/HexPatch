@@ -1,14 +1,15 @@
 #![allow(clippy::module_inception)]
-use std::{io, path::{Path, PathBuf}};
+use std::{collections::HashMap, io, path::{Path, PathBuf}};
 
-use super::{color_settings::ColorSettings, key_settings::KeySettings};
+use super::{color_settings::ColorSettings, key_settings::KeySettings, settings_value::SettingsValue};
 
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize, Default)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
 #[serde(default)]
 pub struct Settings
 {
     pub color: ColorSettings,
     pub key: KeySettings,
+    pub custom: HashMap<String, SettingsValue>,
 }
 
 impl Settings
@@ -111,5 +112,20 @@ mod test
             panic!("Could not load settings: {}", e);
         }
         assert_eq!(settings.unwrap(), Settings::default());
+    }
+
+    #[test]
+    fn test_settings_load_custom()
+    {
+        let settings = Settings::load(Some(Path::new("test/custom_settings.json")));
+        if let Err(e) = settings
+        {
+            panic!("Could not load settings: {}", e);
+        }
+        let mut expected = Settings::default();
+        expected.custom.insert("plugin1.value1".to_string(), SettingsValue::from("value1"));
+        expected.custom.insert("plugin1.value2".to_string(), SettingsValue::from(2));
+        expected.custom.insert("plugin2.value1".to_string(), SettingsValue::from(3.0));
+        expected.custom.insert("plugin2.value2".to_string(), SettingsValue::from(true));
     }
 }

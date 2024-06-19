@@ -1,26 +1,23 @@
 use bitflags::bitflags;
 use crossterm::event::{KeyEvent, MouseEvent};
 
-use crate::app::settings::key_settings::KeySettings;
-
-pub enum Event<'a>
+pub enum Event<'app>
 {
     Open {
-        data: &'a mut Vec<u8>
+        data: &'app mut Vec<u8>,
     },
     Edit {
-        data: &'a mut Vec<u8>,
+        data: &'app mut Vec<u8>,
         starting_byte: usize,
-        new_bytes: &'a mut Vec<u8>
+        new_bytes: &'app mut Vec<u8>,
     },
     Save {
-        data: &'a mut Vec<u8>
+        data: &'app mut Vec<u8>,
     },
     Key {
-        code: String,
-        modifiers: u8,
-        kind: String,
-        state: u8,
+        event: KeyEvent,
+        data: &'app mut Vec<u8>,
+        current_byte: usize,
     },
     // TODO: provide more abstract info about where the mouse event occurred
     Mouse {
@@ -30,23 +27,11 @@ pub enum Event<'a>
     },
 }
 
-impl<'a> Event<'a> 
+impl<'app> Event<'app> 
 {
-    pub fn from_key_event(event: KeyEvent) -> Self
-    {
-        let code = KeySettings::key_code_to_string(event.code);
-        let kind = KeySettings::key_event_kind_to_string(event.kind);
-
-        Event::Key {
-            code,
-            modifiers: event.modifiers.bits(),
-            kind,
-            state: event.state.bits(),
-        }
-    }
-
     pub fn from_mouse_event(event: MouseEvent) -> Self
     {
+        // TODO: make kind serializable and deserializable
         let kind = format!("{:?}", event.kind);
         let row = event.row;
         let col = event.column;
@@ -54,7 +39,7 @@ impl<'a> Event<'a>
         Event::Mouse {
             kind,
             row,
-            col
+            col,
         }
     }
 }

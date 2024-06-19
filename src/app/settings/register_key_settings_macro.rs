@@ -31,7 +31,7 @@ macro_rules! RegisterKeySettings {(
     };
 }
 
-fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Table<'lua>>
+pub fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Table<'lua>>
 {
     let ret = lua.create_table()?;
     ret.set("code", KeySettings::key_code_to_string(key.code))?;
@@ -41,7 +41,7 @@ fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Table<
     Ok(ret)
 }
 
-fn lua_to_key_event<'lua>(_lua: &'lua Lua, table: &mlua::Table) -> mlua::Result<KeyEvent>
+pub fn lua_to_key_event<'lua>(_lua: &'lua Lua, table: &mlua::Table) -> mlua::Result<KeyEvent>
 {
     let code = KeySettings::string_to_key_code(&table.get::<_,String>("code")?)
         .map_err(|e| mlua::Error::RuntimeError(e.to_string()))?;

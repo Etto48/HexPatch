@@ -7,3 +7,4 @@ pub mod key_settings;
 pub mod register_key_settings_macro;
 #[macro_use]
 pub mod register_color_settings_macro;
+pub mod settings_value;

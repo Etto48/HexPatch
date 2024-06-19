@@ -2,9 +2,9 @@ use std::{error::Error, path::{Path, PathBuf}};
 
 use mlua::{Function, Lua};
 
-use crate::app::{log::logger::Logger, settings::Settings};
+use crate::app::{log::logger::Logger, settings::{register_key_settings_macro::key_event_to_lua, Settings}};
 
-use super::{event::{Event, Events}, register_userdata::{register_settings, register_vec_u8}};
+use super::{ app_context::AppContext, event::{Event, Events}, register_userdata::{register_logger, register_settings, register_vec_u8}};
 
 pub struct Plugin
 {
@@ -19,6 +19,7 @@ impl Plugin {
 
         register_vec_u8(&lua)?;
         register_settings(&lua)?;
+        register_logger(&lua)?;
 
         if let Ok(init) = lua.globals().get::<_, Function>("init")
         {
@@ -96,49 +97,60 @@ impl Plugin {
         handlers
     }
 
-    pub fn handle(&self, event: Event)
+    pub fn handle(&self, event: Event, context: &mut AppContext)
     {
         match event
         {
-            Event::Open { data } =>
+            Event::Open { data} =>
             {
                 // Call the on_open function
                 let on_open = self.lua.globals().get::<_, Function>("on_open").unwrap();
                 self.lua.scope(|scope| {
                     let data = scope.create_any_userdata_ref_mut(data)?;
-                    on_open.call::<_,()>(data)
+                    let context = scope.create_userdata_ref_mut(context)?;
+                    on_open.call::<_,()>((data, context))
                 }).unwrap();
             },
-            Event::Edit { data, starting_byte, new_bytes } =>
+            Event::Edit { data, starting_byte, new_bytes} =>
             {
                 // Call the on_edit function
                 let on_edit = self.lua.globals().get::<_, Function>("on_edit").unwrap();
                 self.lua.scope(|scope| {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let new_bytes = scope.create_any_userdata_ref_mut(new_bytes)?;
-                    on_edit.call::<_,()>((data, starting_byte, new_bytes))
+                    let context = scope.create_userdata_ref_mut(context)?;
+                    on_edit.call::<_,()>((data, starting_byte, new_bytes, context))
                 }).unwrap();
             },
-            Event::Save { data } =>
+            Event::Save { data} =>
             {
                 // Call the on_save function
                 let on_save = self.lua.globals().get::<_, Function>("on_save").unwrap();
                 self.lua.scope(|scope| {
                     let data = scope.create_any_userdata_ref_mut(data)?;
-                    on_save.call::<_,()>(data)
+                    let context = scope.create_userdata_ref_mut(context)?;
+                    on_save.call::<_,()>((data, context))
                 }).unwrap();
             },
-            Event::Key {code, modifiers, kind, state} =>
+            Event::Key {event, data, current_byte} =>
             {
                 // Call the on_key function
                 let on_key = self.lua.globals().get::<_, Function>("on_key").unwrap();
-                on_key.call::<_,()>((code, modifiers, kind, state)).unwrap();
+                let event = key_event_to_lua(&self.lua, &event).unwrap();
+                self.lua.scope(|scope| {
+                    let data = scope.create_any_userdata_ref_mut(data)?;
+                    let context = scope.create_userdata_ref_mut(context)?;
+                    on_key.call::<_,()>((event, data, current_byte, context))
+                }).unwrap();
             },
             Event::Mouse {kind, row, col} =>
             {
                 // Call the on_mouse function
                 let on_mouse = self.lua.globals().get::<_, Function>("on_mouse").unwrap();
-                on_mouse.call::<_,()>((kind, row, col)).unwrap();
+                self.lua.scope(|scope| {
+                    let context = scope.create_userdata_ref_mut(context)?;
+                    on_mouse.call::<_,()>((kind, row, col, context))
+                }).unwrap();
             },
         }
     }
@@ -148,6 +160,8 @@ impl Plugin {
 mod test
 {
     use crossterm::event::{KeyCode, KeyEvent};
+
+    use crate::app::{log::NotificationLevel, settings::settings_value::SettingsValue};
 
     use super::*;
 
@@ -170,20 +184,20 @@ mod test
     fn test_discover_event_handlers()
     {
         let source = "
-            function on_open(data) end
-            function on_edit(data, selected_byte, new_bytes) end
-            function on_save(data) end
-            function on_key(code, modifiers, kind, state) end
-            function on_mouse(kind, row, col) end
+            function on_open(data, logger) end
+            function on_edit(data, selected_byte, new_bytes, logger) end
+            function on_save(data, logger) end
+            function on_key(key_event, data, current_byte, logger) end
+            function on_mouse(kind, row, col, logger) end
         ";
         let mut settings = Settings::default();
         let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
         let handlers = plugin.get_event_handlers();
         assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE | Events::ON_KEY | Events::ON_MOUSE);
         let source = "
-            function on_open(data) end
-            function on_edit(data, selected_byte, new_bytes) end
-            function on_save(data) end
+            function on_open(data, logger) end
+            function on_edit(data, selected_byte, new_bytes, logger) end
+            function on_save(data, logger) end
         ";
         let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
         let handlers = plugin.get_event_handlers();
@@ -194,15 +208,16 @@ mod test
     fn test_edit_open_data()
     {
         let source = "
-            function on_open(data)
+            function on_open(data, logger)
                 data:set(0,42)
             end
         ";
         let mut settings = Settings::default();
-        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
         let mut data = vec![0; 0x100];
+        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
+        let mut context = AppContext::default();
         let event = Event::Open { data: &mut data };
-        plugin.handle(event);
+        plugin.handle(event, &mut context);
         assert_eq!(data[0], 42);
     }
 
@@ -217,14 +232,69 @@ mod test
                 settings.color_address_default_bg = nil
 
                 settings.key_up = {code=\"Down\",modifiers=0,kind=\"Press\",state=0}
+
+                if settings:get_custom(\"test\") ~= \"Hello\" then
+                    error(\"Custom setting not set\")
+                end
+                settings:set_custom(\"test\", \"World\")
             end
         ";
         let mut settings = Settings::default();
+        settings.custom.insert("test".to_string(), SettingsValue::from("Hello"));
         let _ = Plugin::new_from_source(source, &mut settings).unwrap();
         assert_eq!(settings.color.address_selected.fg, Some(ratatui::style::Color::Rgb(0xff, 0, 0)));
         assert_eq!(settings.color.address_selected.bg, Some(ratatui::style::Color::Black));
         assert_eq!(settings.color.address_default.fg, Some(ratatui::style::Color::Indexed(2)));
         assert_eq!(settings.color.address_default.bg, None);
         assert_eq!(settings.key.up, KeyEvent::from(KeyCode::Down));
+        assert_eq!(settings.custom.get("test").unwrap(), &SettingsValue::from("World"));
+    }
+
+    #[test]
+    fn test_on_key_with_init()
+    {
+        let source = "
+            command = nil
+            function init(settings)
+                command = settings.key_confirm
+            end
+            function on_key(key_event, data, current_byte, logger)
+                if key_event.code == command.code then
+                    data:set(current_byte, 42)
+                end
+            end
+        ";
+        let mut settings = Settings::default();
+        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
+        let mut data = vec![0; 0x100];
+        let mut context = AppContext::default();
+        let event = Event::Key { event: KeyEvent::from(KeyCode::Down), data: &mut data, current_byte: 0 };
+        plugin.handle(event, &mut context);
+        assert_eq!(data[0], 0);
+        let event = Event::Key { event: settings.key.confirm, data: &mut data, current_byte: 0 };
+        plugin.handle(event, &mut context);
+        assert_eq!(data[0], 42);
+    }
+
+    #[test]
+    fn test_log_from_lua()
+    {
+        let source = "
+            function on_open(data, logger)
+                logger:log(1, \"Hello from Lua\")
+            end
+        ";
+        let mut settings = Settings::default();
+        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
+        let mut data = vec![0; 0x100];
+        let event = Event::Open { data: &mut data };
+        let mut context = AppContext::default();
+        plugin.handle(event, &mut context);
+        let mut message_iter = context.logger.iter();
+        let message = message_iter.next().unwrap();
+        assert_eq!(message.level, NotificationLevel::Debug);
+        assert_eq!(message.message, "Hello from Lua");
+        assert_eq!(context.logger.get_notification_level(), NotificationLevel::Debug);
+        assert!(message_iter.next().is_none());
     }
 }
