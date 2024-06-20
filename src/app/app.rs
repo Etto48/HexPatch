@@ -4,13 +4,13 @@ use std::time::Duration;
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
-use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin::Plugin, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin_manager::PluginManager, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
 use crate::{args::Args, fuzzer::Fuzzer, headers::Header};
 
 pub struct App 
 {
-    pub(super) plugins: Vec<Plugin>,
+    pub(super) plugin_manager: PluginManager,
     pub(super) filesystem: FileSystem,
     pub(super) commands: Fuzzer,
     pub(super) header: Header,
@@ -79,13 +79,13 @@ impl App
                 Settings::default()
             },
         };
-        let plugins = match Plugin::load_plugins(&mut logger, &mut settings, None)
+        let plugin_manager = match PluginManager::load(None, &mut logger, &mut settings)
         {
             Ok(plugins) => plugins,
             Err(e) => {
                 logger.log(NotificationLevel::Error, 
                     &format!("Error loading plugins: {e}"));
-                Vec::new()
+                PluginManager::default()
             },
         };
         Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", args.path), terminal)?;
@@ -104,7 +104,7 @@ impl App
 
         let mut app = App
         {
-            plugins,
+            plugin_manager,
             filesystem,
             screen_size,
             help_list: Self::help_list(&settings.key),
@@ -247,7 +247,7 @@ impl Default for App
 {
     fn default() -> Self {
         App{
-            plugins: Vec::new(),
+            plugin_manager: PluginManager::default(),
             filesystem: FileSystem::default(),
             commands: Fuzzer::new(&Command::get_commands()),
             header: Header::None,

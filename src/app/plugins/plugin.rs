@@ -1,8 +1,8 @@
-use std::{error::Error, path::{Path, PathBuf}};
+use std::error::Error;
 
 use mlua::{Function, Lua};
 
-use crate::app::{log::logger::Logger, settings::{register_key_settings_macro::key_event_to_lua, Settings}};
+use crate::app::settings::{register_key_settings_macro::key_event_to_lua, Settings};
 
 use super::{ app_context::AppContext, event::{Event, Events}, register_userdata::{register_logger, register_settings, register_vec_u8}};
 
@@ -38,39 +38,6 @@ impl Plugin {
         Self::new_from_source(&source, settings)
     }
 
-    fn get_default_plugin_path() -> Option<PathBuf>
-    {
-        let config = dirs::config_dir()?;
-        Some(config.join("HexPatch").join("plugins"))
-    }
-
-    pub fn load_plugins(log: &mut Logger, settings: &mut Settings, path: Option<&Path>) -> std::io::Result<Vec<Plugin>>
-    {
-        let mut plugins = Vec::new();
-        let path = match path
-        {
-            Some(path) => path.to_path_buf(),
-            None => Self::get_default_plugin_path().ok_or(
-                std::io::Error::new(std::io::ErrorKind::Other, "Could not get default plugin path")
-            )?
-        };
-        std::fs::create_dir_all(&path)?;
-        for entry in std::fs::read_dir(path)?
-        {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_file() && path.extension().unwrap_or_default() == "lua"
-            {
-                match Plugin::new_from_file(&path.to_string_lossy(), settings)
-                {
-                    Ok(plugin) => plugins.push(plugin),
-                    Err(e) => log.log(crate::app::log::notification::NotificationLevel::Error, &format!("Could not load plugin \"{}\": {}", path.to_string_lossy(), e)),
-                }
-            }
-        }
-        Ok(plugins)
-    }
-
     pub fn get_event_handlers(&self) -> Events
     {
         let mut handlers = Events::NONE;
@@ -97,7 +64,7 @@ impl Plugin {
         handlers
     }
 
-    pub fn handle(&self, event: Event, context: &mut AppContext)
+    pub fn handle(&self, event: Event, context: &mut AppContext) -> mlua::Result<()>
     {
         match event
         {
@@ -109,9 +76,9 @@ impl Plugin {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let context = scope.create_userdata_ref_mut(context)?;
                     on_open.call::<_,()>((data, context))
-                }).unwrap();
+                })
             },
-            Event::Edit { data, starting_byte, new_bytes} =>
+            Event::Edit { data, offset: starting_byte, new_bytes} =>
             {
                 // Call the on_edit function
                 let on_edit = self.lua.globals().get::<_, Function>("on_edit").unwrap();
@@ -120,7 +87,7 @@ impl Plugin {
                     let new_bytes = scope.create_any_userdata_ref_mut(new_bytes)?;
                     let context = scope.create_userdata_ref_mut(context)?;
                     on_edit.call::<_,()>((data, starting_byte, new_bytes, context))
-                }).unwrap();
+                })
             },
             Event::Save { data} =>
             {
@@ -130,7 +97,7 @@ impl Plugin {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let context = scope.create_userdata_ref_mut(context)?;
                     on_save.call::<_,()>((data, context))
-                }).unwrap();
+                })
             },
             Event::Key {event, data, current_byte} =>
             {
@@ -141,7 +108,7 @@ impl Plugin {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let context = scope.create_userdata_ref_mut(context)?;
                     on_key.call::<_,()>((event, data, current_byte, context))
-                }).unwrap();
+                })
             },
             Event::Mouse {kind, row, col} =>
             {
@@ -150,7 +117,7 @@ impl Plugin {
                 self.lua.scope(|scope| {
                     let context = scope.create_userdata_ref_mut(context)?;
                     on_mouse.call::<_,()>((kind, row, col, context))
-                }).unwrap();
+                })
             },
         }
     }
@@ -218,7 +185,7 @@ mod test
         let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
         let mut context = AppContext::default();
         let event = Event::Open { data: &mut data };
-        plugin.handle(event, &mut context);
+        plugin.handle(event, &mut context).unwrap();
         assert_eq!(data[0], 42);
     }
 
@@ -284,10 +251,10 @@ mod test
         let mut data = vec![0; 0x100];
         let mut context = AppContext::default();
         let event = Event::Key { event: KeyEvent::from(KeyCode::Down), data: &mut data, current_byte: 0 };
-        plugin.handle(event, &mut context);
+        plugin.handle(event, &mut context).unwrap();
         assert_eq!(data[0], 0);
         let event = Event::Key { event: settings.key.confirm, data: &mut data, current_byte: 0 };
-        plugin.handle(event, &mut context);
+        plugin.handle(event, &mut context).unwrap();
         assert_eq!(data[0], 42);
     }
 
@@ -304,7 +271,7 @@ mod test
         let mut data = vec![0; 0x100];
         let event = Event::Open { data: &mut data };
         let mut context = AppContext::default();
-        plugin.handle(event, &mut context);
+        plugin.handle(event, &mut context).unwrap();
         let mut message_iter = context.logger.iter();
         let message = message_iter.next().unwrap();
         assert_eq!(message.level, NotificationLevel::Debug);

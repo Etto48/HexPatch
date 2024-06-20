@@ -8,7 +8,7 @@ pub enum Event<'app>
     },
     Edit {
         data: &'app mut Vec<u8>,
-        starting_byte: usize,
+        offset: usize,
         new_bytes: &'app mut Vec<u8>,
     },
     Save {
