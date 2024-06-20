@@ -160,6 +160,7 @@ impl Plugin {
 mod test
 {
     use crossterm::event::{KeyCode, KeyEvent};
+    use ratatui::style::Style;
 
     use crate::app::{log::NotificationLevel, settings::settings_value::SettingsValue};
 
@@ -226,17 +227,21 @@ mod test
     {
         let source = "
             function init(settings)
-                settings.color_address_selected_fg = \"#FF0000\"
-                settings.color_address_selected_bg = \"Black\"
-                settings.color_address_default_fg = \"2\"
-                settings.color_address_default_bg = nil
+                settings.color_address_selected = {fg=\"#ff0000\",bg=\"Black\"}
+                settings.color_address_default = {fg=2}
 
                 settings.key_up = {code=\"Down\",modifiers=0,kind=\"Press\",state=0}
 
                 if settings:get_custom(\"test\") ~= \"Hello\" then
                     error(\"Custom setting not set\")
                 end
-                settings:set_custom(\"test\", \"World\")
+                settings:set_custom(\"string\", \"World\")
+                settings:set_custom(\"integer\", 42)
+                settings:set_custom(\"float\", 3.14)
+                settings:set_custom(\"boolean\", true)
+                settings:set_custom(\"nil\", nil)
+                settings:set_custom(\"style\", {fg=\"#ff0000\",bg=\"#000000\"})
+                settings:set_custom(\"key\", {code=\"Up\"})
             end
         ";
         let mut settings = Settings::default();
@@ -247,7 +252,17 @@ mod test
         assert_eq!(settings.color.address_default.fg, Some(ratatui::style::Color::Indexed(2)));
         assert_eq!(settings.color.address_default.bg, None);
         assert_eq!(settings.key.up, KeyEvent::from(KeyCode::Down));
-        assert_eq!(settings.custom.get("test").unwrap(), &SettingsValue::from("World"));
+        assert_eq!(settings.custom.get("string").unwrap(), &SettingsValue::from("World"));
+        assert_eq!(settings.custom.get("integer").unwrap(), &SettingsValue::from(42));
+        assert_eq!(settings.custom.get("float").unwrap(), &SettingsValue::from(3.14));
+        assert_eq!(settings.custom.get("boolean").unwrap(), &SettingsValue::from(true));
+        assert!(settings.custom.get("nil").is_none());
+        assert_eq!(settings.custom.get("style").unwrap(), &SettingsValue::from(
+            Style::new()
+                .fg(ratatui::style::Color::Rgb(0xff, 0, 0))
+                .bg(ratatui::style::Color::Rgb(0, 0, 0))
+        ));
+        assert_eq!(settings.custom.get("key").unwrap(), &SettingsValue::from(KeyEvent::from(KeyCode::Up)));
     }
 
     #[test]

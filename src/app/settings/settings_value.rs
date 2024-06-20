@@ -1,7 +1,11 @@
 use std::fmt::{Display, Formatter};
 
+use crossterm::event::{KeyCode, KeyEvent, KeyEventState, KeyModifiers};
 use mlua::{FromLua, IntoLua};
-use serde::{Deserialize, Serialize};
+use ratatui::style::{Modifier, Style};
+use serde::{ser::SerializeMap, Deserialize, Serialize};
+
+use super::{key_settings::KeySettings, register_color_settings_macro::{get_style, set_style}, register_key_settings_macro::{key_event_to_lua, lua_to_key_event}};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum SettingsValue
@@ -10,6 +14,8 @@ pub enum SettingsValue
     Int(i64),
     Float(f64),
     String(String),
+    Style(Style),
+    Key(KeyEvent)
 }
 
 impl From<bool> for SettingsValue
@@ -52,6 +58,22 @@ impl From<&str> for SettingsValue
     }
 }
 
+impl From<Style> for SettingsValue
+{
+    fn from(value: Style) -> Self
+    {
+        SettingsValue::Style(value)
+    }
+}
+
+impl From<KeyEvent> for SettingsValue
+{
+    fn from(value: KeyEvent) -> Self
+    {
+        SettingsValue::Key(value)
+    }
+}
+
 impl Display for SettingsValue
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
@@ -62,6 +84,23 @@ impl Display for SettingsValue
             SettingsValue::Int(value) => write!(f, "{}", value),
             SettingsValue::Float(value) => write!(f, "{}", value),
             SettingsValue::String(value) => write!(f, "{}", value),
+            SettingsValue::Style(value) => 
+            {
+                write!(f, "{{fg:{},", value.fg.map_or("None".to_string(), |c|c.to_string()))?;
+                write!(f, "bg:{},", value.bg.map_or("None".to_string(), |c|c.to_string()))?;
+                write!(f, "underline:{},", value.underline_color.map_or("None".to_string(), |c|c.to_string()))?;
+                write!(f, "add_modifier:{},", value.add_modifier.bits())?;
+                write!(f, "sub_modifier:{}}}", value.sub_modifier.bits())?;
+                Ok(())
+            },
+            SettingsValue::Key(value) => 
+            {
+                write!(f, "{{code:{},", KeySettings::key_code_to_string(value.code))?;
+                write!(f, "modifiers:{},", value.modifiers.bits())?;
+                write!(f, "kind:{},", KeySettings::key_event_kind_to_string(value.kind))?;
+                write!(f, "state:{}}}", value.state.bits())?;
+                Ok(())
+            }
         }
     }
 }
@@ -76,6 +115,47 @@ impl Serialize for SettingsValue
             SettingsValue::Int(value) => serializer.serialize_i64(*value),
             SettingsValue::Float(value) => serializer.serialize_f64(*value),
             SettingsValue::String(value) => serializer.serialize_str(value),
+            SettingsValue::Style(value) => 
+            {
+                let len = 2 + 
+                    value.fg.is_some() as usize + 
+                    value.bg.is_some() as usize + 
+                    value.underline_color.is_some() as usize;
+                let mut map = serializer.serialize_map(Some(len))?;
+                if let Some(fg) = value.fg
+                {
+                    map.serialize_key("fg")?;
+                    map.serialize_value(&fg.to_string())?;
+                }
+                if let Some(bg) = value.bg
+                {
+                    map.serialize_key("bg")?;
+                    map.serialize_value(&bg.to_string())?;
+                }
+                if let Some(underline) = value.underline_color
+                {
+                    map.serialize_key("underline")?;
+                    map.serialize_value(&underline.to_string())?;
+                }
+                map.serialize_key("add_modifier")?;
+                map.serialize_value(&value.add_modifier.bits())?;
+                map.serialize_key("sub_modifier")?;
+                map.serialize_value(&value.sub_modifier.bits())?;
+                map.end()
+            },
+            SettingsValue::Key(value) => 
+            {
+                let mut map = serializer.serialize_map(Some(4))?;
+                map.serialize_key("code")?;
+                map.serialize_value(&KeySettings::key_code_to_string(value.code))?;
+                map.serialize_key("modifiers")?;
+                map.serialize_value(&value.modifiers.bits())?;
+                map.serialize_key("kind")?;
+                map.serialize_value(&KeySettings::key_event_kind_to_string(value.kind))?;
+                map.serialize_key("state")?;
+                map.serialize_value(&value.state.bits())?;
+                map.end()
+            }
         }
     }
 }
@@ -103,6 +183,16 @@ impl SettingsValueVisitor
     {
         Ok(SettingsValue::String(value.to_string()))
     }
+
+    fn visit_style<E>(self, style: Style) -> Result<SettingsValue, E>
+    {
+        Ok(SettingsValue::Style(style))
+    }
+
+    fn visit_key<E>(self, value: KeyEvent) -> Result<SettingsValue, E>
+    {
+        Ok(SettingsValue::Key(value))
+    }
 }
 
 impl <'de> serde::de::Visitor<'de> for SettingsValueVisitor
@@ -110,7 +200,7 @@ impl <'de> serde::de::Visitor<'de> for SettingsValueVisitor
     type Value = SettingsValue;
 
     fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-        formatter.write_str("a boolean, integer, number, or string")
+        formatter.write_str("a boolean, integer, number, string, style, or key event")
     }
 
     fn visit_bool<E>(self, value: bool) -> Result<Self::Value, E>
@@ -185,6 +275,101 @@ impl <'de> serde::de::Visitor<'de> for SettingsValueVisitor
     {
         self.visit_str(value)
     }
+
+    fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+        where
+            A: serde::de::MapAccess<'de>, {
+
+        let mut style = Style::default();
+        let mut key_event = KeyEvent::new(KeyCode::Null, KeyModifiers::NONE);
+        #[derive(Debug, PartialEq)]
+        enum MapKind{
+            Unknown,
+            Style,
+            Key,
+        }
+        let mut map_kind = MapKind::Unknown;
+        while let Some(key) = map.next_key()?
+        {
+            if map_kind == MapKind::Unknown
+            {
+                match key
+                {
+                    "fg" | "bg" | "underline" | "add_modifier" | "sub_modifier" =>
+                    {
+                        map_kind = MapKind::Style;
+                    }
+                    "code" | "modifiers" | "kind" | "state" =>
+                    {
+                        map_kind = MapKind::Key;
+                    }
+                    _ => break,
+                }
+            }
+
+            match map_kind
+            {
+                MapKind::Unknown => break,
+                MapKind::Style => 
+                match key {
+                    "fg" => {
+                        let value = map.next_value()?;
+                        style.fg = Some(value);
+                    },
+                    "bg" => {
+                        let value = map.next_value()?;
+                        style.bg = Some(value);
+                    },
+                    "underline" => {
+                        let value = map.next_value()?;
+                        style.underline_color = Some(value);
+                    },
+                    "add_modifier" => {
+                        let value = map.next_value()?;
+                        style.add_modifier = Modifier::from_bits(value).ok_or_else(||serde::de::Error::custom("Invalid style add modifier"))?;
+                    },
+                    "sub_modifier" => {
+                        let value = map.next_value()?;
+                        style.sub_modifier = Modifier::from_bits(value).ok_or_else(||serde::de::Error::custom("Invalid style sub modifier"))?;
+                    },
+                    _ => {
+                        map_kind = MapKind::Unknown;
+                        break;
+                    },
+                },
+                MapKind::Key => 
+                match key {
+                    "code" => {
+                        let value = map.next_value::<String>()?;
+                        key_event.code = KeySettings::string_to_key_code(&value).map_err(|e| serde::de::Error::custom(e))?;
+                    },
+                    "modifiers" => {
+                        let value = map.next_value()?;
+                        key_event.modifiers = KeyModifiers::from_bits(value).ok_or_else(||serde::de::Error::custom("Invalid key modifiers"))?;
+                    },
+                    "kind" => {
+                        let value = map.next_value::<String>()?;
+                        key_event.kind = KeySettings::string_to_key_event_kind(&value).map_err(|e| serde::de::Error::custom(e))?;
+                    },
+                    "state" => {
+                        let value = map.next_value()?;
+                        key_event.state = KeyEventState::from_bits(value).ok_or_else(||serde::de::Error::custom("Invalid key event state"))?;
+                    },
+                    _ => {
+                        map_kind = MapKind::Unknown;
+                        break;
+                    },
+                
+                },
+            }
+        }
+        match map_kind
+        {
+            MapKind::Unknown => Err(serde::de::Error::custom("Invalid table, expected style or key event")),
+            MapKind::Style => self.visit_style(style),
+            MapKind::Key => self.visit_key(key_event),
+        }
+    }
 }
 
 impl<'de> Deserialize<'de> for SettingsValue
@@ -205,6 +390,8 @@ impl<'lua> IntoLua<'lua> for SettingsValue
             SettingsValue::Int(value) => value.into_lua(lua),
             SettingsValue::Float(value) => value.into_lua(lua),
             SettingsValue::String(value) => value.into_lua(lua),
+            SettingsValue::Style(value) => Ok(mlua::Value::Table(get_style(lua, &value)?)),
+            SettingsValue::Key(value) => Ok(mlua::Value::Table(key_event_to_lua(lua, &value)?)),
         }
     }
 }
@@ -218,7 +405,29 @@ impl<'lua> FromLua<'lua> for SettingsValue
             mlua::Value::Integer(value) => Ok(SettingsValue::Int(value)),
             mlua::Value::Number(value) => Ok(SettingsValue::Float(value)),
             mlua::Value::String(value) => Ok(SettingsValue::String(value.to_str()?.to_string())),
-            _ => Err(mlua::Error::RuntimeError("Expected boolean, integer, number, or string".to_string())),
+            mlua::Value::Table(value) =>
+            {
+                if value.contains_key("fg")? ||
+                value.contains_key("bg")? ||
+                value.contains_key("underline")? ||
+                value.contains_key("add_modifier")? ||
+                value.contains_key("sub_modifier")?
+                {
+                    let mut style = Style::default();
+                    set_style(_lua, &mut style, value)?;
+                    Ok(SettingsValue::Style(style))
+                } else if value.contains_key("code")? ||
+                value.contains_key("modifiers")? ||
+                value.contains_key("kind")? ||
+                value.contains_key("state")?
+                {
+                    let key_event = lua_to_key_event(_lua, &value)?;
+                    Ok(SettingsValue::Key(key_event))
+                } else {
+                    Err(mlua::Error::RuntimeError("Invalid table, expected style or key event".to_string()))
+                }
+            },
+            _ => Err(mlua::Error::RuntimeError("Expected boolean, integer, number, string, style or key event".to_string())),
         }
     }
 }

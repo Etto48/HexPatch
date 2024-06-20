@@ -90,6 +90,9 @@ impl Settings
 #[cfg(test)]
 mod test
 {
+    use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    use ratatui::style::{Color, Style};
+
     use super::*;
 
     #[test]
@@ -127,5 +130,7 @@ mod test
         expected.custom.insert("plugin1.value2".to_string(), SettingsValue::from(2));
         expected.custom.insert("plugin2.value1".to_string(), SettingsValue::from(3.0));
         expected.custom.insert("plugin2.value2".to_string(), SettingsValue::from(true));
+        expected.custom.insert("plugin3.value1".to_string(), SettingsValue::from(Style::default().fg(Color::Red)));
+        expected.custom.insert("plugin3.value2".to_string(), SettingsValue::from(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)));
     }
 }

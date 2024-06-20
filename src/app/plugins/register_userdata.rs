@@ -48,12 +48,22 @@ pub fn register_settings(lua: &Lua) -> mlua::Result<()>
                 if let Some(old_value) = this.custom.get_mut(&key)
                 {
                     let old_value_copy = old_value.clone();
-                    *old_value = SettingsValue::from_lua(value, lua)?;
+                    if value.is_nil()
+                    {
+                        this.custom.remove(&key);
+                    }
+                    else
+                    {
+                        *old_value = SettingsValue::from_lua(value, lua)?;
+                    }
                     old_value_copy.into_lua(lua)
                 }
                 else
                 {
-                    this.custom.insert(key, SettingsValue::from_lua(value, lua)?);
+                    if !value.is_nil()
+                    {
+                        this.custom.insert(key, SettingsValue::from_lua(value, lua)?);
+                    }
                     Ok(mlua::Value::Nil)
                 }
             }

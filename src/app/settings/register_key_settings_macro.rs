@@ -1,4 +1,4 @@
-use crossterm::event::KeyEvent;
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
 use mlua::{Lua, Table};
 
 use super::key_settings::KeySettings;
@@ -43,12 +43,42 @@ pub fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Ta
 
 pub fn lua_to_key_event<'lua>(_lua: &'lua Lua, table: &mlua::Table) -> mlua::Result<KeyEvent>
 {
-    let code = KeySettings::string_to_key_code(&table.get::<_,String>("code")?)
-        .map_err(|e| mlua::Error::RuntimeError(e.to_string()))?;
-    let modifiers = table.get::<_,u8>("modifiers")?;
-    let kind = KeySettings::string_to_key_event_kind(&table.get::<_,String>("kind")?)
-        .map_err(|e| mlua::Error::RuntimeError(e.to_string()))?;
-    let state = table.get::<_,u8>("state")?;
+    let code = match table.get::<_,String>("code") {
+        Ok(value) => 
+            KeySettings::string_to_key_code(&value).map_err(|e| mlua::Error::RuntimeError(e))?,
+        Err(e) => match e
+        {
+            mlua::Error::FromLuaConversionError { from: "nil", to: "String", message: _ } => KeyCode::Null,
+            _ => return Err(e)
+        }
+    };
+    let modifiers = match table.get::<_,u8>("modifiers")
+    {
+        Ok(value) => value,
+        Err(e) => match e
+        {
+            mlua::Error::FromLuaConversionError { from: "nil", to: "u8", message: _ } => 0,
+            _ => return Err(e)
+        }
+    };
+    let kind = match table.get::<_,String>("kind") {
+        Ok(value) => 
+            KeySettings::string_to_key_event_kind(&value).map_err(|e| mlua::Error::RuntimeError(e))?,
+        Err(e) => match e
+        {
+            mlua::Error::FromLuaConversionError { from: "nil", to: "String", message: _ } => KeyEventKind::Press,
+            _ => return Err(e)
+        }
+    };
+    let state = match table.get::<_,u8>("state")
+    {
+        Ok(value) => value,
+        Err(e) => match e
+        {
+            mlua::Error::FromLuaConversionError { from: "nil", to: "u8", message: _ } => 0,
+            _ => return Err(e)
+        }
+    };
     Ok(KeyEvent {
         code,
         modifiers: crossterm::event::KeyModifiers::from_bits(modifiers).unwrap(),
