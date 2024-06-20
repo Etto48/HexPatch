@@ -14,15 +14,15 @@ macro_rules! RegisterKeySettings {(
     }) => {
         impl $key_settings
         {
-            pub fn register_userdata(data: &mut mlua::UserDataRegistry<crate::app::settings::Settings>)
+            pub fn register_userdata(data: &mut mlua::UserDataRegistry<$crate::app::settings::Settings>)
             {
                 $(
                     mlua::UserDataFields::add_field_method_get(data, concat!("key_",stringify!($field_name)), |lua, settings| {
-                        crate::app::settings::register_key_settings_macro::
+                        $crate::app::settings::register_key_settings_macro::
                             get_key(lua, &settings.key.$field_name)
                     });
                     mlua::UserDataFields::add_field_method_set(data, concat!("key_",stringify!($field_name)), |lua, settings, value| {
-                        crate::app::settings::register_key_settings_macro::
+                        $crate::app::settings::register_key_settings_macro::
                             set_key(lua, &mut settings.key.$field_name, value)
                     });
                 )*
@@ -41,11 +41,11 @@ pub fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Ta
     Ok(ret)
 }
 
-pub fn lua_to_key_event<'lua>(_lua: &'lua Lua, table: &mlua::Table) -> mlua::Result<KeyEvent>
+pub fn lua_to_key_event(_lua: &Lua, table: &mlua::Table) -> mlua::Result<KeyEvent>
 {
     let code = match table.get::<_,String>("code") {
         Ok(value) => 
-            KeySettings::string_to_key_code(&value).map_err(|e| mlua::Error::RuntimeError(e))?,
+            KeySettings::string_to_key_code(&value).map_err(mlua::Error::RuntimeError)?,
         Err(e) => match e
         {
             mlua::Error::FromLuaConversionError { from: "nil", to: "String", message: _ } => KeyCode::Null,
@@ -63,7 +63,7 @@ pub fn lua_to_key_event<'lua>(_lua: &'lua Lua, table: &mlua::Table) -> mlua::Res
     };
     let kind = match table.get::<_,String>("kind") {
         Ok(value) => 
-            KeySettings::string_to_key_event_kind(&value).map_err(|e| mlua::Error::RuntimeError(e))?,
+            KeySettings::string_to_key_event_kind(&value).map_err(mlua::Error::RuntimeError)?,
         Err(e) => match e
         {
             mlua::Error::FromLuaConversionError { from: "nil", to: "String", message: _ } => KeyEventKind::Press,

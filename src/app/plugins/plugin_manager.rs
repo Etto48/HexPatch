@@ -4,6 +4,7 @@ use crate::app::{log::logger::Logger, settings::Settings};
 
 use super::{app_context::AppContext, event::{Event, Events}, plugin::Plugin};
 
+#[derive(Default, Debug)]
 pub struct PluginManager {
     plugins: Vec<Plugin>,
     on_open: Vec<usize>,
@@ -19,8 +20,10 @@ impl PluginManager {
     }
 
     pub fn load(path: Option<&Path>, log: &mut Logger, settings: &mut Settings) -> std::io::Result<Self> {
-        let mut plugin_manager = Self::default();
-        plugin_manager.plugins = Self::load_plugins(log, settings, path)?;
+        let mut plugin_manager = Self {
+            plugins: Self::load_plugins(log, settings, path)?,
+            ..Default::default()
+        };
 
         for (i, plugin) in plugin_manager.plugins.iter().enumerate() {
             let handlers = plugin.get_event_handlers();
@@ -139,18 +142,5 @@ impl PluginManager {
         }
         logger.merge(&context.logger);
         Ok(())
-    }
-}
-
-impl Default for PluginManager {
-    fn default() -> Self {
-        Self {
-            plugins: Vec::new(),
-            on_open: Vec::new(),
-            on_save: Vec::new(),
-            on_edit: Vec::new(),
-            on_key: Vec::new(),
-            on_mouse: Vec::new(),
-        }
     }
 }

@@ -252,7 +252,7 @@ impl <'de> serde::de::Visitor<'de> for SettingsValueVisitor
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
         where
             E: serde::de::Error, {
-        if let Some(value) = i64::try_from(v).ok()
+        if let Ok(value) = i64::try_from(v)
         {
             self.visit_i64(value)
         } else {
@@ -341,7 +341,7 @@ impl <'de> serde::de::Visitor<'de> for SettingsValueVisitor
                 match key {
                     "code" => {
                         let value = map.next_value::<String>()?;
-                        key_event.code = KeySettings::string_to_key_code(&value).map_err(|e| serde::de::Error::custom(e))?;
+                        key_event.code = KeySettings::string_to_key_code(&value).map_err(serde::de::Error::custom)?;
                     },
                     "modifiers" => {
                         let value = map.next_value()?;
@@ -349,7 +349,7 @@ impl <'de> serde::de::Visitor<'de> for SettingsValueVisitor
                     },
                     "kind" => {
                         let value = map.next_value::<String>()?;
-                        key_event.kind = KeySettings::string_to_key_event_kind(&value).map_err(|e| serde::de::Error::custom(e))?;
+                        key_event.kind = KeySettings::string_to_key_event_kind(&value).map_err(serde::de::Error::custom)?;
                     },
                     "state" => {
                         let value = map.next_value()?;

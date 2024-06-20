@@ -12,15 +12,15 @@ macro_rules! RegisterColorSettings {(
     }) => {
         impl $color_settings
         {
-            pub fn register_userdata(data: &mut mlua::UserDataRegistry<crate::app::settings::Settings>)
+            pub fn register_userdata(data: &mut mlua::UserDataRegistry<$crate::app::settings::Settings>)
             {
                 $(
                     mlua::UserDataFields::add_field_method_get(data, concat!("color_",stringify!($field_name)), |lua, settings| {
-                        crate::app::settings::register_color_settings_macro::
+                        $crate::app::settings::register_color_settings_macro::
                             get_style(lua, &settings.color.$field_name)
                     });
                     mlua::UserDataFields::add_field_method_set(data, concat!("color_",stringify!($field_name)), |lua, settings, value| {
-                        crate::app::settings::register_color_settings_macro::
+                        $crate::app::settings::register_color_settings_macro::
                             set_style(lua, &mut settings.color.$field_name, value)
                     });
                 )*

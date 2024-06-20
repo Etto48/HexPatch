@@ -6,6 +6,7 @@ use crate::app::settings::{register_key_settings_macro::key_event_to_lua, Settin
 
 use super::{ app_context::AppContext, event::{Event, Events}, register_userdata::{register_logger, register_settings, register_vec_u8}};
 
+#[derive(Debug)]
 pub struct Plugin
 {
     lua: Lua,
