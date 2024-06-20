@@ -13,7 +13,7 @@ pub struct Plugin
 }
 
 impl Plugin {
-    pub fn new_from_source(source: &str, settings: &mut Settings) -> Result<Self, Box<dyn Error>>
+    pub fn new_from_source(source: &str, settings: &mut Settings, context: &mut AppContext) -> Result<Self, Box<dyn Error>>
     {
         let lua = Lua::new();
         lua.load(source).exec()?;
@@ -26,17 +26,18 @@ impl Plugin {
         {
             lua.scope(|scope|{
                 let settings = scope.create_any_userdata_ref_mut(settings)?;
-                init.call(settings)
+                let context = scope.create_userdata_ref_mut(context)?;
+                init.call((settings, context))
             })?;
         }
         
         Ok(Plugin { lua })
     }
 
-    pub fn new_from_file(path: &str, settings: &mut Settings) -> Result<Self, Box<dyn Error>>
+    pub fn new_from_file(path: &str, settings: &mut Settings, context: &mut AppContext) -> Result<Self, Box<dyn Error>>
     {
         let source = std::fs::read_to_string(path)?;
-        Self::new_from_source(&source, settings)
+        Self::new_from_source(&source, settings, context)
     }
 
     pub fn get_event_handlers(&self) -> Events
@@ -140,12 +141,13 @@ mod test
         let test_value = 42;
         let source = format!("
             test_value = 0
-            function init()
+            function init(settings, context)
                 test_value = {test_value}
             end
         ");
         let mut settings = Settings::default();
-        let plugin = Plugin::new_from_source(&source, &mut settings).unwrap();
+        let mut context = AppContext::default();
+        let plugin = Plugin::new_from_source(&source, &mut settings, &mut context).unwrap();
         assert_eq!(plugin.lua.globals().get::<_, i32>("test_value").unwrap(), test_value);
     }
 
@@ -153,22 +155,23 @@ mod test
     fn test_discover_event_handlers()
     {
         let source = "
-            function on_open(data, logger) end
-            function on_edit(data, selected_byte, new_bytes, logger) end
-            function on_save(data, logger) end
-            function on_key(key_event, data, current_byte, logger) end
-            function on_mouse(kind, row, col, logger) end
+            function on_open(data, context) end
+            function on_edit(data, selected_byte, new_bytes, context) end
+            function on_save(data, context) end
+            function on_key(key_event, data, current_byte, context) end
+            function on_mouse(kind, row, col, context) end
         ";
         let mut settings = Settings::default();
-        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
+        let mut context = AppContext::default();
+        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let handlers = plugin.get_event_handlers();
         assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE | Events::ON_KEY | Events::ON_MOUSE);
         let source = "
-            function on_open(data, logger) end
-            function on_edit(data, selected_byte, new_bytes, logger) end
-            function on_save(data, logger) end
+            function on_open(data, context) end
+            function on_edit(data, selected_byte, new_bytes, context) end
+            function on_save(data, context) end
         ";
-        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
+        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let handlers = plugin.get_event_handlers();
         assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE);
     }
@@ -177,13 +180,14 @@ mod test
     fn test_edit_open_data()
     {
         let source = "
-            function on_open(data, logger)
+            function on_open(data, context)
                 data:set(0,42)
             end
         ";
         let mut settings = Settings::default();
+        let mut context = AppContext::default();
         let mut data = vec![0; 0x100];
-        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
+        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut context = AppContext::default();
         let event = Event::Open { data: &mut data };
         plugin.handle(event, &mut context).unwrap();
@@ -194,7 +198,7 @@ mod test
     fn test_init_change_settings()
     {
         let source = "
-            function init(settings)
+            function init(settings, context)
                 settings.color_address_selected = {fg=\"#ff0000\",bg=\"Black\"}
                 settings.color_address_default = {fg=2}
 
@@ -213,8 +217,9 @@ mod test
             end
         ";
         let mut settings = Settings::default();
+        let mut context = AppContext::default();
         settings.custom.insert("test".to_string(), SettingsValue::from("Hello"));
-        let _ = Plugin::new_from_source(source, &mut settings).unwrap();
+        let _ = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         assert_eq!(settings.color.address_selected.fg, Some(ratatui::style::Color::Rgb(0xff, 0, 0)));
         assert_eq!(settings.color.address_selected.bg, Some(ratatui::style::Color::Black));
         assert_eq!(settings.color.address_default.fg, Some(ratatui::style::Color::Indexed(2)));
@@ -238,19 +243,19 @@ mod test
     {
         let source = "
             command = nil
-            function init(settings)
+            function init(settings, context)
                 command = settings.key_confirm
             end
-            function on_key(key_event, data, current_byte, logger)
+            function on_key(key_event, data, current_byte, context)
                 if key_event.code == command.code then
                     data:set(current_byte, 42)
                 end
             end
         ";
         let mut settings = Settings::default();
-        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
-        let mut data = vec![0; 0x100];
         let mut context = AppContext::default();
+        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
+        let mut data = vec![0; 0x100];
         let event = Event::Key { event: KeyEvent::from(KeyCode::Down), data: &mut data, current_byte: 0 };
         plugin.handle(event, &mut context).unwrap();
         assert_eq!(data[0], 0);
@@ -263,21 +268,39 @@ mod test
     fn test_log_from_lua()
     {
         let source = "
-            function on_open(data, logger)
-                logger:log(1, \"Hello from Lua\")
+            function init(settings, context)
+                context:log(1, \"Hello from init\")
+            end
+
+            function on_open(data, context)
+                context:log(2, \"Hello from on_open\")
             end
         ";
         let mut settings = Settings::default();
-        let plugin = Plugin::new_from_source(source, &mut settings).unwrap();
+        let mut context = AppContext::default();
+        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
+
+        {
+            let mut message_iter = context.logger.iter();
+            let message = message_iter.next().unwrap();
+            assert_eq!(message.level, NotificationLevel::Debug);
+            assert_eq!(message.message, "Hello from init");
+            assert_eq!(context.logger.get_notification_level(), NotificationLevel::Debug);
+        }
+
+        context.logger.clear();
+
         let mut data = vec![0; 0x100];
         let event = Event::Open { data: &mut data };
-        let mut context = AppContext::default();
         plugin.handle(event, &mut context).unwrap();
-        let mut message_iter = context.logger.iter();
-        let message = message_iter.next().unwrap();
-        assert_eq!(message.level, NotificationLevel::Debug);
-        assert_eq!(message.message, "Hello from Lua");
-        assert_eq!(context.logger.get_notification_level(), NotificationLevel::Debug);
-        assert!(message_iter.next().is_none());
+
+        {
+            let mut message_iter = context.logger.iter();
+            let message = message_iter.next().unwrap();
+            assert_eq!(message.level, NotificationLevel::Info);
+            assert_eq!(message.message, "Hello from on_open");
+            assert_eq!(context.logger.get_notification_level(), NotificationLevel::Info);
+            assert!(message_iter.next().is_none());
+        }
     }
 }

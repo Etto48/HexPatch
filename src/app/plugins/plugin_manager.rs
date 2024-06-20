@@ -68,19 +68,21 @@ impl PluginManager {
             )?
         };
         std::fs::create_dir_all(&path)?;
+        let mut context = AppContext::default();
         for entry in std::fs::read_dir(path)?
         {
             let entry = entry?;
             let path = entry.path();
             if path.is_file() && path.extension().unwrap_or_default() == "lua"
             {
-                match Plugin::new_from_file(&path.to_string_lossy(), settings)
+                match Plugin::new_from_file(&path.to_string_lossy(), settings, &mut context)
                 {
                     Ok(plugin) => plugins.push(plugin),
                     Err(e) => log.log(crate::app::log::notification::NotificationLevel::Error, &format!("Could not load plugin \"{}\": {}", path.to_string_lossy(), e)),
                 }
             }
         }
+        log.merge(&context.logger);
         Ok(plugins)
     }
 
