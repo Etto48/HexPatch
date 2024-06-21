@@ -4,12 +4,13 @@ use mlua::{Function, Lua};
 
 use crate::app::settings::{register_key_settings_macro::key_event_to_lua, Settings};
 
-use super::{ app_context::AppContext, event::{Event, Events}, register_userdata::{register_logger, register_settings, register_vec_u8}};
+use super::{ app_context::AppContext, command_info::CommandInfo, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_logger, register_settings, register_vec_u8}};
 
 #[derive(Debug)]
 pub struct Plugin
 {
     lua: Lua,
+    commands: ExportedCommands,
 }
 
 impl Plugin {
@@ -21,7 +22,7 @@ impl Plugin {
         register_vec_u8(&lua)?;
         register_settings(&lua)?;
         register_logger(&lua)?;
-
+        context.exported_commands = ExportedCommands::default();
         if let Ok(init) = lua.globals().get::<_, Function>("init")
         {
             lua.scope(|scope|{
@@ -31,7 +32,7 @@ impl Plugin {
             })?;
         }
         
-        Ok(Plugin { lua })
+        Ok(Plugin { lua , commands: context.exported_commands.take() })
     }
 
     pub fn new_from_file(path: &str, settings: &mut Settings, context: &mut AppContext) -> Result<Self, Box<dyn Error>>
@@ -66,9 +67,10 @@ impl Plugin {
         handlers
     }
 
-    pub fn handle(&self, event: Event, context: &mut AppContext) -> mlua::Result<()>
+    pub fn handle(&mut self, event: Event, context: &mut AppContext) -> mlua::Result<()>
     {
-        match event
+        context.exported_commands = self.commands.take();
+        let ret = match event
         {
             Event::Open { data} =>
             {
@@ -121,7 +123,26 @@ impl Plugin {
                     on_mouse.call::<_,()>((kind, row, col, context))
                 })
             },
-        }
+        };
+        self.commands = context.exported_commands.take();
+        ret
+    }
+
+    pub fn run_command(&mut self, context: &mut AppContext, command: &str) -> mlua::Result<()>
+    {
+        let command_fn = self.lua.globals().get::<_, Function>(command)?;
+        context.exported_commands = self.commands.take();
+        let ret = self.lua.scope(|scope| {
+            let context = scope.create_userdata_ref_mut(context)?;
+            command_fn.call::<_,()>(context)
+        });
+        self.commands = context.exported_commands.take();
+        ret
+    }
+
+    pub fn get_commands(&self) -> &[CommandInfo]
+    {
+        self.commands.get_commands()
     }
 }
 
@@ -187,7 +208,7 @@ mod test
         let mut settings = Settings::default();
         let mut context = AppContext::default();
         let mut data = vec![0; 0x100];
-        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
+        let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut context = AppContext::default();
         let event = Event::Open { data: &mut data };
         plugin.handle(event, &mut context).unwrap();
@@ -254,7 +275,7 @@ mod test
         ";
         let mut settings = Settings::default();
         let mut context = AppContext::default();
-        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
+        let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut data = vec![0; 0x100];
         let event = Event::Key { event: KeyEvent::from(KeyCode::Down), data: &mut data, current_byte: 0 };
         plugin.handle(event, &mut context).unwrap();
@@ -278,7 +299,7 @@ mod test
         ";
         let mut settings = Settings::default();
         let mut context = AppContext::default();
-        let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
+        let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
 
         {
             let mut message_iter = context.logger.iter();
@@ -302,5 +323,85 @@ mod test
             assert_eq!(context.logger.get_notification_level(), NotificationLevel::Info);
             assert!(message_iter.next().is_none());
         }
+    }
+
+    #[test]
+    fn test_export_command()
+    {
+        let source = "
+            function init(settings, context)
+                context:add_command(\"test\", \"Test command\")
+            end
+        ";
+        let mut settings = Settings::default();
+        let mut context = AppContext::default();
+        assert!(Plugin::new_from_source(source, &mut settings, &mut context).is_err(), 
+            "Should not be able to export a command without defining it first");
+
+        let source = "
+            function init(settings, context)
+                context:add_command(\"test\", \"Test command\")
+                context:add_command(\"test3\", \"Test command 3\")
+            end
+
+            -- Add and remove commands
+            function test(context)
+                context:add_command(\"test2\", \"Test command 2\")
+                context:remove_command(\"test\")
+            end
+
+            -- Intentional error
+            function test2(context)
+                context:add_command(\"does_not_exist\", \"This command does not exist\")
+            end
+
+            -- No duplicate command should be added
+            function test3(context)
+                context:add_command(\"test\", \"Test command\")
+                context:add_command(\"test\", \"Test command 1\")
+            end
+        ";
+
+        let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
+
+        let commands = plugin.commands.get_commands();
+        assert_eq!(commands.len(), 2);
+        assert_eq!(commands[0].command, "test");
+        assert_eq!(commands[0].description, "Test command");
+        assert_eq!(commands[1].command, "test3");
+        assert_eq!(commands[1].description, "Test command 3");
+
+        plugin.run_command(&mut context, "test").unwrap();
+        
+        let commands = plugin.commands.get_commands();
+        assert_eq!(commands.len(), 2);
+        assert_eq!(commands[0].command, "test3");
+        assert_eq!(commands[0].description, "Test command 3");
+        assert_eq!(commands[1].command, "test2");
+        assert_eq!(commands[1].description, "Test command 2");
+
+        assert!(plugin.run_command(&mut context, "test2").is_err(), 
+            "Should not be able to add a command that is not defined");
+        
+        let commands = plugin.commands.get_commands();
+        assert_eq!(commands.len(), 2, 
+            "No commands should be lost when an error occurs");
+        assert_eq!(commands[0].command, "test3");
+        assert_eq!(commands[0].description, "Test command 3");
+        assert_eq!(commands[1].command, "test2");
+        assert_eq!(commands[1].description, "Test command 2");
+
+        plugin.run_command(&mut context, "test3").unwrap();
+
+        let commands = plugin.commands.get_commands();
+        assert_eq!(commands.len(), 3, 
+            "No duplicate commands should be added");
+        assert_eq!(commands[0].command, "test3");
+        assert_eq!(commands[0].description, "Test command 3");
+        assert_eq!(commands[1].command, "test2");
+        assert_eq!(commands[1].description, "Test command 2");
+        assert_eq!(commands[2].command, "test");
+        assert_eq!(commands[2].description, "Test command 1", 
+            "Should overwrite the description of the command");
     }
 }

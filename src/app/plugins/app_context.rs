@@ -1,29 +1,22 @@
-use mlua::UserData;
+use mlua::{Function, UserData};
 
 use crate::app::log::logger::Logger;
 
-#[derive(Debug, Clone)]
+use super::exported_commands::ExportedCommands;
+
+#[derive(Debug, Clone, Default)]
 pub struct AppContext
 {
     pub logger: Logger,
+    pub exported_commands: ExportedCommands,
 }
 
 impl AppContext
 {
+    /// Same as `AppContext::default()`.
     pub fn new() -> Self
     {
         Self::default()
-    }
-}
-
-impl Default for AppContext
-{
-    fn default() -> Self
-    {
-        Self
-        {
-            logger: Logger::new(),
-        }
     }
 }
 
@@ -36,6 +29,35 @@ impl UserData for AppContext
             {
                 this.logger.log(level.into(), &message);
                 Ok(())
+            }
+        );
+
+        methods.add_method_mut("add_command", 
+            |lua, this, (command, description): (String, String)| 
+            {
+                if let Ok(_command_fn) = lua.globals().get::<_,Function>(command.clone())
+                {
+                    this.exported_commands.add_command(command, description);
+                    Ok(())
+                }
+                else
+                {
+                    Err(mlua::Error::external(format!("Function '{}' not found but needed to export the command", command)))
+                }
+            }
+        );
+
+        methods.add_method_mut("remove_command", 
+            |_lua, this, command: String|
+            {
+                if this.exported_commands.remove_command(&command)
+                {
+                    Ok(())
+                }
+                else
+                {
+                    Err(mlua::Error::external(format!("Command '{}' not found", command)))
+                }
             }
         );
     }

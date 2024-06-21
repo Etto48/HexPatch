@@ -77,7 +77,10 @@ impl PluginManager {
             {
                 match Plugin::new_from_file(&path.to_string_lossy(), settings, &mut context)
                 {
-                    Ok(plugin) => plugins.push(plugin),
+                    Ok(plugin) => 
+                    {
+                        plugins.push(plugin);
+                    },
                     Err(e) => log.log(crate::app::log::notification::NotificationLevel::Error, &format!("Could not load plugin \"{}\": {}", path.to_string_lossy(), e)),
                 }
             }
@@ -86,7 +89,7 @@ impl PluginManager {
         Ok(plugins)
     }
 
-    pub fn on_open(&self, data: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_open(&mut self, data: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
     {
         let mut context = AppContext::new();
         for i in self.on_open.iter()
@@ -98,7 +101,7 @@ impl PluginManager {
         Ok(())
     }
 
-    pub fn on_save(&self, data: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_save(&mut self, data: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
     {
         let mut context = AppContext::new();
         for i in self.on_save.iter()
@@ -110,7 +113,7 @@ impl PluginManager {
         Ok(())
     }
 
-    pub fn on_edit(&self, data: &mut Vec<u8>, offset: usize, new_bytes: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_edit(&mut self, data: &mut Vec<u8>, offset: usize, new_bytes: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
     {
         let mut context = AppContext::new();
         for i in self.on_edit.iter()
@@ -122,7 +125,7 @@ impl PluginManager {
         Ok(())
     }
 
-    pub fn on_key(&self, event: crossterm::event::KeyEvent, data: &mut Vec<u8>, current_byte: usize, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_key(&mut self, event: crossterm::event::KeyEvent, data: &mut Vec<u8>, current_byte: usize, logger: &mut Logger) -> mlua::Result<()>
     {
         let mut context = AppContext::new();
         for i in self.on_key.iter()
@@ -134,7 +137,7 @@ impl PluginManager {
         Ok(())
     }
 
-    pub fn on_mouse(&self, kind: String, row: u16, col: u16, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_mouse(&mut self, kind: String, row: u16, col: u16, logger: &mut Logger) -> mlua::Result<()>
     {
         let mut context = AppContext::new();
         for i in self.on_mouse.iter()
