@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::app::{log::logger::Logger, settings::Settings};
 
-use super::{app_context::AppContext, event::{Event, Events}, plugin::Plugin};
+use super::{app_context::AppContext, command_info::CommandInfo, event::{Event, Events}, plugin::Plugin};
 
 #[derive(Default, Debug)]
 pub struct PluginManager {
@@ -147,5 +147,67 @@ impl PluginManager {
         }
         logger.merge(&context.logger);
         Ok(())
+    }
+
+    pub fn get_commands(&self) -> Vec<&CommandInfo>
+    {
+        let mut commands = Vec::new();
+        let command_count = self.plugins.iter().map(|p| p.get_commands().len()).sum();
+        commands.reserve(command_count);
+        for plugin in self.plugins.iter()
+        {
+            commands.extend(plugin.get_commands());
+        }
+        commands
+    }
+
+    pub fn run_command(&mut self, command: &str, logger: &mut Logger) -> mlua::Result<()>
+    {
+        let mut context = AppContext::new();
+        let mut found = false;
+        for plugin in self.plugins.iter_mut()
+        {
+            if let Some(_command_info) = plugin.get_commands()
+                .iter()
+                .find(|c| c.command == command)
+            {
+                plugin.run_command(&mut context, command)?;
+                found = true;
+                break;
+            }
+        }
+        logger.merge(&context.logger);
+        if !found { Err(mlua::Error::external(format!("Command \"{}\" not found", command))) } else { Ok(()) }
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::*;
+
+    #[test]
+    fn test_load_plugins()
+    {
+        let mut log = Logger::new();
+        let mut settings = Settings::default();
+        let path = std::path::Path::new("test/plugins");
+        let mut plugin_manager = PluginManager::load(Some(path), &mut log, &mut settings).unwrap();
+        assert_eq!(plugin_manager.plugins.len(), 2);
+
+        plugin_manager.run_command("p1c1", &mut log).unwrap();
+        plugin_manager.run_command("p1c2", &mut log).unwrap();
+        plugin_manager.run_command("p2c1", &mut log).unwrap();
+        plugin_manager.run_command("p2c2", &mut log).unwrap();
+
+        plugin_manager.on_open(&mut Vec::new(), &mut log).unwrap();
+
+        let messages: Vec<_> = log.iter().collect();
+        assert_eq!(messages.len(), 5, "{:?}", messages);
+        assert_eq!(messages[0].message, "Plugin 1 Command 1 called");
+        assert_eq!(messages[1].message, "Plugin 1 Command 2 called");
+        assert_eq!(messages[2].message, "Plugin 2 Command 1 called");
+        assert_eq!(messages[3].message, "Plugin 2 Command 2 called");
+        assert_eq!(messages[4].message, "Plugin 1 on_open called");
     }
 }
