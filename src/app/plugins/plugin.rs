@@ -2,9 +2,9 @@ use std::error::Error;
 
 use mlua::{Function, Lua};
 
-use crate::app::settings::{register_key_settings_macro::key_event_to_lua, Settings};
+use crate::app::{commands::command_info::CommandInfo, settings::{register_key_settings_macro::key_event_to_lua, Settings}};
 
-use super::{ app_context::AppContext, command_info::CommandInfo, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_logger, register_settings, register_vec_u8}};
+use super::{ app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_logger, register_settings, register_vec_u8}};
 
 #[derive(Debug)]
 pub struct Plugin

@@ -1,4 +1,4 @@
-use super::command_info::CommandInfo;
+use crate::app::commands::command_info::CommandInfo;
 
 #[derive(Debug, Default, Clone)]
 pub struct ExportedCommands

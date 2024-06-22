@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
-use crate::app::{log::logger::Logger, settings::Settings};
+use crate::app::{commands::command_info::CommandInfo, log::logger::Logger, settings::Settings};
 
-use super::{app_context::AppContext, command_info::CommandInfo, event::{Event, Events}, plugin::Plugin};
+use super::{app_context::AppContext, event::{Event, Events}, plugin::Plugin};
 
 #[derive(Default, Debug)]
 pub struct PluginManager {

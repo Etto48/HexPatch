@@ -4,15 +4,14 @@ use std::time::Duration;
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
-use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin_manager::PluginManager, popup_state::PopupState, run_command::Command, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{assembly::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin_manager::PluginManager, popup_state::PopupState, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
-use crate::{args::Args, fuzzer::Fuzzer, headers::Header};
+use crate::{args::Args, headers::Header};
 
 pub struct App 
 {
     pub(super) plugin_manager: PluginManager,
     pub(super) filesystem: FileSystem,
-    pub(super) commands: Fuzzer,
     pub(super) header: Header,
     pub(super) logger: Logger,
     pub(super) help_list: Vec<HelpLine>,
@@ -79,7 +78,7 @@ impl App
                 Settings::default()
             },
         };
-        let plugin_manager = match PluginManager::load(None, &mut logger, &mut settings)
+        let plugin_manager = match PluginManager::load(args.plugins.as_deref(), &mut logger, &mut settings)
         {
             Ok(plugins) => plugins,
             Err(e) => {
@@ -249,7 +248,6 @@ impl Default for App
         App{
             plugin_manager: PluginManager::default(),
             filesystem: FileSystem::default(),
-            commands: Fuzzer::new(&Command::get_commands()),
             header: Header::None,
             logger: Logger::new(),
             help_list: Self::help_list(&Settings::default().key),

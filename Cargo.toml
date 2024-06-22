@@ -27,7 +27,7 @@ clap = { version = "4.5", features = ["derive"] }
 crossterm = { version = "0.27", features = ["serde"] }
 dirs = "5.0"
 keystone-engine = "0.1"
-macro_rules_attribute = "0.2.0"
+macro_rules_attribute = "0.2"
 mlua = { version = "0.9", features = ["lua54", "vendored", "serialize"] }
 object = "0.36"
 pathdiff = "0.2"

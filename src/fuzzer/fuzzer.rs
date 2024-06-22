@@ -1,42 +1,51 @@
-#![allow(clippy::module_inception)]
-use super::fuzzer_entry::FuzzerEntry;
-
-pub struct Fuzzer
+pub fn fuzzy_search_cloned<T>(key: &str, entries: &Vec<T>) -> Vec<T>
+where T: AsRef<str> + Clone
 {
-    entries: Vec<FuzzerEntry>,
+    let mut ret = entries.clone();
+    fuzzy_search_in_place(key, &mut ret);
+    ret
 }
 
-impl Fuzzer
+pub fn fuzzy_search_in_place<T>(key: &str, entries: &mut Vec<T>)
+where T: AsRef<str> + Clone
 {
-    pub fn new(entries: &[&str]) -> Fuzzer
+    entries.sort_by_cached_key(|source|score(source.as_ref(), key));
+    entries.reverse();
+}
+
+fn score(source: &str, key: &str) -> isize
+{
+    let mut score = 0;
+
+    let char_found_bonus = 10;
+    let key_char_not_found_penalty = -5;
+    let self_char_not_found_penalty = -1;
+
+    let mut key_chars = key.chars();
+    let self_chars = source.chars();
+    let mut current_key_char = key_chars.next();
+    for self_char in self_chars
     {
-        Fuzzer
+        if let Some(key_char) = current_key_char
         {
-            entries: entries.iter().map(|entry| FuzzerEntry::new(entry)).collect(),
+            if self_char == key_char
+            {
+                score += char_found_bonus;
+                current_key_char = key_chars.next();
+            }
+            else
+            {
+                score += self_char_not_found_penalty;
+            }
+        }
+        else 
+        {
+            break;
         }
     }
-
-    /// Returns a sorted list of keys, from most relevant to least relevant.
-    pub fn fuzzy_search_sorted(&self, key: &str) -> Vec<String>
+    for _ in key_chars
     {
-        let mut ret = self.entries.clone();
-        ret.sort_by_key(|entry| -entry.score(key));
-        ret.into_iter().map(|entry| entry.key).collect()
+        score += key_char_not_found_penalty;
     }
-}
-
-#[cfg(test)]
-mod test
-{
-    use super::*;
-
-    #[test]
-    pub fn test_fuzzer()
-    {
-        let fuzzer = Fuzzer::new(&["cherry", "banana", "apple"]);
-        let results = fuzzer.fuzzy_search_sorted("a");
-        assert_eq!(results, vec!["apple", "banana", "cherry"]);
-        let results = fuzzer.fuzzy_search_sorted("an");
-        assert_eq!(results, vec!["banana", "apple", "cherry"]);
-    }
+    score
 }

@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, files::{path_result::PathResult, path}, run_command::Command, settings::color_settings::ColorSettings, App};
+use super::{assembly::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
@@ -19,7 +19,7 @@ pub enum PopupState
     {
         command: String,
         cursor: usize,
-        results: Vec<Command>,
+        results: Vec<CommandInfo>,
         scroll: usize
     },
     FindText
@@ -382,7 +382,14 @@ impl App
                 let skip = 0.max(*scroll as isize - max_results as isize / 2) as usize;
                 let skip = skip.min(results.len().saturating_sub(max_results));
                 let relative_scroll = *scroll - skip;
-                let results_iter = results.iter().skip(skip).take(max_results).enumerate().map(|(i,c)| c.to_line(color_settings, relative_scroll == i));
+                let results_iter = results
+                    .iter()
+                    .skip(skip)
+                    .take(max_results)
+                    .enumerate()
+                    .map(|(i,c)| 
+                        c.to_line(color_settings, relative_scroll == i)
+                    );
                 if skip > 0
                 {
                     popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
