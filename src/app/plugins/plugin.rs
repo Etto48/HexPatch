@@ -280,7 +280,7 @@ mod test
             end
             function on_key(key_event, data, offset, current_instruction, context)
                 if key_event.code == command.code then
-                    data:set(current_byte, 42)
+                    data:set(offset, 42)
                 end
             end
         ";

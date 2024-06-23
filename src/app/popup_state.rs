@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, settings::color_settings::ColorSettings, App};
+use super::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState

@@ -1,141 +1,12 @@
 use ratatui::text::{Line, Span};
 
-use crate::asm::assembler::assemble;
+use crate::{app::{instruction::Instruction, log::NotificationLevel, settings::color_settings::ColorSettings, App}, asm::assembler::assemble, headers::{Header, Section}};
 
-use super::{app::App, instruction::Instruction, log::NotificationLevel, plugins::instruction_info::InstructionInfo, settings::color_settings::ColorSettings};
-
-use crate::headers::{Header, Section};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SectionTag
-{
-    pub name: String,
-    pub file_address: u64,
-    pub virtual_address: u64,
-    pub size: usize
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct InstructionTag
-{
-    pub instruction: Instruction,
-    pub file_address: u64,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AssemblyLine
-{
-    Instruction(InstructionTag),
-    SectionTag(SectionTag)
-}
-
-impl AssemblyLine
-{
-    pub fn file_address(&self) -> u64
-    {
-        match self
-        {
-            AssemblyLine::Instruction(instruction) => instruction.file_address,
-            AssemblyLine::SectionTag(section) => section.file_address,
-        }
-    }
-
-    pub fn virtual_address(&self) -> u64
-    {
-        match self
-        {
-            AssemblyLine::Instruction(instruction) => instruction.instruction.ip(),
-            AssemblyLine::SectionTag(section) => section.virtual_address
-        }
-    }
-
-    pub fn len(&self) -> usize
-    {
-        match self
-        {
-            AssemblyLine::Instruction(instruction) => instruction.instruction.len(),
-            AssemblyLine::SectionTag(section) => section.size
-        }
-    }
-
-    pub fn is_empty(&self) -> bool
-    {
-        match self
-        {
-            AssemblyLine::Instruction(instruction) => instruction.instruction.is_empty(),
-            AssemblyLine::SectionTag(section) => section.size == 0
-        }
-    }
-
-    pub fn to_line(&self, color_settings: &ColorSettings, current_byte_index: usize, header: &Header, address_min_width: usize) -> Line
-    {
-        match self
-        {
-            AssemblyLine::Instruction(instruction) => {
-                let selected = current_byte_index >= instruction.file_address as usize && current_byte_index < instruction.file_address as usize + instruction.instruction.len();
-                App::instruction_to_line(color_settings, instruction, selected, header, address_min_width)
-            },
-            AssemblyLine::SectionTag(section) => 
-            {
-                let selected = current_byte_index >= section.file_address as usize && current_byte_index < section.file_address as usize + section.size;
-                let mut line = Line::default();
-                let address_style = if selected
-                {
-                    color_settings.assembly_selected
-                }
-                else
-                {
-                    color_settings.assembly_address
-                };
-                line.spans.push(Span::styled(format!("{:>address_min_width$X}", section.file_address), address_style));
-                line.spans.push(Span::raw(" "));
-                line.spans.push(Span::styled(format!("[{} ({}B)]", section.name, section.size), color_settings.assembly_section));
-                line.spans.push(Span::styled(format!(" @{:X}", section.virtual_address), color_settings.assembly_virtual_address));
-                line
-            }
-        }
-    }
-
-    pub fn is_same_instruction(&self, other: &AssemblyLine) -> bool
-    {
-        match (self, other)
-        {
-            (AssemblyLine::Instruction(instruction), AssemblyLine::Instruction(other_instruction)) => 
-            {
-                instruction.instruction.bytes == other_instruction.instruction.bytes &&
-                instruction.instruction.virtual_address == other_instruction.instruction.virtual_address
-            },
-            _ => false
-        }
-    }
-}
-
-impl Into<InstructionInfo> for &AssemblyLine
-{
-    fn into(self) -> InstructionInfo {
-        match self
-        {
-            AssemblyLine::Instruction(i) => 
-                InstructionInfo::new(
-                    i.instruction.to_string(), 
-                    i.file_address, 
-                    i.instruction.ip(), 
-                    i.instruction.len()
-                ),
-            AssemblyLine::SectionTag(s) =>
-                InstructionInfo::new(
-                    format!(".{}:",s.name),
-                    s.file_address,
-                    s.virtual_address,
-                    s.size
-                )
-        }
-    }
-}
+use super::{assembly_line::AssemblyLine, instruction_tag::InstructionTag, section_tag::SectionTag};
 
 impl App
 {
-    pub(super) fn find_symbols(&self, filter: &str) -> Vec<(u64, String)>
+    pub(in crate::app) fn find_symbols(&self, filter: &str) -> Vec<(u64, String)>
     {
         if filter.is_empty()
         {
@@ -154,7 +25,12 @@ impl App
         }
     }
 
-    fn instruction_to_line (color_settings: &ColorSettings, instruction: &InstructionTag, selected: bool, header: &Header, address_min_width: usize) -> Line<'static>
+    pub(super) fn instruction_to_line (
+        color_settings: &ColorSettings, 
+        instruction: &InstructionTag, 
+        selected: bool, 
+        header: &Header, 
+        address_min_width: usize) -> Line<'static>
     {
         let symbol_table = header.get_symbols();
         let mut line = Line::default();
@@ -201,7 +77,7 @@ impl App
         line
     }
 
-    pub(super) fn sections_from_bytes(bytes: &[u8], header: &Header) -> (Vec<usize>, Vec<AssemblyLine>)
+    pub(in crate::app) fn sections_from_bytes(bytes: &[u8], header: &Header) -> (Vec<usize>, Vec<AssemblyLine>)
     {
         let mut line_offsets = vec![0; bytes.len()];
         let mut lines = Vec::new();
@@ -294,7 +170,7 @@ impl App
         (line_offsets, lines)
     }
 
-    pub(super) fn assembly_from_section(bytes: &[u8], header: &Header, starting_ip: usize, starting_file_address: usize, section_size: usize, starting_sections: usize) -> (Vec<usize>, Vec<AssemblyLine>)
+    pub(in crate::app) fn assembly_from_section(bytes: &[u8], header: &Header, starting_ip: usize, starting_file_address: usize, section_size: usize, starting_sections: usize) -> (Vec<usize>, Vec<AssemblyLine>)
     {
         let mut line_offsets = vec![0; section_size];
         let mut instructions = Vec::new();
@@ -318,7 +194,7 @@ impl App
         (line_offsets, instructions)
     }
 
-    pub(super) fn bytes_from_assembly(&self, assembly: &str, starting_virtual_address: u64) -> Result<Vec<u8>, String>
+    pub(in crate::app) fn bytes_from_assembly(&self, assembly: &str, starting_virtual_address: u64) -> Result<Vec<u8>, String>
     {        
         let bytes = assemble(assembly, starting_virtual_address, &self.header);
         match bytes
@@ -331,7 +207,7 @@ impl App
         }
     }
 
-    pub(super) fn patch_bytes(&mut self, bytes: &[u8], start_from_beginning_of_instruction: bool)
+    pub(in crate::app) fn patch_bytes(&mut self, bytes: &[u8], start_from_beginning_of_instruction: bool)
     {
         let current_instruction = self.get_current_instruction();
         if let Some(current_instruction) = current_instruction
@@ -363,7 +239,7 @@ impl App
         }
     }
 
-    pub(super) fn patch(&mut self, assembly: &str)
+    pub(in crate::app) fn patch(&mut self, assembly: &str)
     {
         if let Some(current_instruction) = self.get_current_instruction()
         {
@@ -386,7 +262,7 @@ impl App
         }
     }
 
-    pub(super) fn get_assembly_view_scroll(&self) -> usize
+    pub(in crate::app) fn get_assembly_view_scroll(&self) -> usize
     {
         let cursor_position = self.get_cursor_position();
         let current_ip = cursor_position.global_byte_index.min(self.assembly_offsets.len() - 1);
@@ -399,7 +275,7 @@ impl App
         view_scroll as usize
     }
 
-    pub(super) fn get_current_instruction(&self) -> Option<&AssemblyLine>
+    pub(in crate::app) fn get_current_instruction(&self) -> Option<&AssemblyLine>
     {
         let global_byte_index = self.get_cursor_position().global_byte_index;
         if global_byte_index >= self.assembly_offsets.len()
@@ -410,13 +286,13 @@ impl App
         Some(&self.assembly_instructions[current_istruction_index])
     }
 
-    pub(super) fn get_instruction_at(&self, index: usize) -> &AssemblyLine
+    pub(in crate::app) fn get_instruction_at(&self, index: usize) -> &AssemblyLine
     {
         let current_istruction_index =  self.assembly_offsets[index];
         &self.assembly_instructions[current_istruction_index]
     }
 
-    pub(super) fn edit_assembly(&mut self, modifyied_bytes: usize)
+    pub(in crate::app) fn edit_assembly(&mut self, modifyied_bytes: usize)
     {
         let current_instruction = self.get_current_instruction();
         if let Some(current_instruction) = current_instruction

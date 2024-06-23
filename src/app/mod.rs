@@ -7,7 +7,7 @@ pub mod help;
 pub mod instruction;
 pub mod status_bar;
 pub mod log;
-pub mod assembly;
+pub mod asm;
 pub mod address;
 pub mod hex;
 pub mod text;
