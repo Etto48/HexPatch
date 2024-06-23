@@ -53,7 +53,7 @@ impl CommandInfo
         };
         Line::from(vec![
             Span::styled(self.command.clone(), s0), 
-            Span::raw(" "), 
+            Span::styled(" ", s0), 
             Span::styled(self.description.clone(), s1)]
         ).left_aligned()
     }
