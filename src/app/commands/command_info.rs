@@ -37,10 +37,10 @@ impl CommandInfo
         ]
     }
 
-    pub fn full_list_of_commands(plugin_mananger: &PluginManager) -> Vec<CommandInfo>
+    pub fn full_list_of_commands(plugin_manager: &PluginManager) -> Vec<CommandInfo>
     {
         let mut commands = Self::default_commands();
-        commands.extend(plugin_mananger.get_commands().iter().map(|&c| c.clone()));
+        commands.extend(plugin_manager.get_commands().iter().map(|&c| c.clone()));
         commands
     }
 
