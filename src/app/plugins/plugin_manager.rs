@@ -1,5 +1,7 @@
 use std::path::{Path, PathBuf};
 
+use crossterm::event::{KeyEvent, MouseEvent};
+
 use crate::app::{commands::command_info::CommandInfo, log::logger::Logger, settings::Settings};
 
 use super::{app_context::AppContext, event::{Event, Events}, plugin::Plugin};
@@ -89,64 +91,63 @@ impl PluginManager {
         Ok(plugins)
     }
 
-    pub fn on_open(&mut self, data: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_open(&mut self, data: &mut Vec<u8>, logger: &mut Logger)
     {
         let mut context = AppContext::new();
         for i in self.on_open.iter()
         {
             let event = Event::Open { data };
-            self.plugins[*i].handle(event, &mut context)?;
+            self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
-        Ok(())
     }
 
-    pub fn on_save(&mut self, data: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_save(&mut self, data: &mut Vec<u8>, logger: &mut Logger)
     {
         let mut context = AppContext::new();
         for i in self.on_save.iter()
         {
             let event = Event::Save { data };
-            self.plugins[*i].handle(event, &mut context)?;
+            self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
-        Ok(())
     }
 
-    pub fn on_edit(&mut self, data: &mut Vec<u8>, offset: usize, new_bytes: &mut Vec<u8>, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_edit(&mut self, data: &mut Vec<u8>, offset: usize, new_bytes: &mut Vec<u8>, logger: &mut Logger)
     {
         let mut context = AppContext::new();
         for i in self.on_edit.iter()
         {
             let event = Event::Edit { data, offset, new_bytes };
-            self.plugins[*i].handle(event, &mut context)?;
+            self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
-        Ok(())
     }
 
-    pub fn on_key(&mut self, event: crossterm::event::KeyEvent, data: &mut Vec<u8>, current_byte: usize, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_key(&mut self, event: KeyEvent, data: &mut Vec<u8>, current_byte: usize, logger: &mut Logger)
     {
         let mut context = AppContext::new();
         for i in self.on_key.iter()
         {
             let event = Event::Key { event, data, current_byte };
-            self.plugins[*i].handle(event, &mut context)?;
+            self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
-        Ok(())
     }
 
-    pub fn on_mouse(&mut self, kind: String, row: u16, col: u16, logger: &mut Logger) -> mlua::Result<()>
+    pub fn on_mouse(&mut self, mouse_event: MouseEvent, logger: &mut Logger)
     {
+        let kind = format!("{:?}", mouse_event.kind);
+        let row = mouse_event.row;
+        let col = mouse_event.column;
+
         let mut context = AppContext::new();
         for i in self.on_mouse.iter()
         {
             let event = Event::Mouse { kind: kind.clone(), row, col };
-            self.plugins[*i].handle(event, &mut context)?;
+            self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
-        Ok(())
     }
 
     pub fn get_commands(&self) -> Vec<&CommandInfo>
@@ -184,6 +185,8 @@ impl PluginManager {
 #[cfg(test)]
 mod test
 {
+    use crate::app::log::NotificationLevel;
+
     use super::*;
 
     #[test]
@@ -200,7 +203,9 @@ mod test
         plugin_manager.run_command("p2c1", &mut log).unwrap();
         plugin_manager.run_command("p2c2", &mut log).unwrap();
 
-        plugin_manager.on_open(&mut Vec::new(), &mut log).unwrap();
+        plugin_manager.on_open(&mut Vec::new(), &mut log);
+        // If there was an error, the logger will have a message
+        assert_ne!(log.get_notification_level(), NotificationLevel::Error);
 
         let messages: Vec<_> = log.iter().collect();
         assert_eq!(messages.len(), 5, "{:?}", messages);

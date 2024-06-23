@@ -33,7 +33,7 @@ impl App
             "save" => {
                 if self.dirty
                 {
-                    self.save_data()?;
+                    self.save_file()?;
                 }
             }
             "saveas" => {
@@ -84,7 +84,7 @@ impl App
                 self.log(NotificationLevel::Debug, "Saving and quitting...");
                 if self.dirty
                 {
-                    self.save_data()?;
+                    self.save_file()?;
                 }
                 self.needs_to_exit = true;       
             }

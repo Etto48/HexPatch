@@ -327,12 +327,13 @@ impl App
             {
                 self.get_cursor_position().global_byte_index - current_ip as usize
             };
-            for (i, byte) in bytes.iter().enumerate()
-            {
-                self.data[current_ip as usize + i + instruction_offset] = *byte;
-            }
+            let offset = current_ip as usize + instruction_offset;
+            let mut bytes = bytes.to_vec();
+            self.plugin_manager.on_edit(&mut self.data, offset, &mut bytes, &mut self.logger);
+            let bytes_len = bytes.len();
+            self.data.splice(offset..offset + bytes_len, bytes);
             self.dirty = true;
-            self.edit_assembly(bytes.len() + instruction_offset);
+            self.edit_assembly(bytes_len + instruction_offset);
         }
     }
 

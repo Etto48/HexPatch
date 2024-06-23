@@ -2,7 +2,7 @@ use std::error::Error;
 
 use mlua::{Function, Lua};
 
-use crate::app::{commands::command_info::CommandInfo, settings::{register_key_settings_macro::key_event_to_lua, Settings}};
+use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::{register_key_settings_macro::key_event_to_lua, Settings}};
 
 use super::{ app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_logger, register_settings, register_vec_u8}};
 
@@ -67,7 +67,9 @@ impl Plugin {
         handlers
     }
 
-    pub fn handle(&mut self, event: Event, context: &mut AppContext) -> mlua::Result<()>
+    /// Handle an event, if an error occurs, return the error
+    /// see [handle] for a version that logs the error
+    pub fn handle_with_error(&mut self, event: Event, context: &mut AppContext) -> mlua::Result<()>
     {
         context.exported_commands = self.commands.take();
         let ret = match event
@@ -126,6 +128,14 @@ impl Plugin {
         };
         self.commands = context.exported_commands.take();
         ret
+    }
+
+    pub fn handle(&mut self, event: Event, context: &mut AppContext)
+    {
+        if let Err(e) = self.handle_with_error(event, context)
+        {
+            context.logger.log(NotificationLevel::Error, &format!("In plugin: {}", e));
+        }
     }
 
     pub fn run_command(&mut self, context: &mut AppContext, command: &str) -> mlua::Result<()>
@@ -211,7 +221,7 @@ mod test
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut context = AppContext::default();
         let event = Event::Open { data: &mut data };
-        plugin.handle(event, &mut context).unwrap();
+        plugin.handle_with_error(event, &mut context).unwrap();
         assert_eq!(data[0], 42);
     }
 
@@ -278,10 +288,10 @@ mod test
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut data = vec![0; 0x100];
         let event = Event::Key { event: KeyEvent::from(KeyCode::Down), data: &mut data, current_byte: 0 };
-        plugin.handle(event, &mut context).unwrap();
+        plugin.handle_with_error(event, &mut context).unwrap();
         assert_eq!(data[0], 0);
         let event = Event::Key { event: settings.key.confirm, data: &mut data, current_byte: 0 };
-        plugin.handle(event, &mut context).unwrap();
+        plugin.handle_with_error(event, &mut context).unwrap();
         assert_eq!(data[0], 42);
     }
 
@@ -313,7 +323,7 @@ mod test
 
         let mut data = vec![0; 0x100];
         let event = Event::Open { data: &mut data };
-        plugin.handle(event, &mut context).unwrap();
+        plugin.handle_with_error(event, &mut context).unwrap();
 
         {
             let mut message_iter = context.logger.iter();

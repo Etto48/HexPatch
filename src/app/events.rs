@@ -1,4 +1,4 @@
-use crossterm::event::{self, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{backend::Backend, Terminal};
 
 use super::{popup_state::PopupState, settings::key_settings::KeySettings, App};
@@ -131,7 +131,7 @@ impl App
                     match c
                     {
                         '0'..='9' | 'A'..='F' | 'a'..='f' => {
-                            self.edit_data(c);
+                            self.edit_data(c)?;
                         },
                         _ => {}
                     }
@@ -398,14 +398,14 @@ impl App
                         }
                         Some(PopupState::SaveAs { path, cursor: _ }) =>
                         {
-                            self.save_as(path)?;
+                            self.save_file_as(path)?;
                             popup = None;
                         }
                         Some(PopupState::Save(yes_selected)) =>
                         {
                             if *yes_selected
                             {
-                                self.save_data()?;
+                                self.save_file()?;
                             }
                             popup = None;
                         },
@@ -413,7 +413,7 @@ impl App
                         {
                             if *yes_selected
                             {
-                                self.save_data()?;
+                                self.save_file()?;
                                 self.needs_to_exit = true;
                             }
                             popup = None;
@@ -422,7 +422,7 @@ impl App
                         {
                             if *yes_selected
                             {
-                                self.save_data()?;
+                                self.save_file()?;
                                 self.needs_to_exit = true;
                             }
                             else
@@ -559,8 +559,36 @@ impl App
         Ok(())
     }
 
+    fn handle_plugin_events(&mut self, event: &Event) -> Result<(), Box<dyn std::error::Error>>
+    {
+        match event
+        {
+            event::Event::FocusGained => {
+                // TODO: Maybe add a focus gained event
+            },
+            event::Event::FocusLost => {
+                // TODO: Maybe add a focus lost event
+            },
+            event::Event::Key(ke) => {
+                let current_byte = self.get_cursor_position().global_byte_index;
+                self.plugin_manager.on_key(*ke, &mut self.data, current_byte, &mut self.logger);
+            },
+            event::Event::Mouse(me) => {
+                self.plugin_manager.on_mouse(*me, &mut self.logger);
+            },
+            event::Event::Paste(_s) => {
+                // TODO: Maybe add a paste event
+            },
+            event::Event::Resize(_rows, _cols) => {
+                // TODO: Maybe add a resize event
+            },
+        }
+        Ok(())
+    }
+
     pub(super) fn handle_event<B: Backend>(&mut self, event: event::Event, terminal: &mut Terminal<B>) -> Result<(),Box<dyn std::error::Error>>
     {
+        self.handle_plugin_events(&event)?;
         if self.popup.is_some()
         {
             self.handle_event_popup(event, terminal)?;

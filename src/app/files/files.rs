@@ -180,7 +180,37 @@ impl App
             Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
         }
         self.log_header_info();
+        self.plugin_manager.on_open(&mut self.data, &mut self.logger);
 
+        Ok(())
+    }
+
+    pub(in crate::app) fn save_file_as(&mut self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        if let Some(parent) = path::parent(path)
+        {
+            self.filesystem.mkdirs(parent)?;
+        };
+        
+        self.filesystem.create(path)?;
+        self.filesystem.cd(&self.filesystem.canonicalize(path)?);
+        self.save_file()?;
+        Ok(())
+    }
+
+    pub(in crate::app) fn save_file(&mut self) -> Result<(), Box<dyn Error>>
+    {
+        self.plugin_manager.on_save(&mut self.data, &mut self.logger);
+        self.filesystem.write(self.filesystem.pwd(), &self.data)?;
+        self.dirty = false;
+        match &self.filesystem
+        {
+            FileSystem::Local { path } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {}", path));},
+            FileSystem::Remote { path, connection } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path, connection));},
+        }
+        
         Ok(())
     }
 }

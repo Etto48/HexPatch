@@ -1,4 +1,4 @@
-use mlua::{FromLua, IntoLua, Lua, UserDataMethods};
+use mlua::{FromLua, IntoLua, Lua, UserDataFields, UserDataMethods};
 
 use crate::app::settings::{color_settings::ColorSettings, key_settings::KeySettings, settings_value::SettingsValue, Settings};
 
@@ -6,8 +6,8 @@ pub fn register_vec_u8(lua: &Lua) -> mlua::Result<()>
 {
     lua.register_userdata_type(|data: &mut mlua::UserDataRegistry<Vec<u8>>|
     {
-        data.add_method("len", 
-            |_lua, this, ()| 
+        data.add_field_method_get("len", 
+            |_lua, this| 
             Ok(this.len())
         );
         data.add_method("get", |_lua, this, index: usize| {
