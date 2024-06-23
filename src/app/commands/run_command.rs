@@ -70,7 +70,9 @@ impl App
                 self.request_view_change();
             }
             any_other_command => {
-                self.plugin_manager.run_command(any_other_command, &mut self.logger)?;
+                let offset = self.get_cursor_position().global_byte_index;
+                let current_instruction = self.get_current_instruction().map(|i|i.into());
+                self.plugin_manager.run_command(any_other_command,&mut self.data, offset, current_instruction, &mut self.logger)?;
             }
         }
         Ok(())

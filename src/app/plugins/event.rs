@@ -1,6 +1,8 @@
 use bitflags::bitflags;
 use crossterm::event::{KeyEvent, MouseEvent};
 
+use super::instruction_info::InstructionInfo;
+
 pub enum Event<'app>
 {
     Open {
@@ -9,6 +11,7 @@ pub enum Event<'app>
     Edit {
         data: &'app mut Vec<u8>,
         offset: usize,
+        current_instruction: Option<InstructionInfo>,
         new_bytes: &'app mut Vec<u8>,
     },
     Save {
@@ -17,7 +20,8 @@ pub enum Event<'app>
     Key {
         event: KeyEvent,
         data: &'app mut Vec<u8>,
-        current_byte: usize,
+        offset: usize,
+        current_instruction: Option<InstructionInfo>,
     },
     // TODO: provide more abstract info about where the mouse event occurred
     Mouse {

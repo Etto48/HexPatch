@@ -2,9 +2,9 @@ use std::path::{Path, PathBuf};
 
 use crossterm::event::{KeyEvent, MouseEvent};
 
-use crate::app::{commands::command_info::CommandInfo, log::logger::Logger, settings::Settings};
+use crate::app::{commands::command_info::CommandInfo, log::{logger::Logger, NotificationLevel}, settings::Settings};
 
-use super::{app_context::AppContext, event::{Event, Events}, plugin::Plugin};
+use super::{app_context::AppContext, event::{Event, Events}, instruction_info::InstructionInfo, plugin::Plugin};
 
 #[derive(Default, Debug)]
 pub struct PluginManager {
@@ -83,7 +83,7 @@ impl PluginManager {
                     {
                         plugins.push(plugin);
                     },
-                    Err(e) => log.log(crate::app::log::notification::NotificationLevel::Error, &format!("Could not load plugin \"{}\": {}", path.to_string_lossy(), e)),
+                    Err(e) => log.log(NotificationLevel::Error, &format!("Could not load plugin \"{}\": {}", path.to_string_lossy(), e)),
                 }
             }
         }
@@ -113,23 +113,45 @@ impl PluginManager {
         logger.merge(&context.logger);
     }
 
-    pub fn on_edit(&mut self, data: &mut Vec<u8>, offset: usize, new_bytes: &mut Vec<u8>, logger: &mut Logger)
+    pub fn on_edit(
+        &mut self, 
+        data: &mut Vec<u8>, 
+        offset: usize, 
+        current_instruction: Option<InstructionInfo>,
+        new_bytes: &mut Vec<u8>, 
+        logger: &mut Logger)
     {
         let mut context = AppContext::new();
         for i in self.on_edit.iter()
         {
-            let event = Event::Edit { data, offset, new_bytes };
+            let event = Event::Edit { 
+                data, 
+                offset, 
+                new_bytes, 
+                current_instruction: current_instruction.clone() 
+            };
             self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
     }
 
-    pub fn on_key(&mut self, event: KeyEvent, data: &mut Vec<u8>, current_byte: usize, logger: &mut Logger)
+    pub fn on_key(
+        &mut self, 
+        event: KeyEvent, 
+        data: &mut Vec<u8>, 
+        offset: usize,
+        current_instruction: Option<InstructionInfo>, 
+        logger: &mut Logger)
     {
         let mut context = AppContext::new();
         for i in self.on_key.iter()
         {
-            let event = Event::Key { event, data, current_byte };
+            let event = Event::Key { 
+                event, 
+                data, 
+                offset, 
+                current_instruction: current_instruction.clone()
+            };
             self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
@@ -162,7 +184,7 @@ impl PluginManager {
         commands
     }
 
-    pub fn run_command(&mut self, command: &str, logger: &mut Logger) -> mlua::Result<()>
+    pub fn run_command(&mut self, command: &str, data: &mut Vec<u8>, offset: usize, current_instruction: Option<InstructionInfo>, logger: &mut Logger) -> mlua::Result<()>
     {
         let mut context = AppContext::new();
         let mut found = false;
@@ -172,7 +194,7 @@ impl PluginManager {
                 .iter()
                 .find(|c| c.command == command)
             {
-                plugin.run_command(&mut context, command)?;
+                plugin.run_command(data, offset, current_instruction, &mut context, command)?;
                 found = true;
                 break;
             }
@@ -197,11 +219,12 @@ mod test
         let path = std::path::Path::new("test/plugins");
         let mut plugin_manager = PluginManager::load(Some(path), &mut log, &mut settings).unwrap();
         assert_eq!(plugin_manager.plugins.len(), 2);
+        let mut data = vec![0; 0x100];
 
-        plugin_manager.run_command("p1c1", &mut log).unwrap();
-        plugin_manager.run_command("p1c2", &mut log).unwrap();
-        plugin_manager.run_command("p2c1", &mut log).unwrap();
-        plugin_manager.run_command("p2c2", &mut log).unwrap();
+        plugin_manager.run_command("p1c1", &mut data, 0, None, &mut log).unwrap();
+        plugin_manager.run_command("p1c2", &mut data, 0, None, &mut log).unwrap();
+        plugin_manager.run_command("p2c1", &mut data, 0, None, &mut log).unwrap();
+        plugin_manager.run_command("p2c2", &mut data, 0, None, &mut log).unwrap();
 
         plugin_manager.on_open(&mut Vec::new(), &mut log);
         // If there was an error, the logger will have a message

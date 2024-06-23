@@ -2,7 +2,7 @@ use ratatui::text::{Line, Span};
 
 use crate::asm::assembler::assemble;
 
-use super::{app::App, instruction::Instruction, log::NotificationLevel, settings::color_settings::ColorSettings};
+use super::{app::App, instruction::Instruction, log::NotificationLevel, plugins::instruction_info::InstructionInfo, settings::color_settings::ColorSettings};
 
 use crate::headers::{Header, Section};
 
@@ -106,6 +106,29 @@ impl AssemblyLine
                 instruction.instruction.virtual_address == other_instruction.instruction.virtual_address
             },
             _ => false
+        }
+    }
+}
+
+impl Into<InstructionInfo> for &AssemblyLine
+{
+    fn into(self) -> InstructionInfo {
+        match self
+        {
+            AssemblyLine::Instruction(i) => 
+                InstructionInfo::new(
+                    i.instruction.to_string(), 
+                    i.file_address, 
+                    i.instruction.ip(), 
+                    i.instruction.len()
+                ),
+            AssemblyLine::SectionTag(s) =>
+                InstructionInfo::new(
+                    format!(".{}:",s.name),
+                    s.file_address,
+                    s.virtual_address,
+                    s.size
+                )
         }
     }
 }
@@ -329,7 +352,9 @@ impl App
             };
             let offset = current_ip as usize + instruction_offset;
             let mut bytes = bytes.to_vec();
-            self.plugin_manager.on_edit(&mut self.data, offset, &mut bytes, &mut self.logger);
+            let current_instruction = self.get_current_instruction()
+                .map(|i|i.into());
+            self.plugin_manager.on_edit(&mut self.data, offset, current_instruction, &mut bytes, &mut self.logger);
             bytes.truncate(self.data.len().checked_sub(offset).unwrap());
             let bytes_len = bytes.len();
             self.data.splice(offset..offset + bytes_len, bytes);

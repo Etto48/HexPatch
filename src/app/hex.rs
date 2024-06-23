@@ -166,7 +166,8 @@ impl App
             let new_byte = u8::from_str_radix(&new_byte_str, 16).unwrap();
 
             let mut new_bytes = vec![new_byte];
-            self.plugin_manager.on_edit(&mut self.data, cursor_position.global_byte_index, &mut new_bytes, &mut self.logger);
+            let current_instruction = self.get_current_instruction().map(|i|i.into());
+            self.plugin_manager.on_edit(&mut self.data, cursor_position.global_byte_index, current_instruction, &mut new_bytes, &mut self.logger);
             new_bytes.truncate(self.data.len().checked_sub(cursor_position.global_byte_index).unwrap());
 
             self.data[cursor_position.global_byte_index..cursor_position.global_byte_index + new_bytes.len()].copy_from_slice(&new_bytes);
