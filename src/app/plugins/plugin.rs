@@ -192,6 +192,7 @@ impl Plugin {
 mod test
 {
     use crossterm::event::{KeyCode, KeyEvent};
+    use object::Architecture;
     use ratatui::style::Style;
 
     use crate::app::{log::NotificationLevel, settings::settings_value::SettingsValue};
@@ -502,8 +503,8 @@ mod test
 
         let messages = context.logger.iter().collect::<Vec<_>>();
         assert_eq!(messages.len(), 3);
-        assert_eq!(messages[0].message, "64", "Default bitness is 64");
-        assert_eq!(messages[1].message, "Unknown", "Default architecture is Unknown");
-        assert_eq!(messages[2].message, "0", "Default entry point is 0");
+        assert_eq!(messages[0].message, 64.to_string(), "Default bitness is 64");
+        assert_eq!(messages[1].message, format!("{:?}",Architecture::Unknown), "Default architecture is Unknown");
+        assert_eq!(messages[2].message, 0.to_string(), "Default entry point is 0");
     }
 }
