@@ -230,7 +230,13 @@ impl App
             let mut bytes = bytes.to_vec();
             let current_instruction = self.get_current_instruction()
                 .map(|i|i.into());
-            self.plugin_manager.on_edit(&mut self.data, offset, current_instruction, &mut bytes, &mut self.logger);
+            self.plugin_manager.on_edit(
+                &mut self.data, 
+                offset, 
+                current_instruction, 
+                &mut bytes, 
+                &mut self.logger,
+                &self.header);
             bytes.truncate(self.data.len().checked_sub(offset).unwrap());
             let bytes_len = bytes.len();
             self.data.splice(offset..offset + bytes_len, bytes);

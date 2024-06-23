@@ -72,7 +72,14 @@ impl App
             any_other_command => {
                 let offset = self.get_cursor_position().global_byte_index;
                 let current_instruction = self.get_current_instruction().map(|i|i.into());
-                self.plugin_manager.run_command(any_other_command,&mut self.data, offset, current_instruction, &mut self.logger)?;
+                self.plugin_manager.run_command(
+                    any_other_command,
+                    &mut self.data, 
+                    offset, 
+                    current_instruction, 
+                    &mut self.logger,
+                    &self.header
+                )?;
             }
         }
         Ok(())

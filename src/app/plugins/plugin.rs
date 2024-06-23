@@ -2,7 +2,7 @@ use std::error::Error;
 
 use mlua::{Function, Lua};
 
-use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::{register_key_settings_macro::key_event_to_lua, Settings}};
+use crate::{app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::{register_key_settings_macro::key_event_to_lua, Settings}}, headers::Header};
 
 use super::{ app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, instruction_info::InstructionInfo, register_userdata::{register_logger, register_settings, register_vec_u8}};
 
@@ -74,17 +74,25 @@ impl Plugin {
         context.exported_commands = self.commands.take();
         let ret = match event
         {
-            Event::Open { data} =>
+            Event::Open { 
+                data, 
+                header} =>
             {
                 // Call the on_open function
                 let on_open = self.lua.globals().get::<_, Function>("on_open").unwrap();
                 self.lua.scope(|scope| {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let context = scope.create_userdata_ref_mut(context)?;
-                    on_open.call::<_,()>((data, context))
+                    let header = scope.create_userdata_ref(header)?;
+                    on_open.call::<_,()>((data, context, header))
                 })
             },
-            Event::Edit { data, offset, new_bytes, current_instruction} =>
+            Event::Edit { 
+                data, 
+                offset, 
+                new_bytes, 
+                current_instruction, 
+                header} =>
             {
                 // Call the on_edit function
                 let on_edit = self.lua.globals().get::<_, Function>("on_edit").unwrap();
@@ -92,20 +100,29 @@ impl Plugin {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let new_bytes = scope.create_any_userdata_ref_mut(new_bytes)?;
                     let context = scope.create_userdata_ref_mut(context)?;
-                    on_edit.call::<_,()>((data, offset, new_bytes, current_instruction, context))
+                    let header = scope.create_userdata_ref(header)?;
+                    on_edit.call::<_,()>((data, offset, new_bytes, current_instruction, context, header))
                 })
             },
-            Event::Save { data} =>
+            Event::Save { 
+                data, 
+                header} =>
             {
                 // Call the on_save function
                 let on_save = self.lua.globals().get::<_, Function>("on_save").unwrap();
                 self.lua.scope(|scope| {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let context = scope.create_userdata_ref_mut(context)?;
-                    on_save.call::<_,()>((data, context))
+                    let header = scope.create_userdata_ref(header)?;
+                    on_save.call::<_,()>((data, context, header))
                 })
             },
-            Event::Key {event, data, offset, current_instruction} =>
+            Event::Key {
+                event, 
+                data, 
+                offset, 
+                current_instruction,
+                header} =>
             {
                 // Call the on_key function
                 let on_key = self.lua.globals().get::<_, Function>("on_key").unwrap();
@@ -113,16 +130,22 @@ impl Plugin {
                 self.lua.scope(|scope| {
                     let data = scope.create_any_userdata_ref_mut(data)?;
                     let context = scope.create_userdata_ref_mut(context)?;
-                    on_key.call::<_,()>((event, data, offset, current_instruction, context))
+                    let header = scope.create_userdata_ref(header)?;
+                    on_key.call::<_,()>((event, data, offset, current_instruction, context, header))
                 })
             },
-            Event::Mouse {kind, row, col} =>
+            Event::Mouse {
+                kind, 
+                row, 
+                col, 
+                header} =>
             {
                 // Call the on_mouse function
                 let on_mouse = self.lua.globals().get::<_, Function>("on_mouse").unwrap();
                 self.lua.scope(|scope| {
                     let context = scope.create_userdata_ref_mut(context)?;
-                    on_mouse.call::<_,()>((kind, row, col, context))
+                    let header = scope.create_userdata_ref(header)?;
+                    on_mouse.call::<_,()>((kind, row, col, context, header))
                 })
             },
         };
@@ -138,14 +161,22 @@ impl Plugin {
         }
     }
 
-    pub fn run_command(&mut self, data: &mut Vec<u8>, offset: usize, current_instruction: Option<InstructionInfo>, context: &mut AppContext, command: &str) -> mlua::Result<()>
+    pub fn run_command(
+        &mut self, 
+        command: &str, 
+        data: &mut Vec<u8>, 
+        offset: usize, 
+        current_instruction: Option<InstructionInfo>, 
+        context: &mut AppContext, 
+        header: &Header) -> mlua::Result<()>
     {
         let command_fn = self.lua.globals().get::<_, Function>(command)?;
         context.exported_commands = self.commands.take();
         let ret = self.lua.scope(|scope| {
             let data = scope.create_any_userdata_ref_mut(data)?;
             let context = scope.create_userdata_ref_mut(context)?;
-            command_fn.call::<_,()>((data, offset, current_instruction, context))
+            let header = scope.create_userdata_ref(header)?;
+            command_fn.call::<_,()>((data, offset, current_instruction, context, header))
         });
         self.commands = context.exported_commands.take();
         ret
@@ -187,11 +218,11 @@ mod test
     fn test_discover_event_handlers()
     {
         let source = "
-            function on_open(data, context) end
-            function on_edit(data, offset, new_bytes, current_instruction, context) end
-            function on_save(data, context) end
-            function on_key(key_event, data, offset, current_instruction, context) end
-            function on_mouse(kind, row, col, context) end
+            function on_open(data, context, header) end
+            function on_edit(data, offset, new_bytes, current_instruction, context, header) end
+            function on_save(data, context, header) end
+            function on_key(key_event, data, offset, current_instruction, context, header) end
+            function on_mouse(kind, row, col, context, header) end
         ";
         let mut settings = Settings::default();
         let mut context = AppContext::default();
@@ -199,9 +230,9 @@ mod test
         let handlers = plugin.get_event_handlers();
         assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE | Events::ON_KEY | Events::ON_MOUSE);
         let source = "
-            function on_open(data, context) end
-            function on_edit(data, offset, new_bytes, current_instruction, context) end
-            function on_save(data, context) end
+            function on_open(data, context, header) end
+            function on_edit(data, offset, new_bytes, current_instruction, context, header) end
+            function on_save(data, context, header) end
         ";
         let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let handlers = plugin.get_event_handlers();
@@ -219,9 +250,10 @@ mod test
         let mut settings = Settings::default();
         let mut context = AppContext::default();
         let mut data = vec![0; 0x100];
+        let header = Header::default();
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut context = AppContext::default();
-        let event = Event::Open { data: &mut data };
+        let event = Event::Open { data: &mut data , header: &header };
         plugin.handle_with_error(event, &mut context).unwrap();
         assert_eq!(data[0], 42);
     }
@@ -278,7 +310,7 @@ mod test
             function init(settings, context)
                 command = settings.key_confirm
             end
-            function on_key(key_event, data, offset, current_instruction, context)
+            function on_key(key_event, data, offset, current_instruction, context, header)
                 if key_event.code == command.code then
                     data:set(offset, 42)
                 end
@@ -288,11 +320,13 @@ mod test
         let mut context = AppContext::default();
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut data = vec![0; 0x100];
+        let header = Header::default();
         let event = Event::Key { 
             event: KeyEvent::from(KeyCode::Down), 
             data: &mut data, 
             offset: 0, 
-            current_instruction: None 
+            current_instruction: None,
+            header: &header
         };
         plugin.handle_with_error(event, &mut context).unwrap();
         assert_eq!(data[0], 0);
@@ -300,7 +334,8 @@ mod test
             event: settings.key.confirm, 
             data: &mut data, 
             offset: 0, 
-            current_instruction: None
+            current_instruction: None,
+            header: &header
         };
         plugin.handle_with_error(event, &mut context).unwrap();
         assert_eq!(data[0], 42);
@@ -314,7 +349,7 @@ mod test
                 context:log(1, \"Hello from init\")
             end
 
-            function on_open(data, context)
+            function on_open(data, context, header)
                 context:log(2, \"Hello from on_open\")
             end
         ";
@@ -333,7 +368,8 @@ mod test
         context.logger.clear();
 
         let mut data = vec![0; 0x100];
-        let event = Event::Open { data: &mut data };
+        let header = Header::default();
+        let event = Event::Open { data: &mut data, header: &header };
         plugin.handle_with_error(event, &mut context).unwrap();
 
         {
@@ -366,18 +402,18 @@ mod test
             end
 
             -- Add and remove commands
-            function test(data, offset, current_instruction, context)
+            function test(data, offset, current_instruction, context, header)
                 context:add_command(\"test2\", \"Test command 2\")
                 context:remove_command(\"test\")
             end
 
             -- Intentional error
-            function test2(data, offset, current_instruction, context)
+            function test2(data, offset, current_instruction, context, header)
                 context:add_command(\"does_not_exist\", \"This command does not exist\")
             end
 
             -- No duplicate command should be added
-            function test3(data, offset, current_instruction, context)
+            function test3(data, offset, current_instruction, context, header)
                 context:add_command(\"test\", \"Test command\")
                 context:add_command(\"test\", \"Test command 1\")
             end
@@ -385,6 +421,7 @@ mod test
 
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut data = vec![0; 0x100];
+        let header = Header::default();
 
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 2);
@@ -393,7 +430,13 @@ mod test
         assert_eq!(commands[1].command, "test3");
         assert_eq!(commands[1].description, "Test command 3");
 
-        plugin.run_command(&mut data, 0, None, &mut context, "test").unwrap();
+        plugin.run_command(
+            "test",
+            &mut data, 
+            0, 
+            None, 
+            &mut context, 
+            &header).unwrap();
         
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 2);
@@ -402,7 +445,13 @@ mod test
         assert_eq!(commands[1].command, "test2");
         assert_eq!(commands[1].description, "Test command 2");
 
-        assert!(plugin.run_command(&mut data, 0, None, &mut context, "test2").is_err(), 
+        assert!(plugin.run_command(
+            "test2",
+            &mut data, 
+            0, 
+            None, 
+            &mut context, 
+            &header).is_err(), 
             "Should not be able to add a command that is not defined");
         
         let commands = plugin.commands.get_commands();
@@ -413,7 +462,13 @@ mod test
         assert_eq!(commands[1].command, "test2");
         assert_eq!(commands[1].description, "Test command 2");
 
-        plugin.run_command(&mut data, 0, None, &mut context, "test3").unwrap();
+        plugin.run_command(
+            "test3", 
+            &mut data, 
+            0, 
+            None, 
+            &mut context, 
+            &header).unwrap();
 
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 3, 
@@ -425,5 +480,30 @@ mod test
         assert_eq!(commands[2].command, "test");
         assert_eq!(commands[2].description, "Test command 1", 
             "Should overwrite the description of the command");
+    }
+
+    #[test]
+    fn test_header()
+    {
+        let source = "
+            function on_open(data, context, header)
+                context:log(1, header.bitness)
+                context:log(1, header.architecture)
+                context:log(1, header.entry_point)
+            end
+        ";
+        let mut settings = Settings::default();
+        let mut context = AppContext::default();
+        let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
+        let mut data = vec![0; 0x100];
+        let header = Header::default();
+        let event = Event::Open { data: &mut data, header: &header };
+        plugin.handle_with_error(event, &mut context).unwrap();
+
+        let messages = context.logger.iter().collect::<Vec<_>>();
+        assert_eq!(messages.len(), 3);
+        assert_eq!(messages[0].message, "64", "Default bitness is 64");
+        assert_eq!(messages[1].message, "Unknown", "Default architecture is Unknown");
+        assert_eq!(messages[2].message, "0", "Default entry point is 0");
     }
 }

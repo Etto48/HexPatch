@@ -571,11 +571,18 @@ impl App
             },
             event::Event::Key(ke) => {
                 let current_byte = self.get_cursor_position().global_byte_index;
-                let current_instruction = self.get_current_instruction().map(|i| i.into());
-                self.plugin_manager.on_key(*ke, &mut self.data, current_byte, current_instruction, &mut self.logger);
+                let current_instruction = self.get_current_instruction()
+                    .map(|i| i.into());
+                self.plugin_manager.on_key(
+                    *ke, 
+                    &mut self.data, 
+                    current_byte, 
+                    current_instruction, 
+                    &mut self.logger,
+                    &self.header);
             },
             event::Event::Mouse(me) => {
-                self.plugin_manager.on_mouse(*me, &mut self.logger);
+                self.plugin_manager.on_mouse(*me, &mut self.logger, &self.header);
             },
             event::Event::Paste(_s) => {
                 // TODO: Maybe add a paste event

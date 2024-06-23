@@ -2,6 +2,7 @@ use std::{collections::HashMap, fmt::Display};
 
 use capstone::{arch::{self, BuildsCapstone}, Capstone, CsResult};
 use keystone_engine::{Arch, Keystone, KeystoneError, Mode};
+use mlua::UserData;
 use object::Architecture;
 
 use crate::app::files::filesystem::FileSystem;
@@ -22,6 +23,16 @@ impl Display for Section
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result
     {
         write!(f, "{}: [{:X} - {:X})", self.name, self.file_offset, self.file_offset + self.size)
+    }
+}
+
+impl UserData for Section
+{
+    fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_field_method_get("name", |_, this| Ok(this.name.clone()));
+        fields.add_field_method_get("virtual_address", |_, this| Ok(this.virtual_address));
+        fields.add_field_method_get("file_offset", |_, this| Ok(this.file_offset));
+        fields.add_field_method_get("size", |_, this| Ok(this.size));
     }
 }
 
@@ -271,6 +282,33 @@ impl Header
             Header::GenericHeader(header) => Self::get_encoder_for_arch(&header.architecture),
             Header::None => Keystone::new(Arch::X86, Mode::MODE_64),
         }
+    }
+}
+
+impl Default for Header
+{
+    fn default() -> Self {
+        Header::None
+    }
+}
+
+impl UserData for Header 
+{
+    fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
+        fields.add_field_method_get("bitness", |_, this| Ok(this.bitness()));
+        fields.add_field_method_get("entry_point", |_, this| Ok(this.entry_point()));
+        fields.add_field_method_get("architecture", |_, this| Ok(format!("{:?}",this.architecture())));
+        fields.add_field_method_get("sections", |_, this| Ok(this.get_sections()));
+        fields.add_field_method_get("text_section", |_, this| Ok(this.get_text_section()));
+        fields.add_field_method_get("symbols", |_, this| Ok(this.get_symbols().map(|x| 
+        {
+            x.values().map(|sym|sym.clone()).collect::<Vec<_>>()
+        })));
+    }
+
+    fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
+        methods.add_method("symbol_to_address", |_, this, symbol: String| Ok(this.symbol_to_address(&symbol)));
+        methods.add_method("virtual_to_physical_address", |_, this, virtual_address: u64| Ok(this.virtual_to_physical_address(virtual_address)));
     }
 }
 

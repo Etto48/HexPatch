@@ -13,7 +13,7 @@ pub struct AppContext
 
 impl AppContext
 {
-    /// Same as `AppContext::default()`.
+    /// Same as [Self::default].
     pub fn new() -> Self
     {
         Self::default()
