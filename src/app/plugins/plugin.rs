@@ -68,7 +68,7 @@ impl Plugin {
     }
 
     /// Handle an event, if an error occurs, return the error
-    /// see [handle] for a version that logs the error
+    /// see [Plugin::handle] for a version that logs the error
     pub fn handle_with_error(&mut self, event: Event, context: &mut AppContext) -> mlua::Result<()>
     {
         context.exported_commands = self.commands.take();
