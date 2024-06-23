@@ -1,12 +1,12 @@
-pub fn fuzzy_search_cloned<T>(key: &str, entries: &Vec<T>) -> Vec<T>
+pub fn fuzzy_search_cloned<T>(key: &str, entries: &[T]) -> Vec<T>
 where T: AsRef<str> + Clone
 {
-    let mut ret = entries.clone();
+    let mut ret = entries.to_vec();
     fuzzy_search_in_place(key, &mut ret);
     ret
 }
 
-pub fn fuzzy_search_in_place<T>(key: &str, entries: &mut Vec<T>)
+pub fn fuzzy_search_in_place<T>(key: &str, entries: &mut [T])
 where T: AsRef<str> + Clone
 {
     entries.sort_by_cached_key(|source|score(source.as_ref(), key));
