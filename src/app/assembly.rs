@@ -330,6 +330,7 @@ impl App
             let offset = current_ip as usize + instruction_offset;
             let mut bytes = bytes.to_vec();
             self.plugin_manager.on_edit(&mut self.data, offset, &mut bytes, &mut self.logger);
+            bytes.truncate(self.data.len().checked_sub(offset).unwrap());
             let bytes_len = bytes.len();
             self.data.splice(offset..offset + bytes_len, bytes);
             self.dirty = true;
