@@ -78,6 +78,7 @@ impl App
                     offset, 
                     current_instruction, 
                     &mut self.logger,
+                    &mut self.popup,
                     &self.header
                 )?;
             }

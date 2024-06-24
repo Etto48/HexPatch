@@ -1,10 +1,11 @@
 use std::error::Error;
 
 use mlua::{Function, Lua};
+use ratatui::text::Text;
 
 use crate::{app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::{register_key_settings_macro::key_event_to_lua, Settings}}, headers::Header};
 
-use super::{ app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, instruction_info::InstructionInfo, register_userdata::{register_logger, register_settings, register_vec_u8}};
+use super::{ app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, instruction_info::InstructionInfo, register_userdata::{register_logger, register_settings, register_string, register_text, register_vec_u8}};
 
 #[derive(Debug)]
 pub struct Plugin
@@ -22,6 +23,9 @@ impl Plugin {
         register_vec_u8(&lua)?;
         register_settings(&lua)?;
         register_logger(&lua)?;
+        register_text(&lua)?;
+        register_string(&lua)?;
+
         context.exported_commands = ExportedCommands::default();
         if let Ok(init) = lua.globals().get::<_, Function>("init")
         {
@@ -185,6 +189,22 @@ impl Plugin {
     pub fn get_commands(&self) -> &[CommandInfo]
     {
         self.commands.get_commands()
+    }
+
+    pub fn fill_popup(
+        &self,
+        callback: impl AsRef<str>,
+        settings: &Settings,
+        popup_text: &mut Text<'static>,
+        popup_title: &mut String) -> mlua::Result<()>
+    {
+        let callback = self.lua.globals().get::<_, Function>(callback.as_ref()).unwrap();
+        self.lua.scope(|scope| {
+            let settings = scope.create_any_userdata_ref(settings)?;
+            let popup_text = scope.create_any_userdata_ref_mut(popup_text)?;
+            let popup_title = scope.create_any_userdata_ref_mut(popup_title)?;
+            callback.call::<_,()>((settings, popup_text, popup_title))
+        })
     }
 }
 

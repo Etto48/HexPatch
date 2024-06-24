@@ -180,7 +180,11 @@ impl App
             Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
         }
         self.log_header_info();
-        self.plugin_manager.on_open(&mut self.data, &mut self.logger, &self.header);
+        self.plugin_manager.on_open(
+            &mut self.data, 
+            &mut self.logger, 
+            &mut self.popup,
+            &self.header);
 
         Ok(())
     }
@@ -200,7 +204,11 @@ impl App
 
     pub(in crate::app) fn save_file(&mut self) -> Result<(), Box<dyn Error>>
     {
-        self.plugin_manager.on_save(&mut self.data, &mut self.logger, &self.header);
+        self.plugin_manager.on_save(
+            &mut self.data, 
+            &mut self.logger, 
+            &mut self.popup,
+            &self.header);
         self.filesystem.write(self.filesystem.pwd(), &self.data)?;
         self.dirty = false;
         match &self.filesystem

@@ -173,6 +173,7 @@ impl App
                 current_instruction, 
                 &mut new_bytes, 
                 &mut self.logger,
+                &mut self.popup,
                 &self.header);
             new_bytes.truncate(self.data.len().checked_sub(cursor_position.global_byte_index).unwrap());
 

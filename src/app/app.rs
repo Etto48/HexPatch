@@ -78,7 +78,12 @@ impl App
                 Settings::default()
             },
         };
-        let plugin_manager = match PluginManager::load(args.plugins.as_deref(), &mut logger, &mut settings)
+        let mut popup = None;
+        let plugin_manager = match PluginManager::load(
+            args.plugins.as_deref(), 
+            &mut logger, 
+            &mut popup,
+            &mut settings)
         {
             Ok(plugins) => plugins,
             Err(e) => {
@@ -109,6 +114,7 @@ impl App
             help_list: Self::help_list(&settings.key),
             settings,
             logger,
+            popup,
             ..Default::default()
         };
 
@@ -215,15 +221,27 @@ impl App
                 if let Some(popup_state) = &self.popup 
                 {
                     let mut popup_text = Text::default();
-                    let mut popup_title = "Popup";
+                    let mut popup_title = "Popup".into();
 
                     let mut popup_width = 60;
                     let mut popup_height = 5;
 
-                    let popup_result = self.fill_popup(&self.settings.color, popup_state, &mut popup_title, &mut popup_text, &mut popup_height, &mut popup_width);
+                    let popup_result = self.fill_popup(
+                        &self.settings.color, 
+                        popup_state, 
+                        &mut popup_title, 
+                        &mut popup_text, 
+                        &mut popup_height, 
+                        &mut popup_width
+                    );
                     popup_height = popup_height.min(f.size().height.saturating_sub(2) as usize);
                     popup_width = popup_width.min(f.size().width.saturating_sub(1) as usize);
-                    let popup_rect = Rect::new((f.size().width / 2).saturating_sub((popup_width / 2 + 1) as u16), (f.size().height / 2).saturating_sub((popup_height / 2) as u16), popup_width as u16, popup_height as u16);
+                    let popup_rect = Rect::new(
+                        (f.size().width / 2).saturating_sub((popup_width / 2 + 1) as u16), 
+                        (f.size().height / 2).saturating_sub((popup_height / 2) as u16), 
+                        popup_width as u16, 
+                        popup_height as u16
+                    );
 
                     if popup_result.is_ok()
                     {

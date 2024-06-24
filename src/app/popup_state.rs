@@ -53,12 +53,18 @@ pub enum PopupState
     },
     QuitDirtySave(bool),
     SaveAndQuit(bool),
-    SaveAs{
+    SaveAs
+    {
         path: String,
         cursor: usize,
     },
     Save(bool),
-    Help(usize)
+    Help(usize),
+    Custom
+    {
+        plugin_index: usize,
+        callback: String,
+    }
 }
 
 impl App
@@ -296,13 +302,13 @@ impl App
         (lines, selected_line)
     }
 
-    pub(super) fn fill_popup(&self, color_settings: &ColorSettings, popup_state: &PopupState, popup_title: &mut &str, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
+    pub(super) fn fill_popup(&self, color_settings: &ColorSettings, popup_state: &PopupState, popup_title: &mut String, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
     {
         match &popup_state
         {
             PopupState::Open { currently_open_path, path, cursor, results, scroll } =>
             {
-                *popup_title = "Open";
+                *popup_title = "Open".into();
                 let available_width = width.saturating_sub(2);
                 let max_results = self.get_scrollable_popup_line_count();
                 *height = max_results + 2 + 5;
@@ -367,7 +373,7 @@ impl App
             },
             PopupState::Run { command, cursor, results, scroll } =>
             {
-                *popup_title = "Run";
+                *popup_title = "Run".into();
                 let available_width = width.saturating_sub(2);
                 let max_results = self.get_scrollable_popup_line_count();
                 *height = max_results + 2 + 4;
@@ -411,7 +417,7 @@ impl App
             },
             PopupState::FindText { text, cursor } =>
             {
-                *popup_title = "Find Text";
+                *popup_title = "Find Text".into();
                 let available_width = width.saturating_sub(2);
                 *height = 3;
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width, true);
@@ -421,7 +427,7 @@ impl App
             }
             PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
             {
-                *popup_title = "Find Symbol";
+                *popup_title = "Find Symbol".into();
                 let available_width = width.saturating_sub(2);
                 let max_symbols = self.get_scrollable_popup_line_count();
                 *height = max_symbols + 2 + 4;
@@ -545,7 +551,7 @@ impl App
             }
             PopupState::Log(scroll) =>
             {
-                *popup_title = "Log";
+                *popup_title = "Log".into();
                 let max_lines = self.get_scrollable_popup_line_count();
                 *height = max_lines + 4;
                 if !self.logger.is_empty()
@@ -575,7 +581,7 @@ impl App
             }
             PopupState::InsertText {text, cursor} =>
             {
-                *popup_title = "Text";
+                *popup_title = "Text".into();
                 let available_editable_text_lines = self.get_scrollable_popup_line_count();
                 *height = 3 + 2 + available_editable_text_lines;
                 let available_width = width.saturating_sub(2);
@@ -610,7 +616,7 @@ impl App
             }
             PopupState::Patch {assembly,preview,  cursor} =>
             {
-                *popup_title = "Patch";
+                *popup_title = "Patch".into();
                 let available_editable_text_lines = self.get_scrollable_popup_line_count();
                 *height = 6 + available_editable_text_lines;
                 let available_width = width.saturating_sub(2);
@@ -645,7 +651,7 @@ impl App
             }
             PopupState::JumpToAddress {location: address, cursor} =>
             {
-                *popup_title = "Jump";
+                *popup_title = "Jump".into();
                 let available_width = width.saturating_sub(2);
                 *height = 3;
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location", available_width, true);
@@ -655,7 +661,7 @@ impl App
             }
             PopupState::SaveAndQuit(yes_selected) =>
             {
-                *popup_title = "Save and Quit";
+                *popup_title = "Save and Quit".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file will be saved and the program will quit."),
@@ -678,7 +684,7 @@ impl App
             },
             PopupState::SaveAs { path, cursor } =>
             {
-                *popup_title = "Save As";
+                *popup_title = "Save As".into();
                 let available_width = width.saturating_sub(2);
                 *height = 3;
                 let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
@@ -688,7 +694,7 @@ impl App
             },
             PopupState::Save(yes_selected) =>
             {
-                *popup_title = "Save";
+                *popup_title = "Save".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file will be saved."),
@@ -711,7 +717,7 @@ impl App
             },
             PopupState::QuitDirtySave(yes_selected) =>
             {
-                *popup_title = "Quit";
+                *popup_title = "Quit".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file has been modified."),
@@ -736,7 +742,7 @@ impl App
             {
                 let max_lines = self.get_scrollable_popup_line_count();
                 *height = max_lines + 4;
-                *popup_title = "Help";
+                *popup_title = "Help".into();
                 if *scroll > 0
                 {
                     popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
@@ -761,7 +767,10 @@ impl App
                 {
                     popup_text.lines.push(Line::raw(""));
                 }
-            }
+            },
+            PopupState::Custom { plugin_index, callback } => {
+                self.plugin_manager.fill_popup(*plugin_index, callback, &self.settings, popup_text, popup_title)?;
+            },
         }
         Ok(())
     }

@@ -9,6 +9,8 @@ pub struct AppContext
 {
     pub logger: Logger,
     pub exported_commands: ExportedCommands,
+    pub plugin_index: Option<usize>,
+    pub popup: Option<(usize, String)>,
 }
 
 impl AppContext
@@ -57,6 +59,25 @@ impl UserData for AppContext
                 else
                 {
                     Err(mlua::Error::external(format!("Command '{}' not found", command)))
+                }
+            }
+        );
+
+        methods.add_method_mut("open_popup",
+            |lua, this, callback: String| 
+            {
+                if this.popup.is_some()
+                {
+                    Err(mlua::Error::external("Popup already open"))
+                }
+                else if lua.globals().get::<_,Function>(callback.clone()).is_err()
+                {
+                    Err(mlua::Error::external(format!("Function '{}' not found but needed to open the popup", callback)))
+                }
+                else
+                {
+                    this.popup = Some((this.plugin_index.unwrap(), callback));
+                    Ok(())
                 }
             }
         );

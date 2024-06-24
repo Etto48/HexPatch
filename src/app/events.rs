@@ -347,7 +347,7 @@ impl App
                         Some(PopupState::QuitDirtySave(yes_selected)) =>
                         {
                             *yes_selected = !*yes_selected;
-                        },
+                        }
                         _ => {}
                     }
                 }
@@ -408,7 +408,7 @@ impl App
                                 self.save_file()?;
                             }
                             popup = None;
-                        },
+                        }
                         Some(PopupState::SaveAndQuit(yes_selected)) =>
                         {
                             if *yes_selected
@@ -417,7 +417,7 @@ impl App
                                 self.needs_to_exit = true;
                             }
                             popup = None;
-                        },
+                        }
                         Some(PopupState::QuitDirtySave(yes_selected)) =>
                         {
                             if *yes_selected
@@ -430,11 +430,12 @@ impl App
                                 self.needs_to_exit = true;
                             }
                             popup = None;
-                        },
+                        }
                         Some(PopupState::Help(_)) => 
                         {
                             popup = None;
                         }
+                        Some(PopupState::Custom { plugin_index: _, callback: _}) => {}
                         None => {}
                     }
                 }
@@ -579,10 +580,16 @@ impl App
                     current_byte, 
                     current_instruction, 
                     &mut self.logger,
+                    &mut self.popup,
                     &self.header);
             },
             event::Event::Mouse(me) => {
-                self.plugin_manager.on_mouse(*me, &mut self.logger, &self.header);
+                self.plugin_manager.on_mouse(
+                    *me, 
+                    &mut self.logger, 
+                    &mut self.popup, 
+                    &self.header
+                );
             },
             event::Event::Paste(_s) => {
                 // TODO: Maybe add a paste event

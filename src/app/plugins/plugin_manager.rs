@@ -1,8 +1,9 @@
 use std::path::{Path, PathBuf};
 
 use crossterm::event::{KeyEvent, MouseEvent};
+use ratatui::text::Text;
 
-use crate::{app::{commands::command_info::CommandInfo, log::{logger::Logger, NotificationLevel}, settings::Settings}, headers::Header};
+use crate::{app::{commands::command_info::CommandInfo, log::{logger::Logger, NotificationLevel}, popup_state::PopupState, settings::Settings}, headers::Header};
 
 use super::{app_context::AppContext, event::{Event, Events}, instruction_info::InstructionInfo, plugin::Plugin};
 
@@ -21,9 +22,13 @@ impl PluginManager {
         Self::default()
     }
 
-    pub fn load(path: Option<&Path>, log: &mut Logger, settings: &mut Settings) -> std::io::Result<Self> {
+    pub fn load(
+        path: Option<&Path>, 
+        log: &mut Logger, 
+        popup: &mut Option<PopupState>, 
+        settings: &mut Settings) -> std::io::Result<Self> {
         let mut plugin_manager = Self {
-            plugins: Self::load_plugins(log, settings, path)?,
+            plugins: Self::load_plugins(log, popup, settings, path)?,
             ..Default::default()
         };
 
@@ -59,7 +64,11 @@ impl PluginManager {
         Some(config.join("HexPatch").join("plugins"))
     }
 
-    fn load_plugins(log: &mut Logger, settings: &mut Settings, path: Option<&Path>) -> std::io::Result<Vec<Plugin>>
+    fn load_plugins(
+        log: &mut Logger, 
+        popup: &mut Option<PopupState>, 
+        settings: &mut Settings, 
+        path: Option<&Path>) -> std::io::Result<Vec<Plugin>>
     {
         let mut plugins = Vec::new();
         let path = match path
@@ -88,29 +97,44 @@ impl PluginManager {
             }
         }
         log.merge(&context.logger);
+        Self::popup_if_needed(popup, &context);
         Ok(plugins)
     }
 
-    pub fn on_open(&mut self, data: &mut Vec<u8>, logger: &mut Logger, header: &Header)
+    pub fn on_open(
+        &mut self, 
+        data: &mut Vec<u8>, 
+        logger: &mut Logger, 
+        popup: &mut Option<PopupState>, 
+        header: &Header)
     {
         let mut context = AppContext::new();
         for i in self.on_open.iter()
         {
+            context.plugin_index = Some(*i);
             let event = Event::Open { data, header };
             self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
+        Self::popup_if_needed(popup, &context);
     }
 
-    pub fn on_save(&mut self, data: &mut Vec<u8>, logger: &mut Logger, header: &Header)
+    pub fn on_save(
+        &mut self, 
+        data: &mut Vec<u8>, 
+        logger: &mut Logger, 
+        popup: &mut Option<PopupState>,
+        header: &Header)
     {
         let mut context = AppContext::new();
         for i in self.on_save.iter()
         {
+            context.plugin_index = Some(*i);
             let event = Event::Save { data, header };
             self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
+        Self::popup_if_needed(popup, &context)
     }
 
     pub fn on_edit(
@@ -120,11 +144,13 @@ impl PluginManager {
         current_instruction: Option<InstructionInfo>,
         new_bytes: &mut Vec<u8>, 
         logger: &mut Logger,
+        popup: &mut Option<PopupState>,
         header: &Header)
     {
         let mut context = AppContext::new();
         for i in self.on_edit.iter()
         {
+            context.plugin_index = Some(*i);
             let event = Event::Edit { 
                 data, 
                 offset, 
@@ -135,6 +161,7 @@ impl PluginManager {
             self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
+        Self::popup_if_needed(popup, &context);
     }
 
     pub fn on_key(
@@ -144,11 +171,13 @@ impl PluginManager {
         offset: usize,
         current_instruction: Option<InstructionInfo>, 
         logger: &mut Logger,
+        popup: &mut Option<PopupState>,
         header: &Header)
     {
         let mut context = AppContext::new();
         for i in self.on_key.iter()
         {
+            context.plugin_index = Some(*i);
             let event = Event::Key { 
                 event, 
                 data, 
@@ -159,9 +188,15 @@ impl PluginManager {
             self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
+        Self::popup_if_needed(popup, &context);
     }
 
-    pub fn on_mouse(&mut self, mouse_event: MouseEvent, logger: &mut Logger, header: &Header)
+    pub fn on_mouse(
+        &mut self, 
+        mouse_event: MouseEvent, 
+        logger: &mut Logger, 
+        popup: &mut Option<PopupState>, 
+        header: &Header)
     {
         let kind = format!("{:?}", mouse_event.kind);
         let row = mouse_event.row;
@@ -170,6 +205,7 @@ impl PluginManager {
         let mut context = AppContext::new();
         for i in self.on_mouse.iter()
         {
+            context.plugin_index = Some(*i);
             let event = Event::Mouse { 
                 kind: kind.clone(), 
                 row, 
@@ -179,6 +215,7 @@ impl PluginManager {
             self.plugins[*i].handle(event, &mut context);
         }
         logger.merge(&context.logger);
+        Self::popup_if_needed(popup, &context);
     }
 
     pub fn get_commands(&self) -> Vec<&CommandInfo>
@@ -200,16 +237,18 @@ impl PluginManager {
         offset: usize, 
         current_instruction: Option<InstructionInfo>, 
         logger: &mut Logger,
+        popup: &mut Option<PopupState>,
         header: &Header) -> mlua::Result<()>
     {
         let mut context = AppContext::new();
         let mut found = false;
-        for plugin in self.plugins.iter_mut()
+        for (i, plugin) in self.plugins.iter_mut().enumerate()
         {
             if let Some(_command_info) = plugin.get_commands()
                 .iter()
                 .find(|c| c.command == command)
             {
+                context.plugin_index = Some(i);
                 plugin.run_command(
                     command,
                     data, 
@@ -223,7 +262,30 @@ impl PluginManager {
             }
         }
         logger.merge(&context.logger);
+        Self::popup_if_needed(popup, &context);
         if !found { Err(mlua::Error::external(format!("Command \"{}\" not found", command))) } else { Ok(()) }
+    }
+
+    pub fn fill_popup(
+        &self, 
+        plugin_index: usize,
+        callback: impl AsRef<str>,
+        settings: &Settings,
+        popup_text: &mut Text<'static>,
+        popup_title: &mut String) -> mlua::Result<()> 
+    {
+        self.plugins[plugin_index].fill_popup(callback, settings, popup_text, popup_title)
+    }
+
+    fn popup_if_needed(popup: &mut Option<PopupState>, context: &AppContext)
+    {
+        if let Some((plugin_index, callback)) = &context.popup
+        {
+            popup.replace(PopupState::Custom { 
+                plugin_index: *plugin_index, 
+                callback: callback.clone() 
+            });
+        }
     }
 }
 
@@ -240,17 +302,18 @@ mod test
         let mut log = Logger::new();
         let mut settings = Settings::default();
         let path = std::path::Path::new("test/plugins");
-        let mut plugin_manager = PluginManager::load(Some(path), &mut log, &mut settings).unwrap();
+        let mut popup_state = None;
+        let mut plugin_manager = PluginManager::load(Some(path), &mut log, &mut popup_state, &mut settings).unwrap();
         assert_eq!(plugin_manager.plugins.len(), 2);
         let mut data = vec![0; 0x100];
         let header = Header::default();
 
-        plugin_manager.run_command("p1c1", &mut data, 0, None, &mut log, &header).unwrap();
-        plugin_manager.run_command("p1c2", &mut data, 0, None, &mut log, &header).unwrap();
-        plugin_manager.run_command("p2c1", &mut data, 0, None, &mut log, &header).unwrap();
-        plugin_manager.run_command("p2c2", &mut data, 0, None, &mut log, &header).unwrap();
+        plugin_manager.run_command("p1c1", &mut data, 0, None, &mut log, &mut popup_state, &header).unwrap();
+        plugin_manager.run_command("p1c2", &mut data, 0, None, &mut log, &mut popup_state, &header).unwrap();
+        plugin_manager.run_command("p2c1", &mut data, 0, None, &mut log, &mut popup_state, &header).unwrap();
+        plugin_manager.run_command("p2c2", &mut data, 0, None, &mut log, &mut popup_state, &header).unwrap();
 
-        plugin_manager.on_open(&mut Vec::new(), &mut log, &header);
+        plugin_manager.on_open(&mut Vec::new(), &mut log, &mut popup_state, &header);
         // If there was an error, the logger will have a message
         assert_ne!(log.get_notification_level(), NotificationLevel::Error);
 

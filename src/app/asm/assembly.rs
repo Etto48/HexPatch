@@ -236,6 +236,7 @@ impl App
                 current_instruction, 
                 &mut bytes, 
                 &mut self.logger,
+                &mut self.popup,
                 &self.header);
             bytes.truncate(self.data.len().checked_sub(offset).unwrap());
             let bytes_len = bytes.len();
