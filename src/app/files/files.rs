@@ -3,7 +3,7 @@ use std::error::Error;
 
 use ratatui::{backend::Backend, Terminal};
 
-use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, headers::Header};
+use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, get_context_refs, headers::Header};
 
 use super::{filesystem::FileSystem, path_result::PathResult, path};
 
@@ -180,11 +180,8 @@ impl App
             Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
         }
         self.log_header_info();
-        self.plugin_manager.on_open(
-            &mut self.data, 
-            &mut self.logger, 
-            &mut self.popup,
-            &self.header);
+        let mut context_refs = get_context_refs!(self);
+        self.plugin_manager.on_open(&mut context_refs);
 
         Ok(())
     }
@@ -204,11 +201,8 @@ impl App
 
     pub(in crate::app) fn save_file(&mut self) -> Result<(), Box<dyn Error>>
     {
-        self.plugin_manager.on_save(
-            &mut self.data, 
-            &mut self.logger, 
-            &mut self.popup,
-            &self.header);
+        let mut context_refs = get_context_refs!(self);
+        self.plugin_manager.on_save(&mut context_refs);
         self.filesystem.write(self.filesystem.pwd(), &self.data)?;
         self.dirty = false;
         match &self.filesystem

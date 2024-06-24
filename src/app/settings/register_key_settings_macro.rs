@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, MouseEvent};
 use mlua::{Lua, Table};
 
 use super::key_settings::KeySettings;
@@ -29,6 +29,16 @@ macro_rules! RegisterKeySettings {(
             }
         }
     };
+}
+
+pub fn mouse_event_to_lua<'lua>(lua: &'lua Lua, mouse: &MouseEvent) -> mlua::Result<Table<'lua>>
+{
+    let ret = lua.create_table()?;
+    ret.set("kind", format!("{:?}",mouse.kind))?;
+    ret.set("column", mouse.column)?;
+    ret.set("row", mouse.row)?;
+    ret.set("modifiers", mouse.modifiers.bits())?;
+    Ok(ret)
 }
 
 pub fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Table<'lua>>

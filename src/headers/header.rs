@@ -36,10 +36,11 @@ impl UserData for Section
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum Header
 {
     GenericHeader(GenericHeader),
+    #[default]
     None,
 }
 
@@ -285,13 +286,6 @@ impl Header
     }
 }
 
-impl Default for Header
-{
-    fn default() -> Self {
-        Header::None
-    }
-}
-
 impl UserData for Header 
 {
     fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
@@ -302,7 +296,7 @@ impl UserData for Header
         fields.add_field_method_get("text_section", |_, this| Ok(this.get_text_section()));
         fields.add_field_method_get("symbols", |_, this| Ok(this.get_symbols().map(|x| 
         {
-            x.values().map(|sym|sym.clone()).collect::<Vec<_>>()
+            x.values().cloned().collect::<Vec<_>>()
         })));
     }
 

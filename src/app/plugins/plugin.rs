@@ -3,9 +3,9 @@ use std::error::Error;
 use mlua::{Function, Lua};
 use ratatui::text::Text;
 
-use crate::{app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::{register_key_settings_macro::key_event_to_lua, Settings}}, headers::Header};
+use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::{register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua}, Settings}};
 
-use super::{ app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, instruction_info::InstructionInfo, register_userdata::{register_logger, register_settings, register_string, register_text, register_vec_u8}};
+use super::{ app_context::AppContext, context_refs::ContextRefs, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_logger, register_settings, register_string, register_text, register_vec_u8}};
 
 #[derive(Debug)]
 pub struct Plugin
@@ -15,7 +15,11 @@ pub struct Plugin
 }
 
 impl Plugin {
-    pub fn new_from_source(source: &str, settings: &mut Settings, context: &mut AppContext) -> Result<Self, Box<dyn Error>>
+    pub fn new_from_source(
+        source: &str, 
+        settings: &mut Settings, 
+        context: &mut AppContext
+    ) -> Result<Self, Box<dyn Error>>
     {
         let lua = Lua::new();
         lua.load(source).exec()?;
@@ -39,7 +43,11 @@ impl Plugin {
         Ok(Plugin { lua , commands: context.exported_commands.take() })
     }
 
-    pub fn new_from_file(path: &str, settings: &mut Settings, context: &mut AppContext) -> Result<Self, Box<dyn Error>>
+    pub fn new_from_file(
+        path: &str, 
+        settings: &mut Settings, 
+        context: &mut AppContext
+    ) -> Result<Self, Box<dyn Error>>
     {
         let source = std::fs::read_to_string(path)?;
         Self::new_from_source(&source, settings, context)
@@ -73,83 +81,83 @@ impl Plugin {
 
     /// Handle an event, if an error occurs, return the error
     /// see [Plugin::handle] for a version that logs the error
-    pub fn handle_with_error(&mut self, event: Event, context: &mut AppContext) -> mlua::Result<()>
+    pub fn handle_with_error(&mut self, event: Event, context: &mut AppContext, context_refs: &mut ContextRefs) -> mlua::Result<()>
     {
         context.exported_commands = self.commands.take();
         let ret = match event
         {
-            Event::Open { 
-                data, 
-                header} =>
+            Event::Open =>
             {
                 // Call the on_open function
                 let on_open = self.lua.globals().get::<_, Function>("on_open").unwrap();
                 self.lua.scope(|scope| {
-                    let data = scope.create_any_userdata_ref_mut(data)?;
+                    let data = scope.create_any_userdata_ref_mut(context_refs.data)?;
+                    let offset = context_refs.offset;
+                    let current_instruction = context_refs.current_instruction.clone();
                     let context = scope.create_userdata_ref_mut(context)?;
-                    let header = scope.create_userdata_ref(header)?;
-                    on_open.call::<_,()>((data, context, header))
+                    let settings = scope.create_any_userdata_ref(context_refs.settings)?;
+                    let header = scope.create_userdata_ref(context_refs.header)?;
+                    on_open.call::<_,()>((data, offset, current_instruction, settings, header, context))
                 })
             },
-            Event::Edit { 
-                data, 
-                offset, 
-                new_bytes, 
-                current_instruction, 
-                header} =>
+            Event::Edit { new_bytes} =>
             {
                 // Call the on_edit function
                 let on_edit = self.lua.globals().get::<_, Function>("on_edit").unwrap();
                 self.lua.scope(|scope| {
-                    let data = scope.create_any_userdata_ref_mut(data)?;
+                    let data = scope.create_any_userdata_ref_mut(context_refs.data)?;
+                    let offset = context_refs.offset;
+                    let current_instruction = context_refs.current_instruction.clone();
                     let new_bytes = scope.create_any_userdata_ref_mut(new_bytes)?;
                     let context = scope.create_userdata_ref_mut(context)?;
-                    let header = scope.create_userdata_ref(header)?;
-                    on_edit.call::<_,()>((data, offset, new_bytes, current_instruction, context, header))
+                    let settings = scope.create_any_userdata_ref(context_refs.settings)?;
+                    let header = scope.create_userdata_ref(context_refs.header)?;
+                    on_edit.call::<_,()>((new_bytes, data, offset, current_instruction, settings, header, context))
                 })
             },
-            Event::Save { 
-                data, 
-                header} =>
+            Event::Save =>
             {
                 // Call the on_save function
                 let on_save = self.lua.globals().get::<_, Function>("on_save").unwrap();
                 self.lua.scope(|scope| {
-                    let data = scope.create_any_userdata_ref_mut(data)?;
+                    let data = scope.create_any_userdata_ref_mut(context_refs.data)?;
+                    let offset = context_refs.offset;
+                    let current_instruction = context_refs.current_instruction.clone();
                     let context = scope.create_userdata_ref_mut(context)?;
-                    let header = scope.create_userdata_ref(header)?;
-                    on_save.call::<_,()>((data, context, header))
+                    let settings = scope.create_any_userdata_ref(context_refs.settings)?;
+                    let header = scope.create_userdata_ref(context_refs.header)?;
+                    on_save.call::<_,()>((data, offset, current_instruction, settings, header, context))
                 })
             },
             Event::Key {
-                event, 
-                data, 
-                offset, 
-                current_instruction,
-                header} =>
+                event} =>
             {
                 // Call the on_key function
                 let on_key = self.lua.globals().get::<_, Function>("on_key").unwrap();
                 let event = key_event_to_lua(&self.lua, &event).unwrap();
                 self.lua.scope(|scope| {
-                    let data = scope.create_any_userdata_ref_mut(data)?;
+                    let data = scope.create_any_userdata_ref_mut(context_refs.data)?;
+                    let offset = context_refs.offset;
+                    let current_instruction = context_refs.current_instruction.clone();
                     let context = scope.create_userdata_ref_mut(context)?;
-                    let header = scope.create_userdata_ref(header)?;
-                    on_key.call::<_,()>((event, data, offset, current_instruction, context, header))
+                    let settings = scope.create_any_userdata_ref(context_refs.settings)?;
+                    let header = scope.create_userdata_ref(context_refs.header)?;
+                    on_key.call::<_,()>((event, data, offset, current_instruction, settings, header, context))
                 })
             },
-            Event::Mouse {
-                kind, 
-                row, 
-                col, 
-                header} =>
+            Event::Mouse { event } =>
             {
                 // Call the on_mouse function
                 let on_mouse = self.lua.globals().get::<_, Function>("on_mouse").unwrap();
+                let event = mouse_event_to_lua(&self.lua, &event).unwrap();
                 self.lua.scope(|scope| {
+                    let data = scope.create_any_userdata_ref_mut(context_refs.data)?;
+                    let offset = context_refs.offset;
+                    let current_instruction = context_refs.current_instruction.clone();
                     let context = scope.create_userdata_ref_mut(context)?;
-                    let header = scope.create_userdata_ref(header)?;
-                    on_mouse.call::<_,()>((kind, row, col, context, header))
+                    let settings = scope.create_any_userdata_ref(context_refs.settings)?;
+                    let header = scope.create_userdata_ref(context_refs.header)?;
+                    on_mouse.call::<_,()>((event, data, offset, current_instruction, settings, header, context))
                 })
             },
         };
@@ -157,9 +165,9 @@ impl Plugin {
         ret
     }
 
-    pub fn handle(&mut self, event: Event, context: &mut AppContext)
+    pub fn handle(&mut self, event: Event, context: &mut AppContext, context_refs: &mut ContextRefs)
     {
-        if let Err(e) = self.handle_with_error(event, context)
+        if let Err(e) = self.handle_with_error(event, context, context_refs)
         {
             context.logger.log(NotificationLevel::Error, &format!("In plugin: {}", e));
         }
@@ -168,19 +176,19 @@ impl Plugin {
     pub fn run_command(
         &mut self, 
         command: &str, 
-        data: &mut Vec<u8>, 
-        offset: usize, 
-        current_instruction: Option<InstructionInfo>, 
         context: &mut AppContext, 
-        header: &Header) -> mlua::Result<()>
+        context_refs: &mut ContextRefs) -> mlua::Result<()>
     {
         let command_fn = self.lua.globals().get::<_, Function>(command)?;
         context.exported_commands = self.commands.take();
         let ret = self.lua.scope(|scope| {
-            let data = scope.create_any_userdata_ref_mut(data)?;
+            let data = scope.create_any_userdata_ref_mut(context_refs.data)?;
+            let offset = context_refs.offset;
+            let current_instruction = context_refs.current_instruction.clone();
             let context = scope.create_userdata_ref_mut(context)?;
-            let header = scope.create_userdata_ref(header)?;
-            command_fn.call::<_,()>((data, offset, current_instruction, context, header))
+            let settings = scope.create_any_userdata_ref(context_refs.settings)?;
+            let header = scope.create_userdata_ref(context_refs.header)?;
+            command_fn.call::<_,()>((data, offset, current_instruction, settings, header, context))
         });
         self.commands = context.exported_commands.take();
         ret
@@ -194,17 +202,25 @@ impl Plugin {
     pub fn fill_popup(
         &self,
         callback: impl AsRef<str>,
-        settings: &Settings,
         popup_text: &mut Text<'static>,
-        popup_title: &mut String) -> mlua::Result<()>
+        popup_title: &mut String,
+        context_refs: ContextRefs) -> mlua::Result<()>
     {
         let callback = self.lua.globals().get::<_, Function>(callback.as_ref()).unwrap();
-        self.lua.scope(|scope| {
-            let settings = scope.create_any_userdata_ref(settings)?;
+        let mut context = AppContext::new();
+        let ret = self.lua.scope(|scope| {
+            let data = scope.create_any_userdata_ref_mut(context_refs.data)?;
+            let offset = context_refs.offset;
+            let current_instruction = context_refs.current_instruction.clone();
+            let settings = scope.create_any_userdata_ref(context_refs.settings)?;
             let popup_text = scope.create_any_userdata_ref_mut(popup_text)?;
             let popup_title = scope.create_any_userdata_ref_mut(popup_title)?;
-            callback.call::<_,()>((settings, popup_text, popup_title))
-        })
+            let context = scope.create_userdata_ref_mut(&mut context)?;
+            let header = scope.create_userdata_ref(context_refs.header)?;
+            callback.call::<_,()>((popup_text, popup_title, data, offset, current_instruction, settings, header, context))
+        });
+        context_refs.logger.merge(&context.logger);
+        ret
     }
 }
 
@@ -215,7 +231,7 @@ mod test
     use object::Architecture;
     use ratatui::style::Style;
 
-    use crate::app::{log::NotificationLevel, settings::settings_value::SettingsValue};
+    use crate::{app::{log::{logger::Logger, NotificationLevel}, settings::settings_value::SettingsValue}, headers::Header};
 
     use super::*;
 
@@ -239,11 +255,11 @@ mod test
     fn test_discover_event_handlers()
     {
         let source = "
-            function on_open(data, context, header) end
-            function on_edit(data, offset, new_bytes, current_instruction, context, header) end
-            function on_save(data, context, header) end
-            function on_key(key_event, data, offset, current_instruction, context, header) end
-            function on_mouse(kind, row, col, context, header) end
+            function on_open(data, offset, current_instruction, settings, header, context) end
+            function on_edit(new_bytes, data, offset, current_instruction, settings, header, context) end
+            function on_save(data, offset, current_instruction, settings, header, context) end
+            function on_key(key_event, data, offset, current_instruction, settings, header, context) end
+            function on_mouse(mouse_event, data, offset, current_instruction, settings, header, context) end
         ";
         let mut settings = Settings::default();
         let mut context = AppContext::default();
@@ -251,9 +267,9 @@ mod test
         let handlers = plugin.get_event_handlers();
         assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE | Events::ON_KEY | Events::ON_MOUSE);
         let source = "
-            function on_open(data, context, header) end
-            function on_edit(data, offset, new_bytes, current_instruction, context, header) end
-            function on_save(data, context, header) end
+            function on_open(data, offset, current_instruction, settings, header, context) end
+            function on_edit(new_bytes, data, offset, current_instruction, settings, header, context) end
+            function on_save(data, offset, current_instruction, settings, header, context) end
         ";
         let plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let handlers = plugin.get_event_handlers();
@@ -264,7 +280,7 @@ mod test
     fn test_edit_open_data()
     {
         let source = "
-            function on_open(data, context)
+            function on_open(data, offset, current_instruction, settings, header, context)
                 data:set(0,42)
             end
         ";
@@ -274,8 +290,11 @@ mod test
         let header = Header::default();
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut context = AppContext::default();
-        let event = Event::Open { data: &mut data , header: &header };
-        plugin.handle_with_error(event, &mut context).unwrap();
+        let mut popup = None;
+        let mut logger = Logger::default();
+        let mut context_refs = ContextRefs::new(0, None, &mut data, &header, &settings, &mut logger, &mut popup);
+        let event = Event::Open;
+        plugin.handle_with_error(event, &mut context, &mut context_refs).unwrap();
         assert_eq!(data[0], 42);
     }
 
@@ -331,7 +350,7 @@ mod test
             function init(settings, context)
                 command = settings.key_confirm
             end
-            function on_key(key_event, data, offset, current_instruction, context, header)
+            function on_key(key_event, data, offset, current_instruction, settings, header, context)
                 if key_event.code == command.code then
                     data:set(offset, 42)
                 end
@@ -341,24 +360,20 @@ mod test
         let mut context = AppContext::default();
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut data = vec![0; 0x100];
+        let mut logger = Logger::default();
+        let mut popup = None;
         let header = Header::default();
+        let mut context_refs = ContextRefs::new(0, None, &mut data, &header, &settings, &mut logger, &mut popup);
         let event = Event::Key { 
-            event: KeyEvent::from(KeyCode::Down), 
-            data: &mut data, 
-            offset: 0, 
-            current_instruction: None,
-            header: &header
+            event: KeyEvent::from(KeyCode::Down)
         };
-        plugin.handle_with_error(event, &mut context).unwrap();
+        plugin.handle_with_error(event, &mut context, &mut context_refs).unwrap();
         assert_eq!(data[0], 0);
         let event = Event::Key { 
             event: settings.key.confirm, 
-            data: &mut data, 
-            offset: 0, 
-            current_instruction: None,
-            header: &header
         };
-        plugin.handle_with_error(event, &mut context).unwrap();
+        let mut context_refs = ContextRefs::new(0, None, &mut data, &header, &settings, &mut logger, &mut popup);
+        plugin.handle_with_error(event, &mut context, &mut context_refs).unwrap();
         assert_eq!(data[0], 42);
     }
 
@@ -370,7 +385,7 @@ mod test
                 context:log(1, \"Hello from init\")
             end
 
-            function on_open(data, context, header)
+            function on_open(data, offset, current_instruction, settings, header, context)
                 context:log(2, \"Hello from on_open\")
             end
         ";
@@ -390,8 +405,11 @@ mod test
 
         let mut data = vec![0; 0x100];
         let header = Header::default();
-        let event = Event::Open { data: &mut data, header: &header };
-        plugin.handle_with_error(event, &mut context).unwrap();
+        let mut logger = Logger::default();
+        let mut popup = None;
+        let mut context_refs = ContextRefs::new(0, None, &mut data, &header, &settings, &mut logger, &mut popup);
+        let event = Event::Open;
+        plugin.handle_with_error(event, &mut context, &mut context_refs).unwrap();
 
         {
             let mut message_iter = context.logger.iter();
@@ -423,18 +441,18 @@ mod test
             end
 
             -- Add and remove commands
-            function test(data, offset, current_instruction, context, header)
+            function test(data, offset, current_instruction, settings, header, context)
                 context:add_command(\"test2\", \"Test command 2\")
                 context:remove_command(\"test\")
             end
 
             -- Intentional error
-            function test2(data, offset, current_instruction, context, header)
+            function test2(data, offset, current_instruction, settings, header, context)
                 context:add_command(\"does_not_exist\", \"This command does not exist\")
             end
 
             -- No duplicate command should be added
-            function test3(data, offset, current_instruction, context, header)
+            function test3(data, offset, current_instruction, settings, header, context)
                 context:add_command(\"test\", \"Test command\")
                 context:add_command(\"test\", \"Test command 1\")
             end
@@ -443,6 +461,9 @@ mod test
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut data = vec![0; 0x100];
         let header = Header::default();
+        let mut logger = Logger::default();
+        let mut popup = None;
+        let mut context_refs = ContextRefs::new(0, None, &mut data, &header, &settings, &mut logger, &mut popup);
 
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 2);
@@ -453,11 +474,8 @@ mod test
 
         plugin.run_command(
             "test",
-            &mut data, 
-            0, 
-            None, 
             &mut context, 
-            &header).unwrap();
+            &mut context_refs).unwrap();
         
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 2);
@@ -468,11 +486,8 @@ mod test
 
         assert!(plugin.run_command(
             "test2",
-            &mut data, 
-            0, 
-            None, 
-            &mut context, 
-            &header).is_err(), 
+            &mut context,
+            &mut context_refs).is_err(), 
             "Should not be able to add a command that is not defined");
         
         let commands = plugin.commands.get_commands();
@@ -484,12 +499,9 @@ mod test
         assert_eq!(commands[1].description, "Test command 2");
 
         plugin.run_command(
-            "test3", 
-            &mut data, 
-            0, 
-            None, 
+            "test3",  
             &mut context, 
-            &header).unwrap();
+            &mut context_refs).unwrap();
 
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 3, 
@@ -507,7 +519,7 @@ mod test
     fn test_header()
     {
         let source = "
-            function on_open(data, context, header)
+            function on_open(data, offset, current_instruction, settings, header, context)
                 context:log(1, header.bitness)
                 context:log(1, header.architecture)
                 context:log(1, header.entry_point)
@@ -518,8 +530,11 @@ mod test
         let mut plugin = Plugin::new_from_source(source, &mut settings, &mut context).unwrap();
         let mut data = vec![0; 0x100];
         let header = Header::default();
-        let event = Event::Open { data: &mut data, header: &header };
-        plugin.handle_with_error(event, &mut context).unwrap();
+        let mut logger = Logger::default();
+        let mut popup = None;
+        let mut context_refs = ContextRefs::new(0, None, &mut data, &header, &settings, &mut logger, &mut popup);
+        let event = Event::Open;
+        plugin.handle_with_error(event, &mut context, &mut context_refs).unwrap();
 
         let messages = context.logger.iter().collect::<Vec<_>>();
         assert_eq!(messages.len(), 3);

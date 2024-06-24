@@ -218,7 +218,8 @@ impl App
                 f.render_widget(output_block, output_rect);
                 f.render_widget(scrollbar, scrollbar_rect);
 
-                if let Some(popup_state) = &self.popup 
+                // Draw popup
+                if self.popup.is_some()
                 {
                     let mut popup_text = Text::default();
                     let mut popup_title = "Popup".into();
@@ -226,14 +227,13 @@ impl App
                     let mut popup_width = 60;
                     let mut popup_height = 5;
 
-                    let popup_result = self.fill_popup(
-                        &self.settings.color, 
-                        popup_state, 
+                    let popup_result = self.fill_popup(  
                         &mut popup_title, 
                         &mut popup_text, 
                         &mut popup_height, 
                         &mut popup_width
                     );
+
                     popup_height = popup_height.min(f.size().height.saturating_sub(2) as usize);
                     popup_width = popup_width.min(f.size().width.saturating_sub(1) as usize);
                     let popup_rect = Rect::new(

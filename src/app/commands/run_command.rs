@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, fuzzer::fuzzy_search_in_place};
+use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, fuzzer::fuzzy_search_in_place, get_context_refs};
 
 use super::command_info::CommandInfo;
 
@@ -70,16 +70,10 @@ impl App
                 self.request_view_change();
             }
             any_other_command => {
-                let offset = self.get_cursor_position().global_byte_index;
-                let current_instruction = self.get_current_instruction().map(|i|i.into());
+                let mut context_refs = get_context_refs!(self);
                 self.plugin_manager.run_command(
                     any_other_command,
-                    &mut self.data, 
-                    offset, 
-                    current_instruction, 
-                    &mut self.logger,
-                    &mut self.popup,
-                    &self.header
+                    &mut context_refs
                 )?;
             }
         }

@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span};
 
-use crate::{app::{instruction::Instruction, log::NotificationLevel, settings::color_settings::ColorSettings, App}, asm::assembler::assemble, headers::{Header, Section}};
+use crate::{app::{instruction::Instruction, log::NotificationLevel, settings::color_settings::ColorSettings, App}, asm::assembler::assemble, get_context_refs, headers::{Header, Section}};
 
 use super::{assembly_line::AssemblyLine, instruction_tag::InstructionTag, section_tag::SectionTag};
 
@@ -228,16 +228,12 @@ impl App
             };
             let offset = current_ip as usize + instruction_offset;
             let mut bytes = bytes.to_vec();
-            let current_instruction = self.get_current_instruction()
-                .map(|i|i.into());
+            let mut context_refs = get_context_refs!(self);
+            context_refs.offset = offset;
             self.plugin_manager.on_edit(
-                &mut self.data, 
-                offset, 
-                current_instruction, 
                 &mut bytes, 
-                &mut self.logger,
-                &mut self.popup,
-                &self.header);
+                &mut context_refs
+            );
             bytes.truncate(self.data.len().checked_sub(offset).unwrap());
             let bytes_len = bytes.len();
             self.data.splice(offset..offset + bytes_len, bytes);

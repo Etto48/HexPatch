@@ -2,6 +2,8 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
+use crate::get_context_refs;
+
 use super::{asm::assembly_line::AssemblyLine, info_mode::InfoMode, settings::color_settings::ColorSettings, App};
 
 pub(super) struct InstructionInfo
@@ -166,15 +168,12 @@ impl App
             let new_byte = u8::from_str_radix(&new_byte_str, 16).unwrap();
 
             let mut new_bytes = vec![new_byte];
-            let current_instruction = self.get_current_instruction().map(|i|i.into());
+            let mut context_refs = get_context_refs!(self);
+
             self.plugin_manager.on_edit(
-                &mut self.data, 
-                cursor_position.global_byte_index, 
-                current_instruction, 
-                &mut new_bytes, 
-                &mut self.logger,
-                &mut self.popup,
-                &self.header);
+                &mut new_bytes,
+                &mut context_refs
+            );
             new_bytes.truncate(self.data.len().checked_sub(cursor_position.global_byte_index).unwrap());
 
             self.data[cursor_position.global_byte_index..cursor_position.global_byte_index + new_bytes.len()].copy_from_slice(&new_bytes);

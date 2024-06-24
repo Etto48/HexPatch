@@ -1,6 +1,8 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{backend::Backend, Terminal};
 
+use crate::get_context_refs;
+
 use super::{popup_state::PopupState, settings::key_settings::KeySettings, App};
 
 impl App
@@ -571,24 +573,14 @@ impl App
                 // TODO: Maybe add a focus lost event
             },
             event::Event::Key(ke) => {
-                let current_byte = self.get_cursor_position().global_byte_index;
-                let current_instruction = self.get_current_instruction()
-                    .map(|i| i.into());
-                self.plugin_manager.on_key(
-                    *ke, 
-                    &mut self.data, 
-                    current_byte, 
-                    current_instruction, 
-                    &mut self.logger,
-                    &mut self.popup,
-                    &self.header);
+                let mut context_refs = get_context_refs!(self);
+                self.plugin_manager.on_key(*ke, &mut context_refs);
             },
             event::Event::Mouse(me) => {
+                let mut context_refs = get_context_refs!(self);
                 self.plugin_manager.on_mouse(
                     *me, 
-                    &mut self.logger, 
-                    &mut self.popup, 
-                    &self.header
+                    &mut context_refs
                 );
             },
             event::Event::Paste(_s) => {

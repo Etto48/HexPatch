@@ -2,6 +2,8 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
+use crate::get_context_refs;
+
 use super::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
@@ -302,18 +304,23 @@ impl App
         (lines, selected_line)
     }
 
-    pub(super) fn fill_popup(&self, color_settings: &ColorSettings, popup_state: &PopupState, popup_title: &mut String, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
+    pub(super) fn fill_popup(&mut self, popup_title: &mut String, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
     {
-        match &popup_state
+        match &self.popup
         {
-            PopupState::Open { currently_open_path, path, cursor, results, scroll } =>
+            Some(PopupState::Open { 
+                currently_open_path, 
+                path, 
+                cursor, 
+                results, 
+                scroll }) =>
             {
                 *popup_title = "Open".into();
                 let available_width = width.saturating_sub(2);
                 let max_results = self.get_scrollable_popup_line_count();
                 *height = max_results + 2 + 5;
                 
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
+                let editable_string = Self::get_line_from_string_and_cursor(&self.settings.color, path, *cursor, "Path", available_width, true);
 
                 let (prefix, currently_open_path_text) = if let Some(parent) = path::parent(currently_open_path)
                 {
@@ -335,7 +342,7 @@ impl App
                     vec![
                         Line::styled(
                             format!(" {}{}", prefix, currently_open_path_text), 
-                            color_settings.path_dir
+                            self.settings.color.path_dir
                         ).left_aligned(),
                         editable_string.left_aligned(), 
                         Line::raw("─".repeat(*width))
@@ -351,11 +358,11 @@ impl App
                     .enumerate()
                     .map(
                         |(i,p)| 
-                        p.to_line(color_settings, relative_scroll == i, currently_open_path)
+                        p.to_line(&self.settings.color, relative_scroll == i, currently_open_path)
                     );
                 if skip > 0
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", self.settings.color.menu_text)]));
                 }
                 else
                 {
@@ -364,21 +371,25 @@ impl App
                 popup_text.lines.extend(results_iter);
                 if results.len() as isize - skip as isize > max_results as isize
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", self.settings.color.menu_text)]));
                 }
                 else
                 {
                     popup_text.lines.push(Line::raw(""));
                 }
             },
-            PopupState::Run { command, cursor, results, scroll } =>
+            Some(PopupState::Run { 
+                command, 
+                cursor, 
+                results, 
+                scroll }) =>
             {
                 *popup_title = "Run".into();
                 let available_width = width.saturating_sub(2);
                 let max_results = self.get_scrollable_popup_line_count();
                 *height = max_results + 2 + 4;
-                let mut editable_string = Self::get_line_from_string_and_cursor(color_settings, command, *cursor, "Command", available_width, true);
-                editable_string.spans.insert(0, Span::styled(" >", color_settings.menu_text));
+                let mut editable_string = Self::get_line_from_string_and_cursor(&self.settings.color, command, *cursor, "Command", available_width, true);
+                editable_string.spans.insert(0, Span::styled(" >", self.settings.color.menu_text));
                 popup_text.lines.extend(
                     vec![
                         editable_string.left_aligned(),
@@ -394,11 +405,11 @@ impl App
                     .take(max_results)
                     .enumerate()
                     .map(|(i,c)| 
-                        c.to_line(color_settings, relative_scroll == i)
+                        c.to_line(&self.settings.color, relative_scroll == i)
                     );
                 if skip > 0
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", self.settings.color.menu_text)]));
                 }
                 else
                 {
@@ -407,7 +418,7 @@ impl App
                 popup_text.lines.extend(results_iter);
                 if results.len() as isize - skip as isize > max_results as isize
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", self.settings.color.menu_text)]));
                 }
                 else
                 {
@@ -415,17 +426,23 @@ impl App
                 }
 
             },
-            PopupState::FindText { text, cursor } =>
+            Some(PopupState::FindText { 
+                text, 
+                cursor }) =>
             {
                 *popup_title = "Find Text".into();
                 let available_width = width.saturating_sub(2);
                 *height = 3;
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width, true);
+                let editable_string = Self::get_line_from_string_and_cursor(&self.settings.color, text, *cursor, "Text", available_width, true);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
                 );
             }
-            PopupState::FindSymbol{ filter, symbols, cursor, scroll } =>
+            Some(PopupState::FindSymbol{ 
+                filter, 
+                symbols, 
+                cursor, 
+                scroll }) =>
             {
                 *popup_title = "Find Symbol".into();
                 let available_width = width.saturating_sub(2);
@@ -460,7 +477,7 @@ impl App
                 selection = selection.saturating_sub(scroll);
 
 
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, filter, *cursor, "Filter", available_width, true);
+                let editable_string = Self::get_line_from_string_and_cursor(&self.settings.color, filter, *cursor, "Filter", available_width, true);
                 if self.header.get_symbols().is_some()
                 {
                     let symbols_as_lines = if !symbols.is_empty() || filter.is_empty()
@@ -486,11 +503,11 @@ impl App
                             let space_count = (width.saturating_sub(short_name.len() + 19) + 1).clamp(0, *width);
                             let (style_sym, style_empty, style_addr) = if i == selection
                             {
-                                (color_settings.assembly_selected, color_settings.assembly_selected, color_settings.assembly_selected)
+                                (self.settings.color.assembly_selected, self.settings.color.assembly_selected, self.settings.color.assembly_selected)
                             }
                             else
                             {
-                                (color_settings.assembly_symbol, color_settings.assembly_symbol, color_settings.assembly_address)
+                                (self.settings.color.assembly_symbol, self.settings.color.assembly_symbol, self.settings.color.assembly_address)
                             };
                             Line::from(vec![
                             Span::styled(short_name, style_sym), 
@@ -500,7 +517,7 @@ impl App
                         let symbol_line_iter = symbols.iter().skip(scroll).take(max_symbols).enumerate().map(symbol_to_line_lambda);
                         let mut symbols_as_lines = if scroll > 0
                         {
-                            vec![Line::from(vec![Span::styled("▲", color_settings.menu_text)])]
+                            vec![Line::from(vec![Span::styled("▲", self.settings.color.menu_text)])]
                         }
                         else
                         {
@@ -516,7 +533,7 @@ impl App
 
                         if symbols.len() as isize - scroll as isize > max_symbols as isize || additional_vector.len() > max_symbols
                         {
-                            symbols_as_lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                            symbols_as_lines.push(Line::from(vec![Span::styled("▼", self.settings.color.menu_text)]));
                         }
                         else
                         {
@@ -549,7 +566,7 @@ impl App
                 }
                 
             }
-            PopupState::Log(scroll) =>
+            Some(PopupState::Log(scroll)) =>
             {
                 *popup_title = "Log".into();
                 let max_lines = self.get_scrollable_popup_line_count();
@@ -558,7 +575,7 @@ impl App
                 {
                     if self.logger.len() as isize - *scroll as isize > max_lines as isize
                     {
-                        popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                        popup_text.lines.push(Line::from(vec![Span::styled("▲", self.settings.color.menu_text)]));
                     }
                     else
                     {
@@ -567,11 +584,11 @@ impl App
                     // take the last 8 lines skipping "scroll" lines from the bottom
                     for line in self.logger.iter().rev().skip(*scroll).take(max_lines).rev()
                     {
-                        popup_text.lines.push(line.to_line(color_settings));
+                        popup_text.lines.push(line.to_line(&self.settings.color));
                     }
                     if *scroll > 0
                     {
-                        popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                        popup_text.lines.push(Line::from(vec![Span::styled("▼", self.settings.color.menu_text)]));
                     }
                     else
                     {
@@ -579,13 +596,15 @@ impl App
                     }
                 }
             }
-            PopupState::InsertText {text, cursor} =>
+            Some(PopupState::InsertText {
+                text, 
+                cursor}) =>
             {
                 *popup_title = "Text".into();
                 let available_editable_text_lines = self.get_scrollable_popup_line_count();
                 *height = 3 + 2 + available_editable_text_lines;
                 let available_width = width.saturating_sub(2);
-                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, text, *cursor, "Text", available_width);
+                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(&self.settings.color, text, *cursor, "Text", available_width);
                 let skip_lines = 0.max(selected_line as isize - (available_editable_text_lines as isize - 1) / 2) as usize;
                 let skip_lines = skip_lines.min(editable_lines.len().saturating_sub(available_editable_text_lines));
                 if skip_lines == 0
@@ -594,7 +613,7 @@ impl App
                 }
                 else 
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", self.settings.color.menu_text)]));
                 }
                 let editable_lines_count = editable_lines.len();
                 popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines));
@@ -604,7 +623,7 @@ impl App
                 }
                 if editable_lines_count as isize - skip_lines as isize > available_editable_text_lines as isize
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", self.settings.color.menu_text)]));
                 }
                 else
                 {
@@ -612,16 +631,19 @@ impl App
                 }
                 let status = format!("{}B",text.as_bytes().len());
                 let padding = width.saturating_sub(status.len());
-                popup_text.lines.push(Line::styled(format!("{}{}",status, " ".repeat(padding)), color_settings.insert_text_status).left_aligned())
+                popup_text.lines.push(Line::styled(format!("{}{}",status, " ".repeat(padding)), self.settings.color.insert_text_status).left_aligned())
             }
-            PopupState::Patch {assembly,preview,  cursor} =>
+            Some(PopupState::Patch {
+                assembly,
+                preview, 
+                cursor}) =>
             {
                 *popup_title = "Patch".into();
                 let available_editable_text_lines = self.get_scrollable_popup_line_count();
                 *height = 6 + available_editable_text_lines;
                 let available_width = width.saturating_sub(2);
-                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(color_settings, assembly, *cursor, "Assembly", available_width);
-                let preview_line = self.get_patch_preview(color_settings, preview);
+                let (editable_lines, selected_line) = Self::get_multiline_from_string_and_cursor(&self.settings.color, assembly, *cursor, "Assembly", available_width);
+                let preview_line = self.get_patch_preview(&self.settings.color, preview);
                 popup_text.lines.extend(
                     vec![
                         preview_line.left_aligned(),
@@ -636,30 +658,32 @@ impl App
                 }
                 else 
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", self.settings.color.menu_text)]));
                 }
                 let editable_lines_count = editable_lines.len();
                 popup_text.lines.extend(editable_lines.into_iter().skip(skip_lines).take(available_editable_text_lines));
                 if editable_lines_count as isize - skip_lines as isize > available_editable_text_lines as isize
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", self.settings.color.menu_text)]));
                 }
                 else
                 {
                     popup_text.lines.push(Line::raw(""));
                 }
             }
-            PopupState::JumpToAddress {location: address, cursor} =>
+            Some(PopupState::JumpToAddress {
+                location: address,
+                cursor}) =>
             {
                 *popup_title = "Jump".into();
                 let available_width = width.saturating_sub(2);
                 *height = 3;
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, address, *cursor, "Location", available_width, true);
+                let editable_string = Self::get_line_from_string_and_cursor(&self.settings.color, address, *cursor, "Location", available_width, true);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
                 );
             }
-            PopupState::SaveAndQuit(yes_selected) =>
+            Some(PopupState::SaveAndQuit(yes_selected)) =>
             {
                 *popup_title = "Save and Quit".into();
                 popup_text.lines.extend(
@@ -667,32 +691,34 @@ impl App
                         Line::raw("The file will be saved and the program will quit."),
                         Line::raw("Are you sure?"),
                         Line::from(vec![
-                            Span::styled("Yes", color_settings.yes),
+                            Span::styled("Yes", self.settings.color.yes),
                             Span::raw("  "),
-                            Span::styled("No", color_settings.no)
+                            Span::styled("No", self.settings.color.no)
                         ])
                     ]
                 );
                 if *yes_selected
                 {
-                    popup_text.lines[2].spans[0].style = color_settings.yes_selected;
+                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
                 }
                 else
                 {
-                    popup_text.lines[2].spans[2].style = color_settings.no_selected;
+                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
                 }
             },
-            PopupState::SaveAs { path, cursor } =>
+            Some(PopupState::SaveAs { 
+                path, 
+                cursor }) =>
             {
                 *popup_title = "Save As".into();
                 let available_width = width.saturating_sub(2);
                 *height = 3;
-                let editable_string = Self::get_line_from_string_and_cursor(color_settings, path, *cursor, "Path", available_width, true);
+                let editable_string = Self::get_line_from_string_and_cursor(&self.settings.color, path, *cursor, "Path", available_width, true);
                 popup_text.lines.extend(
                     vec![editable_string.left_aligned()]
                 );
             },
-            PopupState::Save(yes_selected) =>
+            Some(PopupState::Save(yes_selected)) =>
             {
                 *popup_title = "Save".into();
                 popup_text.lines.extend(
@@ -700,22 +726,22 @@ impl App
                         Line::raw("The file will be saved."),
                         Line::raw("Are you sure?"),
                         Line::from(vec![
-                            Span::styled("Yes", color_settings.yes),
+                            Span::styled("Yes", self.settings.color.yes),
                             Span::raw("  "),
-                            Span::styled("No", color_settings.no)
+                            Span::styled("No", self.settings.color.no)
                         ])
                     ]
                 );
                 if *yes_selected
                 {
-                    popup_text.lines[2].spans[0].style = color_settings.yes_selected;
+                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
                 }
                 else
                 {
-                    popup_text.lines[2].spans[2].style = color_settings.no_selected;
+                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
                 }
             },
-            PopupState::QuitDirtySave(yes_selected) =>
+            Some(PopupState::QuitDirtySave(yes_selected)) =>
             {
                 *popup_title = "Quit".into();
                 popup_text.lines.extend(
@@ -723,29 +749,29 @@ impl App
                         Line::raw("The file has been modified."),
                         Line::raw("Do you want to save before quitting?"),
                         Line::from(vec![
-                            Span::styled("Yes", color_settings.yes),
+                            Span::styled("Yes", self.settings.color.yes),
                             Span::raw("  "),
-                            Span::styled("No", color_settings.no)
+                            Span::styled("No", self.settings.color.no)
                         ])
                     ]
                 );
                 if *yes_selected
                 {
-                    popup_text.lines[2].spans[0].style = color_settings.yes_selected;
+                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
                 }
                 else
                 {
-                    popup_text.lines[2].spans[2].style = color_settings.no_selected;
+                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
                 }
             },
-            PopupState::Help(scroll) =>
+            Some(PopupState::Help(scroll)) =>
             {
                 let max_lines = self.get_scrollable_popup_line_count();
                 *height = max_lines + 4;
                 *popup_title = "Help".into();
                 if *scroll > 0
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▲", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▲", self.settings.color.menu_text)]));
                 }
                 else
                 {
@@ -761,16 +787,25 @@ impl App
                 );
                 if self.help_list.len() as isize - *scroll as isize > max_lines as isize
                 {
-                    popup_text.lines.push(Line::from(vec![Span::styled("▼", color_settings.menu_text)]));
+                    popup_text.lines.push(Line::from(vec![Span::styled("▼", self.settings.color.menu_text)]));
                 }
                 else
                 {
                     popup_text.lines.push(Line::raw(""));
                 }
             },
-            PopupState::Custom { plugin_index, callback } => {
-                self.plugin_manager.fill_popup(*plugin_index, callback, &self.settings, popup_text, popup_title)?;
+            Some(PopupState::Custom { 
+                plugin_index, 
+                callback }) => 
+            {
+                self.plugin_manager.fill_popup(
+                    *plugin_index, 
+                    callback.clone(), 
+                    popup_text, 
+                    popup_title,
+                    get_context_refs!(self))?;
             },
+            None => {}
         }
         Ok(())
     }
