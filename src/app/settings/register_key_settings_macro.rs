@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, MouseEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers, MouseEvent};
 use mlua::{Lua, Table};
 
 use super::key_settings::KeySettings;
@@ -31,13 +31,36 @@ macro_rules! RegisterKeySettings {(
     };
 }
 
+fn key_modifiers_to_table<'lua>(lua: &'lua Lua, modifiers: KeyModifiers) -> mlua::Result<Table<'lua>>
+{
+    let ret = lua.create_table()?;
+    ret.set("alt", modifiers.contains(KeyModifiers::ALT))?;
+    ret.set("control", modifiers.contains(KeyModifiers::CONTROL))?;
+    ret.set("hyper", modifiers.contains(KeyModifiers::HYPER))?;
+    ret.set("meta", modifiers.contains(KeyModifiers::META))?;
+    ret.set("shift", modifiers.contains(KeyModifiers::SHIFT))?;
+    ret.set("super", modifiers.contains(KeyModifiers::SUPER))?;
+    Ok(ret)
+}
+
+fn key_state_to_table<'lua>(lua: &'lua Lua, state: KeyEventState) -> mlua::Result<Table<'lua>>
+{
+    let ret = lua.create_table()?;
+    ret.set("caps_lock", state.contains(KeyEventState::CAPS_LOCK))?;
+    ret.set("keypad", state.contains(KeyEventState::KEYPAD))?;
+    ret.set("num_lock", state.contains(KeyEventState::NUM_LOCK))?;
+    Ok(ret)
+}
+
 pub fn mouse_event_to_lua<'lua>(lua: &'lua Lua, mouse: &MouseEvent) -> mlua::Result<Table<'lua>>
 {
     let ret = lua.create_table()?;
     ret.set("kind", format!("{:?}",mouse.kind))?;
     ret.set("column", mouse.column)?;
     ret.set("row", mouse.row)?;
-    ret.set("modifiers", mouse.modifiers.bits())?;
+
+    let modifiers = key_modifiers_to_table(lua, mouse.modifiers)?;
+    ret.set("modifiers", modifiers)?;
     Ok(ret)
 }
 
@@ -45,9 +68,15 @@ pub fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Ta
 {
     let ret = lua.create_table()?;
     ret.set("code", KeySettings::key_code_to_string(key.code))?;
-    ret.set("modifiers", key.modifiers.bits())?;
+
+    let modifiers = key_modifiers_to_table(lua, key.modifiers)?;
+    ret.set("modifiers", modifiers)?;
+
     ret.set("kind", format!("{:?}",key.kind))?;
-    ret.set("state", key.state.bits())?;
+
+    let state = key_state_to_table(lua, key.state)?;
+    ret.set("state", state)?;
+
     Ok(ret)
 }
 
@@ -62,15 +91,18 @@ pub fn lua_to_key_event(_lua: &Lua, table: &mlua::Table) -> mlua::Result<KeyEven
             _ => return Err(e)
         }
     };
-    let modifiers = match table.get::<_,u8>("modifiers")
+
+    let mut modifiers = KeyModifiers::NONE;
+    if let Ok(modifiers_table) = table.get::<_,Table>("modifiers")
     {
-        Ok(value) => value,
-        Err(e) => match e
-        {
-            mlua::Error::FromLuaConversionError { from: "nil", to: "u8", message: _ } => 0,
-            _ => return Err(e)
-        }
-    };
+        if modifiers_table.get::<_,bool>("alt").unwrap_or(false) { modifiers |= KeyModifiers::ALT; }
+        if modifiers_table.get::<_,bool>("control").unwrap_or(false) { modifiers |= KeyModifiers::CONTROL; }
+        if modifiers_table.get::<_,bool>("hyper").unwrap_or(false) { modifiers |= KeyModifiers::HYPER; }
+        if modifiers_table.get::<_,bool>("meta").unwrap_or(false) { modifiers |= KeyModifiers::META; }
+        if modifiers_table.get::<_,bool>("shift").unwrap_or(false) { modifiers |= KeyModifiers::SHIFT; }
+        if modifiers_table.get::<_,bool>("super").unwrap_or(false) { modifiers |= KeyModifiers::SUPER; }
+    }
+
     let kind = match table.get::<_,String>("kind") {
         Ok(value) => 
             KeySettings::string_to_key_event_kind(&value).map_err(mlua::Error::RuntimeError)?,
@@ -80,20 +112,20 @@ pub fn lua_to_key_event(_lua: &Lua, table: &mlua::Table) -> mlua::Result<KeyEven
             _ => return Err(e)
         }
     };
-    let state = match table.get::<_,u8>("state")
+
+    let mut state = KeyEventState::NONE;
+    if let Ok(state_table) = table.get::<_,Table>("state")
     {
-        Ok(value) => value,
-        Err(e) => match e
-        {
-            mlua::Error::FromLuaConversionError { from: "nil", to: "u8", message: _ } => 0,
-            _ => return Err(e)
-        }
-    };
+        if state_table.get::<_,bool>("caps_lock").unwrap_or(false) { state |= KeyEventState::CAPS_LOCK; }
+        if state_table.get::<_,bool>("keypad").unwrap_or(false) { state |= KeyEventState::KEYPAD; }
+        if state_table.get::<_,bool>("num_lock").unwrap_or(false) { state |= KeyEventState::NUM_LOCK; }
+    }
+
     Ok(KeyEvent {
         code,
-        modifiers: crossterm::event::KeyModifiers::from_bits(modifiers).unwrap(),
+        modifiers,
         kind,
-        state: crossterm::event::KeyEventState::from_bits(state).unwrap(),
+        state,
     })
 }
 

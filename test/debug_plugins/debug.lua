@@ -1,33 +1,52 @@
-function init(settings, context)
-    context:add_command("debug", "Open debug popup")
+function init(context)
+    context.add_command("debug", "Open debug popup")
 end
 
-function on_open(data, offset, current_instruction, settings, header, context)
-    context:log(1, "Data loaded: " .. data.len .. "B")
+function on_open(context)
+    context.log(1, "Data loaded: " .. context.data.len .. "B")
 end
 
-function on_save(data, offset, current_instruction, settings, header, context)
-    context:log(1, "Data saved: " .. data.len .. "B")
+function on_save(context)
+    context.log(1, "Data saved: " .. contex.data.len .. "B")
 end
 
-function on_edit(new_bytes, data, offset, current_instruction, settings, header, context)
-    context:log(1, "Data edited: @" .. offset)
+function on_edit(new_bytes, context)
+    context.log(1, "Data edited: @" .. context.offset)
 end
 
-function on_key(key_event, data, offset, current_instruction, settings, header, context)
-    context:log(1, "Key event: " .. key_event.code .. "+" .. key_event.modifiers .. "@" .. offset)
+function on_key(key_event, context)
+    modifiers = ""
+    if key_event.modifiers.shift then
+        modifiers = modifiers .. "+Shift"
+    end
+    if key_event.modifiers.ctrl then
+        modifiers = modifiers .. "+Ctrl"
+    end
+    if key_event.modifiers.alt then
+        modifiers = modifiers .. "+Alt"
+    end
+    if key_event.modifiers.meta then
+        modifiers = modifiers .. "+Meta"
+    end
+    if key_event.modifiers.super then
+        modifiers = modifiers .. "+Super"
+    end
+    if key_event.modifiers.hyper then
+        modifiers = modifiers .. "+Hyper"
+    end
+    context.log(1, "Key event: " .. key_event.code .. modifiers .. "@" .. context.offset)
 end
 
-function on_mouse(mouse_event, data, offset, current_instruction, settings, header, context)
-    context:log(1, "Mouse event: " .. event_kind .. "@" .. x .. "," .. y)
+function on_mouse(mouse_event, context)
+    context.log(1, "Mouse event: " .. mouse_event.kind .. "@" .. x .. "," .. y)
 end
 
-function debug(data, offset, current_instruction, settings, header, context)
-    context:open_popup("fill_popup")
+function debug(context)
+    context.open_popup("fill_popup")
 end
 
 fill_popup_calls = 0
-function fill_popup(popup_text, popup_title, data, offset, current_instruction, settings, header, context)
+function fill_popup(popup_text, popup_title, context)
     popup_title:set("Debug")
     popup_text:push_line("Debugging information")
     popup_text:push_line("Calls: " .. fill_popup_calls)

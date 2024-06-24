@@ -6,7 +6,7 @@ use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Bloc
 
 use super::{asm::assembly_line::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin_manager::PluginManager, popup_state::PopupState, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
-use crate::{args::Args, headers::Header};
+use crate::{args::Args, get_context_refs, headers::Header};
 
 pub struct App 
 {
@@ -69,27 +69,13 @@ impl App
     pub fn new<B: Backend>(args: Args, terminal: &mut ratatui::Terminal<B>) -> Result<Self,String>
     {
         let mut logger = Logger::new();
-        let mut settings = match Settings::load_or_create(args.config.as_deref())
+        let settings = match Settings::load_or_create(args.config.as_deref())
         {
             Ok(settings) => settings,
             Err(e) => {
                 logger.log(NotificationLevel::Error, 
                     &format!("Error loading settings: {e}"));
                 Settings::default()
-            },
-        };
-        let mut popup = None;
-        let plugin_manager = match PluginManager::load(
-            args.plugins.as_deref(), 
-            &mut logger, 
-            &mut popup,
-            &mut settings)
-        {
-            Ok(plugins) => plugins,
-            Err(e) => {
-                logger.log(NotificationLevel::Error, 
-                    &format!("Error loading plugins: {e}"));
-                PluginManager::default()
             },
         };
         Self::print_loading_status(&settings.color, &format!("Opening \"{}\"...", args.path), terminal)?;
@@ -108,14 +94,25 @@ impl App
 
         let mut app = App
         {
-            plugin_manager,
             filesystem,
             screen_size,
             help_list: Self::help_list(&settings.key),
             settings,
             logger,
-            popup,
             ..Default::default()
+        };
+
+        let mut context_refs = get_context_refs!(app);
+        app.plugin_manager = match PluginManager::load(
+            args.plugins.as_deref(), 
+            &mut context_refs)
+        {
+            Ok(plugins) => plugins,
+            Err(e) => {
+                app.log(NotificationLevel::Error, 
+                    &format!("Error loading plugins: {e}"));
+                PluginManager::default()
+            },
         };
 
         if app.filesystem.is_file(app.filesystem.pwd())
