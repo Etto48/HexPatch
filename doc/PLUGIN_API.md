@@ -4,7 +4,7 @@ This document describes the API that plugins can use to interact with HexPatch.
 
 ## Functions
 
-For the explaination of the types used in the functions, see the [Types](#types) section.
+For the explanation of the types used in the functions, see the [Types](#types) section.
 
 ### Initialization
 

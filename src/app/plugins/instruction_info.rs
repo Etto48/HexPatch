@@ -1,5 +1,7 @@
 use mlua::UserData;
 
+use crate::app::asm::assembly_line::AssemblyLine;
+
 #[derive(Debug, Clone)]
 pub struct InstructionInfo
 {
@@ -19,6 +21,29 @@ impl InstructionInfo
             physical_address,
             virtual_address,
             size,
+        }
+    }
+}
+
+impl From<&AssemblyLine> for InstructionInfo
+{
+    fn from(value: &AssemblyLine) -> Self {
+        match value
+        {
+            AssemblyLine::Instruction(i) => 
+                InstructionInfo::new(
+                    i.instruction.to_string(), 
+                    i.file_address, 
+                    i.instruction.ip(), 
+                    i.instruction.len()
+                ),
+            AssemblyLine::SectionTag(s) =>
+                InstructionInfo::new(
+                    format!(".{}:",s.name),
+                    s.file_address,
+                    s.virtual_address,
+                    s.size
+                )
         }
     }
 }

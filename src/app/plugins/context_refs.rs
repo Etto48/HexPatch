@@ -70,9 +70,9 @@ impl<'app> ContextRefs<'app> {
     }
 }
 
-pub fn create_lua_context<'lua, 'scope>(
+pub fn create_lua_context<'lua>(
     lua: &'lua Lua, 
-    scope: &Scope<'lua, 'scope>, 
+    scope: &Scope<'lua, '_>, 
     context_refs: &'lua mut ContextRefs) -> mlua::Table<'lua> 
 {
     let context = lua.create_table().unwrap();

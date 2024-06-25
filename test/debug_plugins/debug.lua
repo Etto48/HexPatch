@@ -7,7 +7,7 @@ function on_open(context)
 end
 
 function on_save(context)
-    context.log(1, "Data saved: " .. contex.data.len .. "B")
+    context.log(1, "Data saved: " .. context.data.len .. "B")
 end
 
 function on_edit(new_bytes, context)

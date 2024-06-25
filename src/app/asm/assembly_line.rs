@@ -1,6 +1,6 @@
 use ratatui::text::{Line, Span};
 
-use crate::{app::{plugins::instruction_info::InstructionInfo, settings::color_settings::ColorSettings, App}, headers::Header};
+use crate::{app::{settings::color_settings::ColorSettings, App}, headers::Header};
 
 use super::{instruction_tag::InstructionTag, section_tag::SectionTag};
 
@@ -88,29 +88,6 @@ impl AssemblyLine
                 instruction.instruction.virtual_address == other_instruction.instruction.virtual_address
             },
             _ => false
-        }
-    }
-}
-
-impl Into<InstructionInfo> for &AssemblyLine
-{
-    fn into(self) -> InstructionInfo {
-        match self
-        {
-            AssemblyLine::Instruction(i) => 
-                InstructionInfo::new(
-                    i.instruction.to_string(), 
-                    i.file_address, 
-                    i.instruction.ip(), 
-                    i.instruction.len()
-                ),
-            AssemblyLine::SectionTag(s) =>
-                InstructionInfo::new(
-                    format!(".{}:",s.name),
-                    s.file_address,
-                    s.virtual_address,
-                    s.size
-                )
         }
     }
 }

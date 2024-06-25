@@ -31,7 +31,7 @@ macro_rules! RegisterKeySettings {(
     };
 }
 
-fn key_modifiers_to_table<'lua>(lua: &'lua Lua, modifiers: KeyModifiers) -> mlua::Result<Table<'lua>>
+fn key_modifiers_to_table(lua: &Lua, modifiers: KeyModifiers) -> mlua::Result<Table>
 {
     let ret = lua.create_table()?;
     ret.set("alt", modifiers.contains(KeyModifiers::ALT))?;
@@ -43,7 +43,7 @@ fn key_modifiers_to_table<'lua>(lua: &'lua Lua, modifiers: KeyModifiers) -> mlua
     Ok(ret)
 }
 
-fn key_state_to_table<'lua>(lua: &'lua Lua, state: KeyEventState) -> mlua::Result<Table<'lua>>
+fn key_state_to_table(lua: &Lua, state: KeyEventState) -> mlua::Result<Table>
 {
     let ret = lua.create_table()?;
     ret.set("caps_lock", state.contains(KeyEventState::CAPS_LOCK))?;
