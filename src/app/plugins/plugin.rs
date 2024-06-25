@@ -5,7 +5,7 @@ use ratatui::text::Text;
 
 use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua}};
 
-use super::{context_refs::{create_lua_context, ContextRefs}, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_logger, register_settings, register_string, register_text, register_vec_u8}};
+use super::{context_refs::{create_lua_context, ContextRefs}, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_settings, register_string, register_text, register_vec_u8}};
 
 #[derive(Debug)]
 pub struct Plugin
@@ -25,7 +25,6 @@ impl Plugin {
 
         register_vec_u8(&lua)?;
         register_settings(&lua)?;
-        register_logger(&lua)?;
         register_text(&lua)?;
         register_string(&lua)?;
 

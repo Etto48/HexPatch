@@ -101,18 +101,3 @@ pub fn register_settings(lua: &Lua) -> mlua::Result<()>
     })?;
     Ok(())
 }
-
-pub fn register_logger(lua: &Lua) -> mlua::Result<()> 
-{
-    lua.register_userdata_type(|data: &mut mlua::UserDataRegistry<crate::app::log::logger::Logger>| 
-    {
-        data.add_method_mut("log", 
-            |_lua, this, (level, message): (u8, String)| 
-            {
-                this.log(level.into(), &message);
-                Ok(())
-            }
-        );
-    })?;
-    Ok(())
-}
