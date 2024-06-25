@@ -40,6 +40,7 @@ pub struct AppContext<'app> {
 }
 
 impl<'app> AppContext<'app> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         offset: usize,
         current_instruction: Option<InstructionInfo>,
