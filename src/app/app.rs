@@ -253,7 +253,6 @@ impl App
                         Err(e) =>
                         {
                             self.logger.log(NotificationLevel::Error, &format!("Filling popup: {e}"));
-                            panic!("Filling popup: {e}");
                         }
                     }
                 }
