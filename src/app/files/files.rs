@@ -3,7 +3,7 @@ use std::error::Error;
 
 use ratatui::{backend::Backend, Terminal};
 
-use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, headers::Header};
+use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, get_context_refs, headers::Header};
 
 use super::{filesystem::FileSystem, path_result::PathResult, path};
 
@@ -180,7 +180,39 @@ impl App
             Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
         }
         self.log_header_info();
+        let mut context_refs = get_context_refs!(self);
+        self.plugin_manager.on_open(&mut context_refs);
 
+        Ok(())
+    }
+
+    pub(in crate::app) fn save_file_as(&mut self, path: &str) -> Result<(), Box<dyn Error>>
+    {
+        if let Some(parent) = path::parent(path)
+        {
+            self.filesystem.mkdirs(parent)?;
+        };
+        
+        self.filesystem.create(path)?;
+        self.filesystem.cd(&self.filesystem.canonicalize(path)?);
+        self.save_file()?;
+        Ok(())
+    }
+
+    pub(in crate::app) fn save_file(&mut self) -> Result<(), Box<dyn Error>>
+    {
+        let mut context_refs = get_context_refs!(self);
+        self.plugin_manager.on_save(&mut context_refs);
+        self.filesystem.write(self.filesystem.pwd(), &self.data)?;
+        self.dirty = false;
+        match &self.filesystem
+        {
+            FileSystem::Local { path } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {}", path));},
+            FileSystem::Remote { path, connection } => 
+                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path, connection));},
+        }
+        
         Ok(())
     }
 }

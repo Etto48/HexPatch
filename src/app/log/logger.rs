@@ -4,6 +4,7 @@ use crate::app::App;
 
 use super::{log_line::LogLine, notification::NotificationLevel};
 
+#[derive(Debug, Clone)]
 pub struct Logger {
     pub(super) log: Vec<LogLine>,
     pub(super) notification: NotificationLevel,
@@ -51,6 +52,15 @@ impl Logger {
     {
         self.notification.reset();
     }
+
+    pub fn merge(&mut self, other: &Self)
+    {
+        for log_line in &other.log
+        {
+            self.log.push(log_line.clone());
+        }
+        self.notification.bump_notification_level(other.notification);
+    }
 }
 
 impl Default for Logger
@@ -79,5 +89,43 @@ impl App
     pub(in crate::app) fn log(&mut self, level: NotificationLevel, message: &str)
     {
         self.logger.log(level, message);
+    }
+}
+
+#[cfg(test)]
+mod test
+{
+    use super::*;
+
+    #[test]
+    fn test_logger()
+    {
+        let mut logger = Logger::new();
+        assert_eq!(logger.len(), 0);
+        assert!(logger.is_empty());
+        logger.log(NotificationLevel::Error, "Test error message");
+        assert_eq!(logger.len(), 1);
+        assert!(!logger.is_empty());
+        assert_eq!(logger[0].level, NotificationLevel::Error);
+        assert_eq!(logger[0].message, "Test error message");
+        logger.clear();
+        assert_eq!(logger.len(), 0);
+        assert!(logger.is_empty());
+    }
+
+    #[test]
+    fn test_logger_merge()
+    {
+        let mut logger1 = Logger::new();
+        let mut logger2 = Logger::new();
+        logger1.log(NotificationLevel::Error, "Test error message");
+        logger2.log(NotificationLevel::Warning, "Test warning message");
+        logger1.merge(&logger2);
+        assert_eq!(logger1.len(), 2);
+        assert_eq!(logger1[0].level, NotificationLevel::Error);
+        assert_eq!(logger1[0].message, "Test error message");
+        assert_eq!(logger1[1].level, NotificationLevel::Warning);
+        assert_eq!(logger1[1].message, "Test warning message");
+        assert_eq!(logger1.get_notification_level(), NotificationLevel::Error);
     }
 }

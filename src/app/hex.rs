@@ -2,7 +2,9 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use super::{assembly::AssemblyLine, files::{filesystem::FileSystem, path}, info_mode::InfoMode, log::NotificationLevel, settings::color_settings::ColorSettings, App};
+use crate::get_context_refs;
+
+use super::{asm::assembly_line::AssemblyLine, info_mode::InfoMode, settings::color_settings::ColorSettings, App};
 
 pub(super) struct InstructionInfo
 {
@@ -145,7 +147,7 @@ impl App
         [symbols[high as usize], symbols[low as usize]]
     }
 
-    pub(super) fn edit_data(&mut self, mut value: char)
+    pub(super) fn edit_data(&mut self, mut value: char) -> Result<(), Box<dyn Error>>
     {
         value = value.to_uppercase().next().unwrap(); 
 
@@ -165,14 +167,24 @@ impl App
             };
             let new_byte = u8::from_str_radix(&new_byte_str, 16).unwrap();
 
-            self.data[cursor_position.global_byte_index] = new_byte;
+            let mut new_bytes = vec![new_byte];
+            let mut context_refs = get_context_refs!(self);
+
+            self.plugin_manager.on_edit(
+                &mut new_bytes,
+                &mut context_refs
+            );
+            new_bytes.truncate(self.data.len().checked_sub(cursor_position.global_byte_index).unwrap());
+
+            self.data[cursor_position.global_byte_index..cursor_position.global_byte_index + new_bytes.len()].copy_from_slice(&new_bytes);
 
             if old_byte != new_byte
             {
                 self.dirty = true;
             }
+            self.edit_assembly(new_bytes.len());
         }
-        self.edit_assembly(1);
+        Ok(())
     }
 
     /// start_row is included, end_row is excluded
@@ -207,42 +219,6 @@ impl App
             }
         };
         Self::bytes_to_styled_hex(&self.settings.color, bytes, self.block_size, self.blocks_per_row, selected_byte_index, high_byte, instruction_info)
-    }
-
-    pub(super) fn save_as(&mut self, path: &str) -> Result<(), Box<dyn Error>>
-    {
-        if let Some(parent) = path::parent(path)
-        {
-            self.filesystem.mkdirs(parent)?;
-        };
-        
-        self.filesystem.create(path)?;
-        self.filesystem.write(path, &self.data)?;
-        self.filesystem.cd(&self.filesystem.canonicalize(path)?);
-        self.dirty = false;
-        match &self.filesystem
-        {
-            FileSystem::Local { path } => 
-                {self.log(NotificationLevel::Info, &format!("Saved to {}", path));},
-            FileSystem::Remote { path, connection } => 
-                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path, connection));},
-        }
-        Ok(())
-    }
-
-    pub(super) fn save_data(&mut self) -> Result<(), Box<dyn Error>>
-    {
-        self.filesystem.write(self.filesystem.pwd(), &self.data)?;
-        self.dirty = false;
-        match &self.filesystem
-        {
-            FileSystem::Local { path } => 
-                {self.log(NotificationLevel::Info, &format!("Saved to {}", path));},
-            FileSystem::Remote { path, connection } => 
-                {self.log(NotificationLevel::Info, &format!("Saved to {} at {}", path, connection));},
-        }
-        
-        Ok(())
     }
 }
 

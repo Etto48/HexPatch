@@ -2,9 +2,11 @@ use ratatui::style::{Color, Modifier, Style};
 use serde::{Deserialize, Serialize};
 
 use crate::app::App;
+use crate::RegisterColorSettings;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
+#[derive(RegisterColorSettings!)]
 pub struct ColorSettings
 {
     pub address_selected: Style,

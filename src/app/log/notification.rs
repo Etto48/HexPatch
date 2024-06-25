@@ -38,6 +38,22 @@ impl NotificationLevel
     }
 }
 
+impl From<u8> for NotificationLevel
+{
+    fn from(value: u8) -> Self
+    {
+        match value
+        {
+            0 => NotificationLevel::None,
+            1 => NotificationLevel::Debug,
+            2 => NotificationLevel::Info,
+            3 => NotificationLevel::Warning,
+            4 => NotificationLevel::Error,
+            _ => NotificationLevel::None,
+        }
+    }
+}
+
 impl Display for NotificationLevel
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result
