@@ -6,7 +6,7 @@ use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Bloc
 
 use super::{asm::assembly_line::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin_manager::PluginManager, popup_state::PopupState, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
-use crate::{args::Args, get_context_refs, headers::Header};
+use crate::{args::Args, get_app_context, headers::Header};
 
 pub struct App 
 {
@@ -102,10 +102,10 @@ impl App
             ..Default::default()
         };
 
-        let mut context_refs = get_context_refs!(app);
+        let mut app_context = get_app_context!(app);
         app.plugin_manager = match PluginManager::load(
             args.plugins.as_deref(), 
-            &mut context_refs)
+            &mut app_context)
         {
             Ok(plugins) => plugins,
             Err(e) => {
@@ -240,13 +240,21 @@ impl App
                         popup_height as u16
                     );
 
-                    if popup_result.is_ok()
+                    match popup_result
                     {
-                        let popup = ratatui::widgets::Paragraph::new(popup_text)
-                            .block(Block::default().title(popup_title).borders(Borders::ALL))
-                            .alignment(ratatui::layout::Alignment::Center);
-                        f.render_widget(Clear, popup_rect);
-                        f.render_widget(popup, popup_rect);
+                        Ok(()) => 
+                        {
+                            let popup = ratatui::widgets::Paragraph::new(popup_text)
+                                .block(Block::default().title(popup_title).borders(Borders::ALL))
+                                .alignment(ratatui::layout::Alignment::Center);
+                            f.render_widget(Clear, popup_rect);
+                            f.render_widget(popup, popup_rect);
+                        }
+                        Err(e) =>
+                        {
+                            self.logger.log(NotificationLevel::Error, &format!("Filling popup: {e}"));
+                            panic!("Filling popup: {e}");
+                        }
                     }
                 }
 

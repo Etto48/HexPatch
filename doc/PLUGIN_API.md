@@ -99,16 +99,15 @@ The command must be registered using `context.add_command("COMMAND_NAME", "COMMA
 ### Popups
 
 ```lua
-function FILL_POPUP_NAME(popup_text, popup_title, context) end
+function FILL_POPUP_NAME(popup_context, context) end
 ```
 
-This function is called each time the popup `POPUP_NAME` is drawn.
-The popup must be opened using `context.open_popup("POPUP_NAME")`.
+This function is called each time the popup `FILL_POPUP_NAME` is drawn.
+The popup must be opened using `context.open_popup("FILL_POPUP_NAME")`.
 
 | Argument | Type | Description |
 |----------|------|-------------|
-|`popup_text`|`Text`|The content of the popup.|
-|`popup_title`|`MutString`|The title of the popup.|
+|`popup_context`|`PopupContext`|The popup context.|
 |`context`|`Context`|The application context.|
 
 ## Types
@@ -118,6 +117,8 @@ The popup must be opened using `context.open_popup("POPUP_NAME")`.
 This table contains the following fields:
 | Field | Type | Description |
 |-------|------|-------------|
+|`screen_height`|`usize`|The height of the screen.|
+|`screen_width`|`usize`|The width of the screen.|
 |`data`|`Data`|The current file's data.|
 |`offset`|`usize`|The current offset in the file.|
 |`settings`|`Settings`|The settings of the application.|
@@ -276,6 +277,16 @@ The following values are possible for the `kind` field:
 - `ScrollLeft`
 - `ScrollRight`
 
+### PopupContext
+
+This table contains the following fields:
+| Field | Type | Description |
+|-------|------|-------------|
+|`text`|`Text`|The content of the popup.|
+|`title`|`MutString`|The title of the popup.|
+|`height`|`MutUsize`|The height of the popup.|
+|`width`|`MutUsize`|The width of the popup.|
+
 ### Text
 
 To add text to a popup, use the following functions:
@@ -291,6 +302,14 @@ This type is a mutable string, it can be manipulated using the following functio
 |----------|-----------|-------------|
 |`get`|`() -> String`|Gets the string.|
 |`set`|`(value: String)`|Sets the string.|
+
+### MutUsize
+
+This type is a mutable usize, it can be manipulated using the following functions:
+| Function | Arguments | Description |
+|----------|-----------|-------------|
+|`get`|`() -> usize`|Gets the value.|
+|`set`|`(value: usize)`|Sets the value.|
 
 ### InstructionInfo
 

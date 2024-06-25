@@ -62,6 +62,18 @@ pub fn register_string(lua: &Lua) -> mlua::Result<()>
     Ok(())
 }
 
+pub fn register_usize(lua: &Lua) -> mlua::Result<()>
+{
+    lua.register_userdata_type(|data: &mut mlua::UserDataRegistry<usize>| {
+        data.add_method("get", |_lua, this, ()| Ok(*this));
+        data.add_method_mut("set", |_lua, this, value: usize| {
+            let old_value = std::mem::replace(this, value);
+            Ok(old_value)
+        });
+    })?;
+    Ok(())
+}
+
 pub fn register_settings(lua: &Lua) -> mlua::Result<()> 
 {
     lua.register_userdata_type(|data: &mut mlua::UserDataRegistry<Settings>| 
