@@ -38,7 +38,7 @@ function on_key(key_event, context)
 end
 
 function on_mouse(mouse_event, context)
-    context.log(1, "Mouse event: " .. mouse_event.kind .. "@" .. x .. "," .. y)
+    context.log(1, "Mouse event: " .. mouse_event.kind .. "@" .. mouse_event.row .. "," .. mouse_event.column)
 end
 
 function debug(context)
@@ -46,9 +46,12 @@ function debug(context)
 end
 
 fill_popup_calls = 0
-function fill_popup(popup_text, popup_title, context)
-    popup_title:set("Debug")
-    popup_text:push_line("Debugging information")
-    popup_text:push_line("Calls: " .. fill_popup_calls)
+function fill_popup(popup_context, context)
+    popup_context.title:set("Debug")
+    popup_context.height:set(6)
+    popup_context.text:push_line("Debugging information")
+    popup_context.text:push_line("Calls: " .. fill_popup_calls)
+    popup_context.text:push_line("Popup size: " .. popup_context.width:get() .. "x" .. popup_context.height:get())
+    popup_context.text:push_line("Screen size: " .. context.screen_width .. "x" .. context.screen_height)
     fill_popup_calls = fill_popup_calls + 1
 end

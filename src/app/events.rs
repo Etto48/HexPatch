@@ -1,7 +1,7 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{backend::Backend, Terminal};
 
-use crate::get_context_refs;
+use crate::get_app_context;
 
 use super::{popup_state::PopupState, settings::key_settings::KeySettings, App};
 
@@ -573,14 +573,14 @@ impl App
                 // TODO: Maybe add a focus lost event
             },
             event::Event::Key(ke) => {
-                let mut context_refs = get_context_refs!(self);
-                self.plugin_manager.on_key(*ke, &mut context_refs);
+                let mut app_context = get_app_context!(self);
+                self.plugin_manager.on_key(*ke, &mut app_context);
             },
             event::Event::Mouse(me) => {
-                let mut context_refs = get_context_refs!(self);
+                let mut app_context = get_app_context!(self);
                 self.plugin_manager.on_mouse(
                     *me, 
-                    &mut context_refs
+                    &mut app_context
                 );
             },
             event::Event::Paste(_s) => {

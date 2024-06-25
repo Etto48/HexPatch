@@ -2,7 +2,7 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use crate::get_context_refs;
+use crate::get_app_context;
 
 use super::{asm::assembly_line::AssemblyLine, info_mode::InfoMode, settings::color_settings::ColorSettings, App};
 
@@ -168,11 +168,11 @@ impl App
             let new_byte = u8::from_str_radix(&new_byte_str, 16).unwrap();
 
             let mut new_bytes = vec![new_byte];
-            let mut context_refs = get_context_refs!(self);
+            let mut app_context = get_app_context!(self);
 
             self.plugin_manager.on_edit(
                 &mut new_bytes,
-                &mut context_refs
+                &mut app_context
             );
             new_bytes.truncate(self.data.len().checked_sub(cursor_position.global_byte_index).unwrap());
 

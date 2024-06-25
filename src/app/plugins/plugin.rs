@@ -1,11 +1,10 @@
 use std::error::Error;
 
 use mlua::{Function, Lua};
-use ratatui::text::Text;
 
 use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua}};
 
-use super::{context_refs::{create_lua_context, ContextRefs}, event::{Event, Events}, exported_commands::ExportedCommands, register_userdata::{register_settings, register_string, register_text, register_vec_u8}};
+use super::{app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, popup_context::PopupContext, register_userdata::{register_settings, register_string, register_text, register_usize, register_vec_u8}};
 
 #[derive(Debug)]
 pub struct Plugin
@@ -17,7 +16,7 @@ pub struct Plugin
 impl Plugin {
     pub fn new_from_source(
         source: &str, 
-        context_refs: &mut ContextRefs
+        app_context: &mut AppContext
     ) -> Result<Self, Box<dyn Error>>
     {
         let lua = Lua::new();
@@ -27,26 +26,27 @@ impl Plugin {
         register_settings(&lua)?;
         register_text(&lua)?;
         register_string(&lua)?;
+        register_usize(&lua)?;
 
-        context_refs.reset_exported_commands();
+        app_context.reset_exported_commands();
         if let Ok(init) = lua.globals().get::<_, Function>("init")
         {
             lua.scope(|scope|{
-                let context = create_lua_context(&lua, scope, context_refs);
+                let context = app_context.to_lua(&lua, scope);
                 init.call(context)
             })?;
         }
         
-        Ok(Plugin { lua , commands: context_refs.take_exported_commands() })
+        Ok(Plugin { lua , commands: app_context.take_exported_commands() })
     }
 
     pub fn new_from_file(
         path: &str, 
-        context_refs: &mut ContextRefs
+        app_context: &mut AppContext
     ) -> Result<Self, Box<dyn Error>>
     {
         let source = std::fs::read_to_string(path)?;
-        Self::new_from_source(&source, context_refs)
+        Self::new_from_source(&source, app_context)
     }
 
     pub fn get_event_handlers(&self) -> Events
@@ -77,9 +77,9 @@ impl Plugin {
 
     /// Handle an event, if an error occurs, return the error
     /// see [Plugin::handle] for a version that logs the error
-    pub fn handle_with_error(&mut self, event: Event, context_refs: &mut ContextRefs) -> mlua::Result<()>
+    pub fn handle_with_error(&mut self, event: Event, app_context: &mut AppContext) -> mlua::Result<()>
     {
-        context_refs.set_exported_commands(self.commands.take());
+        app_context.set_exported_commands(self.commands.take());
         let ret = match event
         {
             Event::Open =>
@@ -87,7 +87,7 @@ impl Plugin {
                 // Call the on_open function
                 let on_open = self.lua.globals().get::<_, Function>("on_open").unwrap();
                 self.lua.scope(|scope| {
-                    let context = create_lua_context(&self.lua, scope, context_refs);
+                    let context = app_context.to_lua(&self.lua, scope);
                     on_open.call::<_,()>(context)
                 })
             },
@@ -97,7 +97,7 @@ impl Plugin {
                 let on_edit = self.lua.globals().get::<_, Function>("on_edit").unwrap();
                 self.lua.scope(|scope| {
                     let new_bytes = scope.create_any_userdata_ref_mut(new_bytes)?;
-                    let context = create_lua_context(&self.lua, scope, context_refs);
+                    let context = app_context.to_lua(&self.lua, scope);
                     on_edit.call::<_,()>((new_bytes, context))
                 })
             },
@@ -106,7 +106,7 @@ impl Plugin {
                 // Call the on_save function
                 let on_save = self.lua.globals().get::<_, Function>("on_save").unwrap();
                 self.lua.scope(|scope| {
-                    let context = create_lua_context(&self.lua, scope, context_refs);
+                    let context = app_context.to_lua(&self.lua, scope);
                     on_save.call::<_,()>(context)
                 })
             },
@@ -117,7 +117,7 @@ impl Plugin {
                 let on_key = self.lua.globals().get::<_, Function>("on_key").unwrap();
                 let event = key_event_to_lua(&self.lua, &event).unwrap();
                 self.lua.scope(|scope| {
-                    let context = create_lua_context(&self.lua, scope, context_refs);
+                    let context = app_context.to_lua(&self.lua, scope);
                     on_key.call::<_,()>((event, context))
                 })
             },
@@ -127,38 +127,38 @@ impl Plugin {
                 let on_mouse = self.lua.globals().get::<_, Function>("on_mouse").unwrap();
                 let event = mouse_event_to_lua(&self.lua, &event).unwrap();
                 self.lua.scope(|scope| {
-                    let context = create_lua_context(&self.lua, scope, context_refs);
+                    let context = app_context.to_lua(&self.lua, scope);
                     on_mouse.call::<_,()>((event, context))
                 })
             },
         };
-        self.commands = context_refs.take_exported_commands();
+        self.commands = app_context.take_exported_commands();
         ret
     }
 
     pub fn handle(
         &mut self, 
         event: Event,
-        context_refs: &mut ContextRefs)
+        app_context: &mut AppContext)
     {
-        if let Err(e) = self.handle_with_error(event, context_refs)
+        if let Err(e) = self.handle_with_error(event, app_context)
         {
-            context_refs.logger.log(NotificationLevel::Error, &format!("In plugin: {}", e));
+            app_context.logger.log(NotificationLevel::Error, &format!("In plugin: {}", e));
         }
     }
 
     pub fn run_command(
         &mut self, 
         command: &str, 
-        context_refs: &mut ContextRefs) -> mlua::Result<()>
+        app_context: &mut AppContext) -> mlua::Result<()>
     {
         let command_fn = self.lua.globals().get::<_, Function>(command)?;
-        context_refs.set_exported_commands(self.commands.take());
+        app_context.set_exported_commands(self.commands.take());
         let ret = self.lua.scope(|scope| {
-            let context = create_lua_context(&self.lua, scope, context_refs);
+            let context = app_context.to_lua(&self.lua, scope);
             command_fn.call::<_,()>(context)
         });
-        self.commands = context_refs.take_exported_commands();
+        self.commands = app_context.take_exported_commands();
         ret
     }
 
@@ -170,16 +170,14 @@ impl Plugin {
     pub fn fill_popup(
         &self,
         callback: impl AsRef<str>,
-        popup_text: &mut Text<'static>,
-        popup_title: &mut String,
-        mut context_refs: ContextRefs) -> mlua::Result<()>
+        mut popup_context: PopupContext,
+        mut app_context: AppContext) -> mlua::Result<()>
     {
         let callback = self.lua.globals().get::<_, Function>(callback.as_ref()).unwrap();
         self.lua.scope(|scope| {
-            let popup_text = scope.create_any_userdata_ref_mut(popup_text)?;
-            let popup_title = scope.create_any_userdata_ref_mut(popup_title)?;
-            let context = create_lua_context(&self.lua, scope, &mut context_refs);
-            callback.call::<_,()>((popup_text, popup_title, context))
+            let popup_context = popup_context.to_lua(&self.lua, scope);
+            let context = app_context.to_lua(&self.lua, scope);
+            callback.call::<_,()>((popup_context, context))
         })
     }
 }
@@ -191,7 +189,7 @@ mod test
     use object::Architecture;
     use ratatui::style::Style;
 
-    use crate::{app::{log::NotificationLevel, settings::settings_value::SettingsValue, App}, get_context_refs};
+    use crate::{app::{log::NotificationLevel, settings::settings_value::SettingsValue, App}, get_app_context};
 
     use super::*;
 
@@ -206,8 +204,8 @@ mod test
             end
         ");
         let mut app = App::mockup(vec![0;0x100]);
-        let mut context_refs = get_context_refs!(app);
-        let plugin = Plugin::new_from_source(&source, &mut context_refs).unwrap();
+        let mut app_context = get_app_context!(app);
+        let plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
         assert_eq!(plugin.lua.globals().get::<_, i32>("test_value").unwrap(), test_value);
     }
 
@@ -222,8 +220,8 @@ mod test
             function on_mouse(mouse_event, context) end
         ";
         let mut app = App::mockup(vec![0;0x100]);
-        let mut context_refs = get_context_refs!(app);
-        let plugin = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let mut app_context = get_app_context!(app);
+        let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
         let handlers = plugin.get_event_handlers();
         assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE | Events::ON_KEY | Events::ON_MOUSE);
         let source = "
@@ -231,7 +229,7 @@ mod test
             function on_edit(new_bytes, context) end
             function on_save(context) end
         ";
-        let plugin = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
         let handlers = plugin.get_event_handlers();
         assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE);
     }
@@ -245,10 +243,10 @@ mod test
             end
         ";
         let mut app = App::mockup(vec![0;0x100]);
-        let mut context_refs = get_context_refs!(app);
-        let mut plugin = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let mut app_context = get_app_context!(app);
+        let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
         let event = Event::Open;
-        plugin.handle_with_error(event, &mut context_refs).unwrap();
+        plugin.handle_with_error(event, &mut app_context).unwrap();
         assert_eq!(app.data[0], 42);
     }
 
@@ -276,8 +274,8 @@ mod test
         ";
         let mut app = App::mockup(vec![0;0x100]);
         app.settings.custom.insert("test".to_string(), SettingsValue::from("Hello"));
-        let mut context_refs = get_context_refs!(app);
-        let _ = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let mut app_context = get_app_context!(app);
+        let _ = Plugin::new_from_source(source, &mut app_context).unwrap();
         assert_eq!(app.settings.color.address_selected.fg, Some(ratatui::style::Color::Rgb(0xff, 0, 0)));
         assert_eq!(app.settings.color.address_selected.bg, Some(ratatui::style::Color::Black));
         assert_eq!(app.settings.color.address_default.fg, Some(ratatui::style::Color::Indexed(2)));
@@ -311,18 +309,18 @@ mod test
             end
         ";
         let mut app = App::mockup(vec![0;0x100]);
-        let mut context_refs = get_context_refs!(app);
-        let mut plugin = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let mut app_context = get_app_context!(app);
+        let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
 
         let event = Event::Key { 
             event: KeyEvent::from(KeyCode::Down)
         };
-        plugin.handle_with_error(event, &mut context_refs).unwrap();
-        assert_eq!(context_refs.data[0], 0);
+        plugin.handle_with_error(event, &mut app_context).unwrap();
+        assert_eq!(app_context.data[0], 0);
         let event = Event::Key { 
-            event: context_refs.settings.key.confirm, 
+            event: app_context.settings.key.confirm, 
         };
-        plugin.handle_with_error(event, &mut context_refs).unwrap();
+        plugin.handle_with_error(event, &mut app_context).unwrap();
         assert_eq!(app.data[0], 42);
     }
 
@@ -340,27 +338,27 @@ mod test
         ";
         let mut app = App::mockup(vec![0;0x100]);
         app.logger.clear();
-        let mut context_refs = get_context_refs!(app);
-        let mut plugin = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let mut app_context = get_app_context!(app);
+        let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
 
         {
-            let mut message_iter = context_refs.logger.iter();
+            let mut message_iter = app_context.logger.iter();
             let message = message_iter.next().unwrap();
             assert_eq!(message.level, NotificationLevel::Debug);
             assert_eq!(message.message, "Hello from init");
-            assert_eq!(context_refs.logger.get_notification_level(), NotificationLevel::Debug);
+            assert_eq!(app_context.logger.get_notification_level(), NotificationLevel::Debug);
         }
 
-        context_refs.logger.clear();
+        app_context.logger.clear();
 
         let event = Event::Open;
-        plugin.handle_with_error(event, &mut context_refs).unwrap();
+        plugin.handle_with_error(event, &mut app_context).unwrap();
 
-        let mut message_iter = context_refs.logger.iter();
+        let mut message_iter = app_context.logger.iter();
         let message = message_iter.next().unwrap();
         assert_eq!(message.level, NotificationLevel::Info);
         assert_eq!(message.message, "Hello from on_open");
-        assert_eq!(context_refs.logger.get_notification_level(), NotificationLevel::Info);
+        assert_eq!(app_context.logger.get_notification_level(), NotificationLevel::Info);
         assert!(message_iter.next().is_none());
     }
 
@@ -374,9 +372,9 @@ mod test
         ";
         let mut app = App::mockup(vec![0;0x100]);
         app.logger.clear();
-        let mut context_refs = get_context_refs!(app);
+        let mut app_context = get_app_context!(app);
 
-        assert!(Plugin::new_from_source(source, &mut context_refs).is_err(), 
+        assert!(Plugin::new_from_source(source, &mut app_context).is_err(), 
             "Should not be able to export a command without defining it first");
 
         let source = "
@@ -403,7 +401,7 @@ mod test
             end
         ";
 
-        let mut plugin = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
 
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 2);
@@ -414,7 +412,7 @@ mod test
 
         plugin.run_command(
             "test",
-            &mut context_refs).unwrap();
+            &mut app_context).unwrap();
         
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 2);
@@ -425,7 +423,7 @@ mod test
 
         assert!(plugin.run_command(
             "test2",
-            &mut context_refs).is_err(), 
+            &mut app_context).is_err(), 
             "Should not be able to add a command that is not defined");
         
         let commands = plugin.commands.get_commands();
@@ -438,7 +436,7 @@ mod test
 
         plugin.run_command(
             "test3",   
-            &mut context_refs).unwrap();
+            &mut app_context).unwrap();
 
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 3, 
@@ -464,14 +462,14 @@ mod test
         ";
         
         let mut app = App::mockup(vec![0;0x100]);
-        let mut context_refs = get_context_refs!(app);
+        let mut app_context = get_app_context!(app);
 
-        let mut plugin = Plugin::new_from_source(source, &mut context_refs).unwrap();
+        let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
 
         let event = Event::Open;
-        plugin.handle_with_error(event, &mut context_refs).unwrap();
+        plugin.handle_with_error(event, &mut app_context).unwrap();
 
-        let messages = context_refs.logger.iter().collect::<Vec<_>>();
+        let messages = app_context.logger.iter().collect::<Vec<_>>();
         assert_eq!(messages.len(), 6);
         assert_eq!(messages[3].message, 64.to_string(), "Default bitness is 64");
         assert_eq!(messages[4].message, format!("{:?}",Architecture::Unknown), "Default architecture is Unknown");

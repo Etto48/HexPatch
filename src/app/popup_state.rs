@@ -2,9 +2,9 @@ use std::error::Error;
 
 use ratatui::text::{Line, Span, Text};
 
-use crate::get_context_refs;
+use crate::get_app_context;
 
-use super::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, settings::color_settings::ColorSettings, App};
+use super::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, plugins::popup_context::PopupContext, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
@@ -801,9 +801,12 @@ impl App
                 self.plugin_manager.fill_popup(
                     *plugin_index, 
                     callback.clone(), 
-                    popup_text, 
-                    popup_title,
-                    get_context_refs!(self))?;
+                    PopupContext::new(
+                        popup_text, 
+                        popup_title, 
+                        height, 
+                        width),
+                    get_app_context!(self))?;
             },
             None => {}
         }

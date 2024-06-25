@@ -1,11 +1,10 @@
 use std::path::{Path, PathBuf};
 
 use crossterm::event::{KeyEvent, MouseEvent};
-use ratatui::text::Text;
 
 use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel};
 
-use super::{context_refs::ContextRefs, event::{Event, Events}, plugin::Plugin};
+use super::{app_context::AppContext, event::{Event, Events}, plugin::Plugin, popup_context::PopupContext};
 
 #[derive(Default, Debug)]
 pub struct PluginManager {
@@ -24,9 +23,9 @@ impl PluginManager {
 
     pub fn load(
         path: Option<&Path>, 
-        context_refs: &mut ContextRefs) -> std::io::Result<Self> {
+        app_context: &mut AppContext) -> std::io::Result<Self> {
         let mut plugin_manager = Self {
-            plugins: Self::load_plugins(path, context_refs)?,
+            plugins: Self::load_plugins(path, app_context)?,
             ..Default::default()
         };
 
@@ -64,7 +63,7 @@ impl PluginManager {
 
     fn load_plugins(
         path: Option<&Path>,
-        context_refs: &mut ContextRefs) -> std::io::Result<Vec<Plugin>>
+        app_context: &mut AppContext) -> std::io::Result<Vec<Plugin>>
     {
         let mut plugins = Vec::new();
         let path = match path
@@ -81,13 +80,13 @@ impl PluginManager {
             let path = entry.path();
             if path.is_file() && path.extension().unwrap_or_default() == "lua"
             {
-                match Plugin::new_from_file(&path.to_string_lossy(), context_refs)
+                match Plugin::new_from_file(&path.to_string_lossy(), app_context)
                 {
                     Ok(plugin) => 
                     {
                         plugins.push(plugin);
                     },
-                    Err(e) => context_refs.logger.log(NotificationLevel::Error, &format!("Could not load plugin \"{}\": {}", path.to_string_lossy(), e)),
+                    Err(e) => app_context.logger.log(NotificationLevel::Error, &format!("Could not load plugin \"{}\": {}", path.to_string_lossy(), e)),
                 }
             }
         }
@@ -96,68 +95,68 @@ impl PluginManager {
 
     pub fn on_open(
         &mut self, 
-        context_refs: &mut ContextRefs)
+        app_context: &mut AppContext)
     {
         for i in self.on_open.iter()
         {
-            context_refs.plugin_index = Some(*i);
+            app_context.plugin_index = Some(*i);
             let event = Event::Open;
-            self.plugins[*i].handle(event, context_refs);
+            self.plugins[*i].handle(event, app_context);
         }
     }
 
     pub fn on_save(
         &mut self, 
-        context_refs: &mut ContextRefs)
+        app_context: &mut AppContext)
     {
         for i in self.on_save.iter()
         {
-            context_refs.plugin_index = Some(*i);
+            app_context.plugin_index = Some(*i);
             let event = Event::Save;
-            self.plugins[*i].handle(event, context_refs);
+            self.plugins[*i].handle(event, app_context);
         }
     }
 
     pub fn on_edit(
         &mut self, 
         new_bytes: &mut Vec<u8>,
-        context_refs: &mut ContextRefs)
+        app_context: &mut AppContext)
     {
         for i in self.on_edit.iter()
         {
-            context_refs.plugin_index = Some(*i);
+            app_context.plugin_index = Some(*i);
             let event = Event::Edit { 
                 new_bytes
             };
-            self.plugins[*i].handle(event, context_refs);
+            self.plugins[*i].handle(event, app_context);
         }
     }
 
     pub fn on_key(
         &mut self, 
         event: KeyEvent,
-        context_refs: &mut ContextRefs)
+        app_context: &mut AppContext)
     {
         for i in self.on_key.iter()
         {
-            context_refs.plugin_index = Some(*i);
+            app_context.plugin_index = Some(*i);
             let event = Event::Key { 
                 event, 
             };
-            self.plugins[*i].handle(event, context_refs);
+            self.plugins[*i].handle(event, app_context);
         }
     }
 
     pub fn on_mouse(
         &mut self, 
         event: MouseEvent, 
-        context_refs: &mut ContextRefs)
+        app_context: &mut AppContext)
     {
         for i in self.on_mouse.iter()
         {
-            context_refs.plugin_index = Some(*i);
+            app_context.plugin_index = Some(*i);
             let event = Event::Mouse { event };
-            self.plugins[*i].handle(event, context_refs);
+            self.plugins[*i].handle(event, app_context);
         }
     }
 
@@ -176,7 +175,7 @@ impl PluginManager {
     pub fn run_command(
         &mut self, 
         command: &str, 
-        context_refs: &mut ContextRefs) -> mlua::Result<()>
+        app_context: &mut AppContext) -> mlua::Result<()>
     {
         let mut found = false;
         for (i, plugin) in self.plugins.iter_mut().enumerate()
@@ -185,10 +184,10 @@ impl PluginManager {
                 .iter()
                 .find(|c| c.command == command)
             {
-                context_refs.plugin_index = Some(i);
+                app_context.plugin_index = Some(i);
                 plugin.run_command(
                     command,
-                    context_refs
+                    app_context
                 )?;
                 found = true;
                 break;
@@ -201,22 +200,20 @@ impl PluginManager {
         &mut self, 
         plugin_index: usize,
         callback: impl AsRef<str>,
-        popup_text: &mut Text<'static>,
-        popup_title: &mut String,
-        context_refs: ContextRefs) -> mlua::Result<()> 
+        popup_context: PopupContext,
+        app_context: AppContext) -> mlua::Result<()> 
     {
         self.plugins[plugin_index].fill_popup(
             callback,
-            popup_text, 
-            popup_title,
-            context_refs)
+            popup_context,
+            app_context)
     }
 }
 
 #[cfg(test)]
 mod test
 {
-    use crate::{app::{log::NotificationLevel, App}, get_context_refs};
+    use crate::{app::{log::NotificationLevel, App}, get_app_context};
 
     use super::*;
 
@@ -225,21 +222,21 @@ mod test
     {
         let mut app = App::mockup(vec![0; 0x100]);
         app.logger.clear();
-        let mut context_refs = get_context_refs!(app);
+        let mut app_context = get_app_context!(app);
         let test_plugins_path = Path::new("test").join("plugins");
-        app.plugin_manager = PluginManager::load(Some(&test_plugins_path), &mut context_refs).unwrap();
+        app.plugin_manager = PluginManager::load(Some(&test_plugins_path), &mut app_context).unwrap();
         assert_eq!(app.plugin_manager.plugins.len(), 2);
 
-        app.plugin_manager.run_command("p1c1", &mut context_refs).unwrap();
-        app.plugin_manager.run_command("p1c2", &mut context_refs).unwrap();
-        app.plugin_manager.run_command("p2c1", &mut context_refs).unwrap();
-        app.plugin_manager.run_command("p2c2", &mut context_refs).unwrap();
+        app.plugin_manager.run_command("p1c1", &mut app_context).unwrap();
+        app.plugin_manager.run_command("p1c2", &mut app_context).unwrap();
+        app.plugin_manager.run_command("p2c1", &mut app_context).unwrap();
+        app.plugin_manager.run_command("p2c2", &mut app_context).unwrap();
 
-        app.plugin_manager.on_open(&mut context_refs);
+        app.plugin_manager.on_open(&mut app_context);
         // If there was an error, the logger will have a message
-        assert_ne!(context_refs.logger.get_notification_level(), NotificationLevel::Error);
+        assert_ne!(app_context.logger.get_notification_level(), NotificationLevel::Error);
 
-        let messages: Vec<_> = context_refs.logger.iter().collect();
+        let messages: Vec<_> = app_context.logger.iter().collect();
         assert_eq!(messages.len(), 5, "{:?}", messages);
         assert_eq!(messages[0].message, "Plugin 1 Command 1 called");
         assert_eq!(messages[1].message, "Plugin 1 Command 2 called");

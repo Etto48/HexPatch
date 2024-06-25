@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, fuzzer::fuzzy_search_in_place, get_context_refs};
+use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, fuzzer::fuzzy_search_in_place, get_app_context};
 
 use super::command_info::CommandInfo;
 
@@ -70,10 +70,10 @@ impl App
                 self.request_view_change();
             }
             any_other_command => {
-                let mut context_refs = get_context_refs!(self);
+                let mut app_context = get_app_context!(self);
                 self.plugin_manager.run_command(
                     any_other_command,
-                    &mut context_refs
+                    &mut app_context
                 )?;
             }
         }
