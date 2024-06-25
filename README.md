@@ -77,6 +77,8 @@ The configuration directory is located in the following paths:
 |Linux|`$XDG_CONFIG_HOME/HexPatch` or `~/.config/HexPatch`|`/home/alice/.config/HexPatch`|
 |macOS|`$HOME/Library/Application Support/HexPatch`|`/Users/Alice/Library/Application Support/HexPatch`|
 
+A different configuration file can be specified with the `--config` flag.
+
 The file will be created with the default settings if it doesn't exist.
 If a setting is not present in the configuration file, the default value will be used.
 Custom settings can be added to the configuration using the following format:
@@ -95,6 +97,7 @@ Custom settings can be accessed by plugins.
 
 HexPatch supports plugins written in Lua.
 Plugins must be placed in the `plugins` directory in hex-patch's configuration directory.
+A different plugins directory can be specified with the `--plugins` flag.
 
 You can find more information about the Plugin Lua API [here](./doc/PLUGIN_API.md).
 
