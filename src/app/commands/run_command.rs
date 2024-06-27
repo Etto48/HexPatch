@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, fuzzer::fuzzy_search_in_place, get_app_context};
+use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup::popup_state::PopupState, App}, fuzzer::fuzzy_search_in_place, get_app_context};
 
 use super::command_info::CommandInfo;
 

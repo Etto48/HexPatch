@@ -4,7 +4,7 @@ use ratatui::text::{Line, Span, Text};
 
 use crate::get_app_context;
 
-use super::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, plugins::popup_context::PopupContext, settings::color_settings::ColorSettings, App};
+use crate::app::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, plugins::popup_context::PopupContext, settings::color_settings::ColorSettings, App};
 
 #[derive(Clone, Debug)]
 pub enum PopupState
@@ -72,7 +72,7 @@ pub enum PopupState
 impl App
 {
 
-    pub(super) fn get_scrollable_popup_line_count(&self) -> usize
+    pub(in crate::app) fn get_scrollable_popup_line_count(&self) -> usize
     {
         let screen_height = self.screen_size.1 as isize;
         let lines = match &self.popup
@@ -165,7 +165,7 @@ impl App
         preview_string
     }
 
-    pub(super) fn resize_popup_if_needed(popup: &mut Option<PopupState>)
+    pub(in crate::app) fn resize_popup_if_needed(popup: &mut Option<PopupState>)
     {
         match popup
         {
@@ -304,7 +304,7 @@ impl App
         (lines, selected_line)
     }
 
-    pub(super) fn fill_popup(&mut self, popup_title: &mut String, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
+    pub(in crate::app) fn fill_popup(&mut self, popup_title: &mut String, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
     {
         match &self.popup
         {

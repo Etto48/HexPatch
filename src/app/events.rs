@@ -3,7 +3,7 @@ use ratatui::{backend::Backend, Terminal};
 
 use crate::get_app_context;
 
-use super::{popup_state::PopupState, settings::key_settings::KeySettings, App};
+use super::{popup::popup_state::PopupState, settings::key_settings::KeySettings, App};
 
 impl App
 {
