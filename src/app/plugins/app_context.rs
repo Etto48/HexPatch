@@ -36,7 +36,7 @@ pub struct AppContext<'app> {
     pub header: &'app Header,
     pub settings: &'app mut Settings,
     pub logger: &'app mut Logger,
-    pub popup: &'app mut Option<PopupState>,
+    pub popup: Arc<Mutex<&'app mut Option<PopupState>>>,
 }
 
 impl<'app> AppContext<'app> {
@@ -62,7 +62,7 @@ impl<'app> AppContext<'app> {
             header,
             settings,
             logger,
-            popup,
+            popup: Arc::new(Mutex::new(popup)),
         }
     }
 
@@ -123,7 +123,8 @@ impl<'app> AppContext<'app> {
         context.set("open_popup", scope.create_function_mut(
             |_, callback: String| 
             {
-                if self.popup.is_some()
+                let mut popup = self.popup.lock().unwrap();
+                if popup.is_some()
                 {
                     Err(mlua::Error::external("Popup already open"))
                 }
@@ -133,11 +134,59 @@ impl<'app> AppContext<'app> {
                 }
                 else
                 {
-                    *self.popup = Some(PopupState::Custom { 
+                    **popup = Some(PopupState::Custom { 
                         plugin_index: self.plugin_index.unwrap(), 
                         callback 
                     });
                     Ok(())
+                }
+            }).unwrap()
+        ).unwrap();
+
+        context.set("get_popup", scope.create_function(
+            |_, ()|
+            {
+                let popup = self.popup.lock().unwrap();
+                if let Some(PopupState::Custom { plugin_index, callback }) = *popup as &Option<PopupState>
+                {
+                    if self.plugin_index.unwrap() != *plugin_index
+                    {
+                        Ok(mlua::Value::Nil)
+                    }
+                    else
+                    {
+                        Ok(mlua::Value::String(lua.create_string(callback.as_str()).unwrap()))
+                    }
+                }
+                else
+                {
+                    Ok(mlua::Value::Nil)
+                }
+            }).unwrap()
+        ).unwrap();
+
+        context.set("close_popup", scope.create_function_mut(
+            |_, expected_callback: Option<String>| 
+            {
+                let mut popup = self.popup.lock().unwrap();
+                if let Some(PopupState::Custom { plugin_index, callback }) = *popup as &mut Option<PopupState>
+                {
+                    if expected_callback.is_some() && expected_callback.as_ref() != Some(callback)
+                    {
+                        Err(mlua::Error::external("A popup is open but not the one expected."))
+                    }
+                    else if self.plugin_index.unwrap() != *plugin_index {
+                        Err(mlua::Error::external("A popup is open but not from this plugin."))
+                    }
+                    else
+                    {
+                        **popup = None;
+                        Ok(())
+                    }
+                }
+                else
+                {
+                    Err(mlua::Error::external("No plugin related popup is open."))
                 }
             }).unwrap()
         ).unwrap();
