@@ -132,6 +132,8 @@ And the following functions:
 |`add_command`|`(command_name: String)`|Registers a command, this must be called to make the command appear in the command list.|
 |`remove_command`|`(command_name: String)`|Removes a command, this removes the command from the command list.|
 |`open_popup`|`(popup_handler: String)`|Opens a popup, each time the popup is drawn the handler function is called|
+|`get_popup`|`() -> Option<String>`|Returns the name of the `popup_handler` of the currently open popup if there is one opened by this plugin. `nil` otherwise.|
+|`close_popup`|`(popup_handler: Option<String>)`|Closes a popup opened by this plugin. If `popup_handler` is not `nil` it will also check if that is the currently open popup. If no popup is open, this plugin does not own the currently open popup, or the provided handler does not match the function will raise an error.|
 
 For more information on the types, see the following sections.
 
