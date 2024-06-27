@@ -584,10 +584,12 @@ impl App
         match event
         {
             event::Event::FocusGained => {
-                // TODO: Maybe add a focus gained event
+                let mut app_context = get_app_context!(self);
+                self.plugin_manager.on_focus(&mut app_context);
             },
             event::Event::FocusLost => {
-                // TODO: Maybe add a focus lost event
+                let mut app_context = get_app_context!(self);
+                self.plugin_manager.on_blur(&mut app_context);
             },
             event::Event::Key(ke) => {
                 let mut app_context = get_app_context!(self);
@@ -600,11 +602,13 @@ impl App
                     &mut app_context
                 );
             },
-            event::Event::Paste(_s) => {
-                // TODO: Maybe add a paste event
+            event::Event::Paste(s) => {
+                let mut app_context = get_app_context!(self);
+                self.plugin_manager.on_paste(s, &mut app_context);
             },
-            event::Event::Resize(_rows, _cols) => {
-                // TODO: Maybe add a resize event
+            event::Event::Resize(rows, cols) => {
+                let mut app_context = get_app_context!(self);
+                self.plugin_manager.on_resize(*rows, *cols, &mut app_context);
             },
         }
         Ok(())
