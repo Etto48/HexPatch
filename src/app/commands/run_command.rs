@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup_state::PopupState, App}, fuzzer::fuzzy_search_in_place, get_app_context};
+use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup::{binary_choice::BinaryChoice, popup_state::PopupState, simple_choice::SimpleChoice}, App}, fuzzer::fuzzy_search_in_place, get_app_context};
 
 use super::command_info::CommandInfo;
 
@@ -115,7 +115,7 @@ impl App
     {
         if self.dirty
         {
-            self.popup = Some(PopupState::QuitDirtySave(false));
+            self.popup = Some(PopupState::QuitDirtySave(SimpleChoice::Cancel));
         }
         else
         {
@@ -127,7 +127,7 @@ impl App
     {
         if self.dirty
         {
-            self.popup = Some(PopupState::Save(false));
+            self.popup = Some(PopupState::Save(BinaryChoice::No));
         }
     }
 
@@ -135,7 +135,7 @@ impl App
     {
         if self.dirty
         {
-            self.popup = Some(PopupState::SaveAndQuit(false));
+            self.popup = Some(PopupState::SaveAndQuit(BinaryChoice::No));
         }
         else
         {

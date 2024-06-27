@@ -4,7 +4,10 @@ use ratatui::text::{Line, Span, Text};
 
 use crate::get_app_context;
 
-use super::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, plugins::popup_context::PopupContext, settings::color_settings::ColorSettings, App};
+use crate::app::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, plugins::popup_context::PopupContext, settings::color_settings::ColorSettings, App};
+
+use super::binary_choice::BinaryChoice;
+use super::simple_choice::SimpleChoice;
 
 #[derive(Clone, Debug)]
 pub enum PopupState
@@ -53,14 +56,14 @@ pub enum PopupState
         location: String,
         cursor: usize
     },
-    QuitDirtySave(bool),
-    SaveAndQuit(bool),
+    QuitDirtySave(SimpleChoice),
+    SaveAndQuit(BinaryChoice),
     SaveAs
     {
         path: String,
         cursor: usize,
     },
-    Save(bool),
+    Save(BinaryChoice),
     Help(usize),
     Custom
     {
@@ -72,7 +75,7 @@ pub enum PopupState
 impl App
 {
 
-    pub(super) fn get_scrollable_popup_line_count(&self) -> usize
+    pub(in crate::app) fn get_scrollable_popup_line_count(&self) -> usize
     {
         let screen_height = self.screen_size.1 as isize;
         let lines = match &self.popup
@@ -165,7 +168,7 @@ impl App
         preview_string
     }
 
-    pub(super) fn resize_popup_if_needed(popup: &mut Option<PopupState>)
+    pub(in crate::app) fn resize_popup_if_needed(popup: &mut Option<PopupState>)
     {
         match popup
         {
@@ -304,7 +307,7 @@ impl App
         (lines, selected_line)
     }
 
-    pub(super) fn fill_popup(&mut self, popup_title: &mut String, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
+    pub(in crate::app) fn fill_popup(&mut self, popup_title: &mut String, popup_text: &mut Text<'static>, height: &mut usize, width: &mut usize) -> Result<(), Box<dyn Error>>
     {
         match &self.popup
         {
@@ -683,28 +686,16 @@ impl App
                     vec![editable_string.left_aligned()]
                 );
             }
-            Some(PopupState::SaveAndQuit(yes_selected)) =>
+            Some(PopupState::SaveAndQuit(choice)) =>
             {
                 *popup_title = "Save and Quit".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file will be saved and the program will quit."),
                         Line::raw("Are you sure?"),
-                        Line::from(vec![
-                            Span::styled("Yes", self.settings.color.yes),
-                            Span::raw("  "),
-                            Span::styled("No", self.settings.color.no)
-                        ])
+                        choice.to_line(&self.settings.color)
                     ]
                 );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
-                }
             },
             Some(PopupState::SaveAs { 
                 path, 
@@ -718,51 +709,27 @@ impl App
                     vec![editable_string.left_aligned()]
                 );
             },
-            Some(PopupState::Save(yes_selected)) =>
+            Some(PopupState::Save(choice)) =>
             {
                 *popup_title = "Save".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file will be saved."),
                         Line::raw("Are you sure?"),
-                        Line::from(vec![
-                            Span::styled("Yes", self.settings.color.yes),
-                            Span::raw("  "),
-                            Span::styled("No", self.settings.color.no)
-                        ])
+                        choice.to_line(&self.settings.color)
                     ]
                 );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
-                }
             },
-            Some(PopupState::QuitDirtySave(yes_selected)) =>
+            Some(PopupState::QuitDirtySave(choice)) =>
             {
                 *popup_title = "Quit".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file has been modified."),
                         Line::raw("Do you want to save before quitting?"),
-                        Line::from(vec![
-                            Span::styled("Yes", self.settings.color.yes),
-                            Span::raw("  "),
-                            Span::styled("No", self.settings.color.no)
-                        ])
+                        choice.to_line(&self.settings.color)
                     ]
                 );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
-                }
             },
             Some(PopupState::Help(scroll)) =>
             {

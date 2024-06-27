@@ -3,7 +3,7 @@ use ratatui::{backend::Backend, Terminal};
 
 use crate::get_app_context;
 
-use super::{popup_state::PopupState, settings::key_settings::KeySettings, App};
+use super::{popup::{binary_choice::BinaryChoice, popup_state::PopupState, simple_choice::SimpleChoice}, settings::key_settings::KeySettings, App};
 
 impl App
 {
@@ -334,21 +334,34 @@ impl App
         match event
         {
             event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
-                if event == self.settings.key.left || event == self.settings.key.right
+                if event == self.settings.key.right
                 {
                     match &mut popup
                     {
-                        Some(PopupState::Save(yes_selected)) =>
+                        Some(PopupState::Save(choice)) |
+                        Some(PopupState::SaveAndQuit(choice)) =>
                         {
-                            *yes_selected = !*yes_selected;
+                            *choice = choice.next();
                         }
-                        Some(PopupState::SaveAndQuit(yes_selected)) =>
+                        Some(PopupState::QuitDirtySave(choice)) =>
                         {
-                            *yes_selected = !*yes_selected;
+                            *choice = choice.next();
                         }
-                        Some(PopupState::QuitDirtySave(yes_selected)) =>
+                        _ => {}
+                    }
+                }
+                else if event == self.settings.key.left
+                {
+                    match &mut popup
+                    {
+                        Some(PopupState::Save(choice)) |
+                        Some(PopupState::SaveAndQuit(choice)) =>
                         {
-                            *yes_selected = !*yes_selected;
+                            *choice = choice.previous();
+                        }
+                        Some(PopupState::QuitDirtySave(choice)) =>
+                        {
+                            *choice = choice.previous();
                         }
                         _ => {}
                     }
@@ -403,33 +416,37 @@ impl App
                             self.save_file_as(path)?;
                             popup = None;
                         }
-                        Some(PopupState::Save(yes_selected)) =>
+                        Some(PopupState::Save(choice)) =>
                         {
-                            if *yes_selected
+                            if *choice == BinaryChoice::Yes
                             {
                                 self.save_file()?;
                             }
                             popup = None;
                         }
-                        Some(PopupState::SaveAndQuit(yes_selected)) =>
+                        Some(PopupState::SaveAndQuit(choice)) =>
                         {
-                            if *yes_selected
+                            if *choice == BinaryChoice::Yes
                             {
                                 self.save_file()?;
                                 self.needs_to_exit = true;
                             }
                             popup = None;
                         }
-                        Some(PopupState::QuitDirtySave(yes_selected)) =>
+                        Some(PopupState::QuitDirtySave(choice)) =>
                         {
-                            if *yes_selected
+                            match choice
                             {
-                                self.save_file()?;
-                                self.needs_to_exit = true;
-                            }
-                            else
-                            {
-                                self.needs_to_exit = true;
+                                SimpleChoice::Yes => 
+                                {
+                                    self.save_file()?;
+                                    self.needs_to_exit = true;
+                                },
+                                SimpleChoice::No => 
+                                {
+                                    self.needs_to_exit = true;
+                                },
+                                SimpleChoice::Cancel => {},
                             }
                             popup = None;
                         }

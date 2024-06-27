@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use mlua::{Function, Lua, Scope};
 
-use crate::{app::{log::{logger::Logger, NotificationLevel}, popup_state::PopupState, settings::Settings}, headers::Header};
+use crate::{app::{log::{logger::Logger, NotificationLevel}, popup::popup_state::PopupState, settings::Settings}, headers::Header};
 
 use super::{exported_commands::ExportedCommands, instruction_info::InstructionInfo};
 
