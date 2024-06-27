@@ -160,6 +160,57 @@ impl PluginManager {
         }
     }
 
+    pub fn on_focus(
+        &mut self, 
+        app_context: &mut AppContext)
+    {
+        for i in self.on_open.iter()
+        {
+            app_context.plugin_index = Some(*i);
+            let event = Event::Focus;
+            self.plugins[*i].handle(event, app_context);
+        }
+    }
+
+    pub fn on_blur(
+        &mut self, 
+        app_context: &mut AppContext)
+    {
+        for i in self.on_open.iter()
+        {
+            app_context.plugin_index = Some(*i);
+            let event = Event::Blur;
+            self.plugins[*i].handle(event, app_context);
+        }
+    }
+
+    pub fn on_paste(
+        &mut self, 
+        text: impl AsRef<str>, 
+        app_context: &mut AppContext)
+    {
+        for i in self.on_open.iter()
+        {
+            app_context.plugin_index = Some(*i);
+            let event = Event::Paste { text: text.as_ref().to_string() };
+            self.plugins[*i].handle(event, app_context);
+        }
+    }
+
+    pub fn on_resize(
+        &mut self, 
+        width: u16, 
+        height: u16, 
+        app_context: &mut AppContext)
+    {
+        for i in self.on_open.iter()
+        {
+            app_context.plugin_index = Some(*i);
+            let event = Event::Resize { width, height };
+            self.plugins[*i].handle(event, app_context);
+        }
+    }
+
     pub fn get_commands(&self) -> Vec<&CommandInfo>
     {
         let mut commands = Vec::new();

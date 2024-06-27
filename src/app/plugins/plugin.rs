@@ -72,6 +72,22 @@ impl Plugin {
         {
             handlers |= Events::ON_MOUSE;
         }
+        if self.lua.globals().get::<_, Function>("on_focus").is_ok()
+        {
+            handlers |= Events::ON_FOCUS;
+        }
+        if self.lua.globals().get::<_, Function>("on_blur").is_ok()
+        {
+            handlers |= Events::ON_BLUR;
+        }
+        if self.lua.globals().get::<_, Function>("on_paste").is_ok()
+        {
+            handlers |= Events::ON_PASTE;
+        }
+        if self.lua.globals().get::<_, Function>("on_resize").is_ok()
+        {
+            handlers |= Events::ON_RESIZE;
+        }
         handlers
     }
 
@@ -129,6 +145,42 @@ impl Plugin {
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
                     on_mouse.call::<_,()>((event, context))
+                })
+            },
+            Event::Focus => 
+            {
+                let on_focus = self.lua.globals().get::<_, Function>("on_focus").unwrap();
+                self.lua.scope(|scope| {
+                    let context = app_context.to_lua(&self.lua, scope);
+                    on_focus.call::<_,()>(context)
+                })
+            },
+            Event::Blur => 
+            {
+                let on_blur = self.lua.globals().get::<_, Function>("on_blur").unwrap();
+                self.lua.scope(|scope| {
+                    let context = app_context.to_lua(&self.lua, scope);
+                    on_blur.call::<_,()>(context)
+                })
+            },
+            Event::Paste { 
+                text } => 
+            {
+                let on_paste = self.lua.globals().get::<_, Function>("on_paste").unwrap();
+                self.lua.scope(|scope| {
+                    let text = self.lua.create_string(text).unwrap();
+                    let context = app_context.to_lua(&self.lua, scope);
+                    on_paste.call::<_,()>((text, context))
+                })
+            },
+            Event::Resize { 
+                width, 
+                height } => 
+            {
+                let on_resize = self.lua.globals().get::<_, Function>("on_resize").unwrap();
+                self.lua.scope(|scope| {
+                    let context = app_context.to_lua(&self.lua, scope);
+                    on_resize.call::<_,()>((width, height, context))
                 })
             },
         };
@@ -218,12 +270,16 @@ mod test
             function on_save(context) end
             function on_key(key_event, context) end
             function on_mouse(mouse_event, context) end
+            function on_focus(context) end
+            function on_blur(context) end
+            function on_paste(text, context) end
+            function on_resize(width, height, context) end
         ";
         let mut app = App::mockup(vec![0;0x100]);
         let mut app_context = get_app_context!(app);
         let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
         let handlers = plugin.get_event_handlers();
-        assert_eq!(handlers, Events::ON_OPEN | Events::ON_EDIT | Events::ON_SAVE | Events::ON_KEY | Events::ON_MOUSE);
+        assert!(handlers.is_all());
         let source = "
             function on_open(context) end
             function on_edit(new_bytes, context) end
