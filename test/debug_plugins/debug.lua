@@ -49,6 +49,22 @@ function on_mouse(mouse_event, context)
     context.log(1, "Mouse event: " .. mouse_event.kind .. "@" .. mouse_event.row .. "," .. mouse_event.column)
 end
 
+function on_focus(context)
+    context.log(1, "Focus gained")
+end
+
+function on_blur(context)
+    context.log(1, "Focus lost")
+end
+
+function on_paste(text, context)
+    context.log(1, "Text pasted: " .. text)
+end
+
+function on_resize(width, height, context)
+    context.log(1, "Resized: " .. width .. "x" .. height .. " from " .. context.screen_width .. "x" .. context.screen_height)
+end
+
 function debug(context)
     context.open_popup("fill_popup")
 end

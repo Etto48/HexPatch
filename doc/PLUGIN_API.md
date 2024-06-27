@@ -83,6 +83,58 @@ This function is called when an action is performed with the mouse.
 |`mouse_event`|`MouseEvent`|The mouse event.|
 |`context`|`Context`|The application context.|
 
+#### On Focus
+
+```lua
+function on_focus(context) end
+```
+
+This function is called when the terminal gains focus.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+|`context`|`Context`|The application context.|
+
+#### On Blur
+
+```lua
+function on_blur(context) end
+```
+
+This function is called when the terminal loses focus.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+|`context`|`Context`|The application context.|
+
+#### On Paste
+
+```lua
+function on_paste(text, context) end
+```
+
+This function is called when text is pasted into the terminal.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+|`text`|`String`|The text that was pasted.|
+|`context`|`Context`|The application context.|
+
+#### On Resize
+
+```lua
+function on_resize(width, height, context) end
+```
+
+This function is called when the terminal is resized.
+The size stored in the context is the old size, before the resize.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+|`width`|`usize`|The new width of the terminal.|
+|`height`|`usize`|The new height of the terminal.|
+|`context`|`Context`|The application context.|
+
 ### Commands
 
 ```lua
