@@ -6,6 +6,9 @@ use crate::get_app_context;
 
 use crate::app::{asm::assembly_line::AssemblyLine, commands::command_info::CommandInfo, files::{path, path_result::PathResult}, plugins::popup_context::PopupContext, settings::color_settings::ColorSettings, App};
 
+use super::binary_choice::BinaryChoice;
+use super::simple_choice::SimpleChoice;
+
 #[derive(Clone, Debug)]
 pub enum PopupState
 {
@@ -53,14 +56,14 @@ pub enum PopupState
         location: String,
         cursor: usize
     },
-    QuitDirtySave(bool),
-    SaveAndQuit(bool),
+    QuitDirtySave(SimpleChoice),
+    SaveAndQuit(BinaryChoice),
     SaveAs
     {
         path: String,
         cursor: usize,
     },
-    Save(bool),
+    Save(BinaryChoice),
     Help(usize),
     Custom
     {
@@ -683,28 +686,16 @@ impl App
                     vec![editable_string.left_aligned()]
                 );
             }
-            Some(PopupState::SaveAndQuit(yes_selected)) =>
+            Some(PopupState::SaveAndQuit(choice)) =>
             {
                 *popup_title = "Save and Quit".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file will be saved and the program will quit."),
                         Line::raw("Are you sure?"),
-                        Line::from(vec![
-                            Span::styled("Yes", self.settings.color.yes),
-                            Span::raw("  "),
-                            Span::styled("No", self.settings.color.no)
-                        ])
+                        choice.to_line(&self.settings.color)
                     ]
                 );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
-                }
             },
             Some(PopupState::SaveAs { 
                 path, 
@@ -718,51 +709,27 @@ impl App
                     vec![editable_string.left_aligned()]
                 );
             },
-            Some(PopupState::Save(yes_selected)) =>
+            Some(PopupState::Save(choice)) =>
             {
                 *popup_title = "Save".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file will be saved."),
                         Line::raw("Are you sure?"),
-                        Line::from(vec![
-                            Span::styled("Yes", self.settings.color.yes),
-                            Span::raw("  "),
-                            Span::styled("No", self.settings.color.no)
-                        ])
+                        choice.to_line(&self.settings.color)
                     ]
                 );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
-                }
             },
-            Some(PopupState::QuitDirtySave(yes_selected)) =>
+            Some(PopupState::QuitDirtySave(choice)) =>
             {
                 *popup_title = "Quit".into();
                 popup_text.lines.extend(
                     vec![
                         Line::raw("The file has been modified."),
                         Line::raw("Do you want to save before quitting?"),
-                        Line::from(vec![
-                            Span::styled("Yes", self.settings.color.yes),
-                            Span::raw("  "),
-                            Span::styled("No", self.settings.color.no)
-                        ])
+                        choice.to_line(&self.settings.color)
                     ]
                 );
-                if *yes_selected
-                {
-                    popup_text.lines[2].spans[0].style = self.settings.color.yes_selected;
-                }
-                else
-                {
-                    popup_text.lines[2].spans[2].style = self.settings.color.no_selected;
-                }
             },
             Some(PopupState::Help(scroll)) =>
             {
