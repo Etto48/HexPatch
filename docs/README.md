@@ -99,7 +99,7 @@ HexPatch supports plugins written in Lua.
 Plugins must be placed in the `plugins` directory in hex-patch's configuration directory.
 A different plugins directory can be specified with the `--plugins` flag.
 
-You can find more information about the Plugin Lua API [here](./docs/PLUGIN_API.md).
+You can find more information about the Plugin Lua API [here](./PLUGIN_API.md).
 
 ## Features
 
