@@ -31,7 +31,7 @@ impl App
                 self.quit(Some(true))?;
             }
             "save" => {
-                if self.dirty
+                if self.data.dirty
                 {
                     self.save_file()?;
                 }
@@ -86,7 +86,7 @@ impl App
         {
             Some(true) => {
                 self.log(NotificationLevel::Debug, "Saving and quitting...");
-                if self.dirty
+                if self.data.dirty
                 {
                     self.save_file()?;
                 }
@@ -98,7 +98,7 @@ impl App
             }
             None => {
                 self.log(NotificationLevel::Debug, "Quitting...");
-                if self.dirty
+                if self.data.dirty
                 {
                     self.log(NotificationLevel::Warning, "You have unsaved changes.")
                 }
@@ -113,7 +113,7 @@ impl App
 
     pub(in crate::app) fn request_quit(&mut self)
     {
-        if self.dirty
+        if self.data.dirty
         {
             self.popup = Some(PopupState::QuitDirtySave(SimpleChoice::Cancel));
         }
@@ -125,7 +125,7 @@ impl App
 
     pub(in crate::app) fn request_save(&mut self)
     {
-        if self.dirty
+        if self.data.dirty
         {
             self.popup = Some(PopupState::Save(BinaryChoice::No));
         }
@@ -133,7 +133,7 @@ impl App
 
     pub(in crate::app) fn request_save_and_quit(&mut self)
     {
-        if self.dirty
+        if self.data.dirty
         {
             self.popup = Some(PopupState::SaveAndQuit(BinaryChoice::No));
         }

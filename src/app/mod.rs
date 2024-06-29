@@ -20,3 +20,4 @@ pub mod ssh;
 pub mod mockup;
 pub mod plugins;
 pub mod commands;
+pub mod data;

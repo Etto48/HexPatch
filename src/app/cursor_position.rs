@@ -28,7 +28,7 @@ impl App
 {
     pub(super) fn get_cursor_position(&self) -> CursorPosition
     {
-        if self.data.is_empty() || self.blocks_per_row == 0
+        if self.data.bytes.is_empty() || self.blocks_per_row == 0
         {
             return CursorPosition {
                 cursor: Some((0, 0)),
@@ -195,9 +195,9 @@ impl App
                 return;
             }
         }
-        if address >= self.data.len()
+        if address >= self.data.bytes.len()
         {
-            address = self.data.len().saturating_sub(1);
+            address = self.data.bytes.len().saturating_sub(1);
         }
         if self.screen_size.1 <= self.vertical_margin
         {
@@ -237,13 +237,13 @@ impl App
         let half_byte_position = current_position.global_byte_index * 2 + if current_position.high_byte {0} else {1};
 
         let mut new_half_byte_position = (half_byte_position as isize).saturating_add(half_byte_delta);
-        if !best_effort && (new_half_byte_position < 0 || new_half_byte_position >= self.data.len() as isize * 2)
+        if !best_effort && (new_half_byte_position < 0 || new_half_byte_position >= self.data.bytes.len() as isize * 2)
         {
             return;
         }
         else if best_effort
         {
-            let max_half_byte_position = (self.data.len() as isize * 2 - 1).max(0);
+            let max_half_byte_position = (self.data.bytes.len() as isize * 2 - 1).max(0);
             new_half_byte_position = new_half_byte_position.clamp(0, max_half_byte_position);
         }
         let new_global_byte_index = new_half_byte_position as usize / 2;
@@ -290,14 +290,14 @@ impl App
 
     pub(super) fn move_cursor_to_end(&mut self)
     {
-        let bytes = self.data.len();
+        let bytes = self.data.bytes.len();
 
         self.move_cursor(bytes as isize * 2, 0, true);
     }
 
     pub(super) fn move_cursor_to_start(&mut self)
     {
-        let bytes = self.data.len();
+        let bytes = self.data.bytes.len();
         self.move_cursor(bytes as isize * -2 , 0, true);
     }
 

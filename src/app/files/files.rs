@@ -3,7 +3,7 @@ use std::error::Error;
 
 use ratatui::{backend::Backend, Terminal};
 
-use crate::{app::{info_mode::InfoMode, log::NotificationLevel, popup::popup_state::PopupState, App}, get_app_context, headers::Header};
+use crate::{app::{data::Data, info_mode::InfoMode, log::NotificationLevel, popup::popup_state::PopupState, App}, get_app_context, headers::Header};
 
 use super::{filesystem::FileSystem, path_result::PathResult, path};
 
@@ -144,7 +144,6 @@ impl App
         self.log(NotificationLevel::Info, &format!("Opening file: \"{}\"", path));
 
         self.filesystem.cd(path);
-        self.dirty = false;
         self.info_mode = InfoMode::Text;
         self.scroll = 0;
         self.cursor = (0,0);
@@ -159,21 +158,21 @@ impl App
             Self::print_loading_status(&self.settings.color, &format!("Opening \"{}\"...", path), terminal)?;
             Some(terminal)
         } else {None};
-        self.data = self.filesystem.read(self.filesystem.pwd())?;
+        self.data = Data::new(self.filesystem.read(self.filesystem.pwd())?);
         
         terminal = if let Some(terminal) = terminal
         {
             Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
             Some(terminal)
         } else {None};
-        self.header = Header::parse_header(&self.data, path, &self.filesystem);
+        self.header = Header::parse_header(&self.data.bytes, path, &self.filesystem);
 
         terminal = if let Some(terminal) = terminal
         {
             Self::print_loading_status(&self.settings.color, "Disassembling executable...", terminal)?;
             Some(terminal)
         } else {None};
-        (self.assembly_offsets, self.assembly_instructions) = Self::sections_from_bytes(&self.data, &self.header);
+        (self.assembly_offsets, self.assembly_instructions) = Self::sections_from_bytes(&self.data.bytes, &self.header);
 
         if let Some(terminal) = terminal
         {
@@ -203,8 +202,8 @@ impl App
     {
         let mut app_context = get_app_context!(self);
         self.plugin_manager.on_save(&mut app_context);
-        self.filesystem.write(self.filesystem.pwd(), &self.data)?;
-        self.dirty = false;
+        self.filesystem.write(self.filesystem.pwd(), &self.data.bytes)?;
+        self.data.dirty = false;
         match &self.filesystem
         {
             FileSystem::Local { path } => 

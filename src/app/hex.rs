@@ -155,7 +155,7 @@ impl App
         {   
             let cursor_position = self.get_cursor_position();
 
-            let old_byte = self.data[cursor_position.global_byte_index];
+            let old_byte = self.data.bytes[cursor_position.global_byte_index];
             let old_byte_str = format!("{:02X}", old_byte);
             let new_byte_str = if cursor_position.high_byte
             {
@@ -174,13 +174,13 @@ impl App
                 &mut new_bytes,
                 &mut app_context
             );
-            new_bytes.truncate(self.data.len().checked_sub(cursor_position.global_byte_index).unwrap());
+            new_bytes.truncate(self.data.bytes.len().checked_sub(cursor_position.global_byte_index).unwrap());
 
-            self.data[cursor_position.global_byte_index..cursor_position.global_byte_index + new_bytes.len()].copy_from_slice(&new_bytes);
+            self.data.bytes[cursor_position.global_byte_index..cursor_position.global_byte_index + new_bytes.len()].copy_from_slice(&new_bytes);
 
             if old_byte != new_byte
             {
-                self.dirty = true;
+                self.data.dirty = true;
             }
             self.edit_assembly(new_bytes.len());
         }
@@ -192,8 +192,8 @@ impl App
     {
         let start_byte = start_row * self.blocks_per_row * self.block_size;
         let end_byte = end_row * self.blocks_per_row * self.block_size;
-        let end_byte = std::cmp::min(end_byte, self.data.len());
-        let bytes = &self.data[start_byte..end_byte];
+        let end_byte = std::cmp::min(end_byte, self.data.bytes.len());
+        let bytes = &self.data.bytes[start_byte..end_byte];
         let selected_byte_index = self.get_cursor_position().global_byte_index.saturating_sub(start_byte);
         let high_byte = self.get_cursor_position().high_byte;
         let instruction_info = 

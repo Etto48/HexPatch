@@ -115,8 +115,8 @@ impl App
                         let old_bytes_offset = instruction.file_address as usize;
                         let old_bytes_len = instruction.instruction.len();
                         let patch_len = preview.len();
-                        let max_instruction_length = std::cmp::min(16, self.data.len() - old_bytes_offset);
-                        let old_bytes_with_max_possible_length = &self.data[old_bytes_offset..old_bytes_offset + max_instruction_length];
+                        let max_instruction_length = std::cmp::min(16, self.data.bytes.len() - old_bytes_offset);
+                        let old_bytes_with_max_possible_length = &self.data.bytes[old_bytes_offset..old_bytes_offset + max_instruction_length];
                         for (i, byte) in old_bytes_with_max_possible_length.iter().enumerate()
                         {
                             if i < patch_len
