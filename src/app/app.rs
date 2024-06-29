@@ -4,7 +4,7 @@ use std::time::Duration;
 use crossterm::event;
 use ratatui::{backend::Backend, layout::Rect, text::{Line, Text}, widgets::{Block, Borders, Clear}};
 
-use super::{asm::assembly_line::AssemblyLine, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin_manager::PluginManager, popup::popup_state::PopupState, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
+use super::{asm::assembly_line::AssemblyLine, data::Data, files::filesystem::FileSystem, help::HelpLine, info_mode::InfoMode, log::{logger::Logger, NotificationLevel}, plugins::plugin_manager::PluginManager, popup::popup_state::PopupState, settings::{color_settings::ColorSettings, Settings}, widgets::{logo::Logo, scrollbar::Scrollbar}};
 
 use crate::{args::Args, get_app_context, headers::Header};
 
@@ -15,8 +15,7 @@ pub struct App
     pub(super) header: Header,
     pub(super) logger: Logger,
     pub(super) help_list: Vec<HelpLine>,
-    pub(super) dirty: bool,
-    pub(super) data: Vec<u8>,
+    pub(super) data: Data,
     pub(super) assembly_offsets: Vec<usize>,
     pub(super) assembly_instructions: Vec<AssemblyLine>,
     pub(super) text_last_searched_string: String,
@@ -165,10 +164,10 @@ impl App
                     .block(Block::default().borders(Borders::NONE));
                 
                 let scrolled_amount = self.get_cursor_position().global_byte_index;
-                let total_amount = self.data.len();
+                let total_amount = self.data.bytes.len();
                 let scrollbar = Scrollbar::new(scrolled_amount, total_amount, self.settings.color.scrollbar);
 
-                if !self.data.is_empty()
+                if !self.data.bytes.is_empty()
                 {
                     let line_start_index = self.scroll;
                     let line_end_index = (self.scroll + f.size().height as usize).saturating_sub(2);
@@ -179,7 +178,7 @@ impl App
                     let address_block = ratatui::widgets::Paragraph::new(address_view)
                         .block(Block::default().title("Address").borders(Borders::LEFT | Borders::TOP));
                     
-                    let editor_title = format!("Hex Editor{}", if self.dirty { " *"} else {""});
+                    let editor_title = format!("Hex Editor{}", if self.data.dirty { " *"} else {""});
 
                     let hex_editor_block = ratatui::widgets::Paragraph::new(hex_view)
                         .block(Block::default().title(editor_title).borders(Borders::LEFT | Borders::TOP | Borders::RIGHT));
@@ -273,8 +272,7 @@ impl Default for App
             header: Header::None,
             logger: Logger::new(),
             help_list: Self::help_list(&Settings::default().key),
-            data: Vec::new(),
-            dirty: false,
+            data: Data::default(),
             assembly_offsets: Vec::new(),
             assembly_instructions: Vec::new(),
             text_last_searched_string: String::new(),

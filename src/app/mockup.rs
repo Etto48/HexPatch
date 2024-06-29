@@ -24,6 +24,6 @@ pub mod test
     {
         let data = b"Hello, World!";
         let app = App::mockup(data.to_vec());
-        assert_eq!(app.data, data);
+        assert_eq!(app.data.bytes, data);
     }
 }

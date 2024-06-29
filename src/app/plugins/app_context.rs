@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use mlua::{Function, Lua, Scope};
 
-use crate::{app::{log::{logger::Logger, NotificationLevel}, popup::popup_state::PopupState, settings::Settings}, headers::Header};
+use crate::{app::{data::Data, log::{logger::Logger, NotificationLevel}, popup::popup_state::PopupState, settings::Settings}, headers::Header};
 
 use super::{exported_commands::ExportedCommands, instruction_info::InstructionInfo};
 
@@ -30,7 +30,7 @@ pub struct AppContext<'app> {
 
     pub screen_height: u16,
     pub screen_width: u16,
-    pub data: &'app mut Vec<u8>,
+    pub data: &'app mut Data,
     pub offset: usize,
     pub current_instruction: Option<InstructionInfo>,
     pub header: &'app Header,
@@ -46,7 +46,7 @@ impl<'app> AppContext<'app> {
         current_instruction: Option<InstructionInfo>,
         screen_height: u16,
         screen_width: u16,
-        data: &'app mut Vec<u8>,
+        data: &'app mut Data,
         header: &'app Header, 
         settings: &'app mut Settings, 
         logger: &'app mut Logger, 
@@ -193,7 +193,7 @@ impl<'app> AppContext<'app> {
     
         context.set("screen_height", self.screen_height).unwrap();
         context.set("screen_width", self.screen_width).unwrap();
-        context.set("data", scope.create_any_userdata_ref_mut(self.data).unwrap()).unwrap();
+        context.set("data", scope.create_userdata_ref_mut(self.data).unwrap()).unwrap();
         context.set("offset", self.offset).unwrap();
         context.set("current_instruction", self.current_instruction.clone()).unwrap();
         context.set("header", scope.create_userdata_ref(self.header).unwrap()).unwrap();

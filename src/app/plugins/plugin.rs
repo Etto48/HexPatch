@@ -303,7 +303,7 @@ mod test
         let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
         let event = Event::Open;
         plugin.handle_with_error(event, &mut app_context).unwrap();
-        assert_eq!(app.data[0], 42);
+        assert_eq!(app.data.bytes[0], 42);
     }
 
     #[test]
@@ -372,12 +372,12 @@ mod test
             event: KeyEvent::from(KeyCode::Down)
         };
         plugin.handle_with_error(event, &mut app_context).unwrap();
-        assert_eq!(app_context.data[0], 0);
+        assert_eq!(app_context.data.bytes[0], 0);
         let event = Event::Key { 
             event: app_context.settings.key.confirm, 
         };
         plugin.handle_with_error(event, &mut app_context).unwrap();
-        assert_eq!(app.data[0], 42);
+        assert_eq!(app.data.bytes[0], 42);
     }
 
     #[test]

@@ -67,8 +67,8 @@ impl App
     {
         for (i,byte) in text.bytes().enumerate()
         {
-            if self.data.len() <= starting_from + i || 
-                self.data[starting_from + i] != byte
+            if self.data.bytes.len() <= starting_from + i || 
+                self.data.bytes[starting_from + i] != byte
             {
                 return false;
             }
@@ -80,15 +80,15 @@ impl App
     {
         let start_byte = start_row * self.blocks_per_row * self.block_size;
         let end_byte = end_row * self.blocks_per_row * self.block_size;
-        let end_byte = std::cmp::min(end_byte, self.data.len());
-        let bytes = &self.data[start_byte..end_byte];
+        let end_byte = std::cmp::min(end_byte, self.data.bytes.len());
+        let bytes = &self.data.bytes[start_byte..end_byte];
         let selected_byte_offset = self.get_cursor_position().global_byte_index.saturating_sub(start_byte);
         Self::bytes_to_styled_text(&self.settings.color, bytes, self.block_size, self.blocks_per_row, selected_byte_offset)
     }
 
     pub(super) fn find_text(&mut self, text: &str)
     {
-        if text.is_empty() || self.data.is_empty()
+        if text.is_empty() || self.data.bytes.is_empty()
         {
             return;
         }
@@ -107,10 +107,10 @@ impl App
         {
             search_here = 0;
         }
-        let max_search_index = self.data.len() + search_here;
+        let max_search_index = self.data.bytes.len() + search_here;
         while search_here < max_search_index
         {
-            let actual_search_here = search_here % self.data.len();
+            let actual_search_here = search_here % self.data.bytes.len();
             if Self::found_text_here(self, actual_search_here, text)
             {
                 self.jump_to(actual_search_here, false);
