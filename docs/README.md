@@ -72,10 +72,10 @@ The following architectures are supported:
 A configuration file named `settings.json` is created in hex-patch's configuration directory.
 The configuration directory is located in the following paths:
 | OS | Path | Example |
-| :--- | :--- | :------ |
-| Windows | `%APPDATA%\HexPatch` | `C:\Users\Alice\AppData\Roaming\HexPatch` |
-| Linux | `$XDG_CONFIG_HOME/HexPatch` or `~/.config/HexPatch` | `/home/alice/.config/HexPatch` |
-| macOS | `$HOME/Library/Application Support/HexPatch` | `/Users/Alice/Library/Application Support/HexPatch` |
+|----|------|---------|
+|Windows|`%APPDATA%\HexPatch`|`C:\Users\Alice\AppData\Roaming\HexPatch`|
+|Linux|`$XDG_CONFIG_HOME/HexPatch` or `~/.config/HexPatch`|`/home/alice/.config/HexPatch`|
+|macOS|`$HOME/Library/Application Support/HexPatch`|`/Users/Alice/Library/Application Support/HexPatch`|
 
 A different configuration file can be specified with the `--config` flag.
 
@@ -99,7 +99,7 @@ HexPatch supports plugins written in Lua.
 Plugins must be placed in the `plugins` directory in hex-patch's configuration directory.
 A different plugins directory can be specified with the `--plugins` flag.
 
-You can find more information about the Plugin Lua API [here](./docs/PLUGIN_API.md).
+You can find more information about the Plugin Lua API [here](./PLUGIN_API.md).
 
 ## Features
 
