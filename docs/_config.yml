@@ -1,6 +1,6 @@
 name: HexPatch
 logo: /assets/logo.svg
-theme: jekyll-theme-minimal
+theme: jekyll-theme-minima
 markdown: GFM
 
 plugins:
