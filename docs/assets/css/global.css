@@ -11,6 +11,13 @@ code {
     border-radius: 5px;
 }
 
+table {
+    display: block;
+    overflow-x: auto;
+    max-width: -moz-fit-content;
+    max-width: fit-content;
+}
+
 table, td, th {
     border-collapse: collapse;
     border: 1px solid #ddd;
