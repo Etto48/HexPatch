@@ -1,0 +1,44 @@
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 20px;
+}
+
+code {
+    border-radius: 5px;
+}
+
+table, td, th {
+    border-collapse: collapse;
+    border: 1px solid #ddd;
+}
+
+thead {
+    border-radius: 5px 5px 0 0;
+    background-color: #f9f9f9;
+}
+
+tr:last-child td:first-child {
+    border-radius: 0 0 0 5px;
+}
+
+tr:last-child td:last-child {
+    border-radius: 0 0 5px 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    table, th, td {
+        border: 1px solid #3c434a;
+    }
+
+    thead {
+        background-color: #33383e;
+    }
+}
+
+table td, table th {
+    padding: 5px;
+}

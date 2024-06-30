@@ -1,0 +1,19 @@
+<nav class="navbar navbar-expand-sm bg-body-tertiary sticky-top">
+    <div class="container-fluid">
+        <a href="/" class="navbar-brand"><img src="{{ "/assets/logo.svg" | relative_url }}" alt="Logo" class="px-2"/>HexPatch</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-sm-0">
+                {% for ipage in site.pages %}
+                    {% if ipage.title != "HexPatch" and ipage.title %}
+                        <li class="nav-item">
+                            <a href="{{ ipage.url }}" class="nav-link {% if page.url == ipage.url %}active{% endif %}">{{ ipage.title }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</nav>

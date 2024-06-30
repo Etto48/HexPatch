@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: "en" }}">
+
+  {%- include head.html -%}
+
+  <body>
+    <script src="{{ "/assets/js/color_mode.js" | relative_url }}"></script>
+
+    {%- include header.html -%}
+
+    <main class="page-content py-3" aria-label="Content">
+      <div class="container">
+        {{ content }}
+      </div>
+    </main>
+
+    {%- include footer.html -%}
+
+  </body>
+
+</html>
