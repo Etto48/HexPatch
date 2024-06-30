@@ -9,7 +9,7 @@
                 {% for ipage in site.pages %}
                     {% if ipage.title != "HexPatch" and ipage.title %}
                         <li class="nav-item">
-                            <a href="{{ ipage.url }}" class="nav-link {% if page.url == ipage.url %}active{% endif %}">{{ ipage.title }}</a>
+                            <a href="{{ ipage.url | relative_url }}" class="nav-link {% if page.url == ipage.url %}active{% endif %}">{{ ipage.title }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
