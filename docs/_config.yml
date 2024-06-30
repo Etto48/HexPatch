@@ -1,4 +1,5 @@
 name: HexPatch
+logo: /assets/logo.svg
 theme: jekyll-theme-minimal
 markdown: GFM
 
