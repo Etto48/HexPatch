@@ -2,7 +2,7 @@ use regex::Regex;
 
 pub fn is_absolute(path: &str) -> bool
 {
-    path.starts_with('/') || 
+    path.starts_with('/') ||
     Regex::new(r"(^(\\\\\?\\)?[a-zA-Z]:)|(^\\\\\?\\[a-zA-Z]{1,})")
         .expect("Invalid regex.")
         .is_match(path)
@@ -10,7 +10,7 @@ pub fn is_absolute(path: &str) -> bool
 
 pub fn is_root(path: &str) -> bool
 {
-    path == "/" || 
+    path == "/" ||
     Regex::new(r"(^(\\\\\?\\)?[a-zA-Z]:\\?$)|(^\\\\\?\\[a-zA-Z]{1,}\\?$)")
         .expect("Invalid regex.")
         .is_match(path)
@@ -22,15 +22,15 @@ pub fn parent(path: &str) -> Option<&str>
     {
         return None;
     }
-    let path = path.trim_end_matches(|c| c == '/' || c == '\\');
-    let last_delimiter_index = path.rfind(|c| c == '/' || c == '\\');
+    let path = path.trim_end_matches(['/', '\\']);
+    let last_delimiter_index = path.rfind(['/', '\\']);
     Some(path.split_at(last_delimiter_index? + 1).0)
 }
 
 pub fn join(start: &str, end: &str, separator: char) -> String
 {
-    let start = start.trim_end_matches(|c| c == separator);
-    let end = end.trim_start_matches(|c| c == separator);
+    let start = start.trim_end_matches(separator);
+    let end = end.trim_start_matches(separator);
     if end == ".."
     {
         parent(start).unwrap_or(start).to_string()
@@ -53,9 +53,8 @@ pub fn filename(path: &str) -> Option<&str>
     }
     else
     {
-        let path = path.trim_end_matches(|c| c == '/' || c == '\\');
-        let path = path.rsplit(|c| c == '/' || c == '\\').collect::<Vec<_>>();
-        Some(path[0])
+        let path = path.trim_end_matches(['/', '\\']);
+        path.rsplit(['/', '\\']).next()
     }
 }
 
@@ -67,11 +66,11 @@ pub fn diff<'a>(full_path: &'a str, prefix_path: &str) -> &'a str
     }
     else if let Some(unprefixed_path) = full_path.strip_prefix(prefix_path)
     {
-        unprefixed_path.trim_start_matches(|c| c == '/' || c == '\\')
+        unprefixed_path.trim_start_matches(['/', '\\'])
     }
     else if let Some(unprefixed_path_reverse_logic) = prefix_path.strip_prefix(full_path)
     {
-        if unprefixed_path_reverse_logic.split(|c| c == '/' || c == '\\').filter(|s|!s.is_empty()).count() == 1
+        if unprefixed_path_reverse_logic.split(['/', '\\']).filter(|s| !s.is_empty()).count() == 1
         {
             ".."
         }

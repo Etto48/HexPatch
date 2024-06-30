@@ -9,8 +9,16 @@ pub struct SSHClient;
 impl Handler for SSHClient
 {
     type Error = russh::Error;
-    
-    fn check_server_key<'life0,'life1,'async_trait>(&'life0 mut self,_server_public_key: &'life1 russh_keys::key::PublicKey,) ->  core::pin::Pin<Box<dyn core::future::Future<Output = Result<bool,Self::Error> > + core::marker::Send+'async_trait> >where 'life0:'async_trait,'life1:'async_trait,Self:'async_trait {
+
+    fn check_server_key<'life0, 'life1, 'async_trait>(
+        &'life0 mut self,
+        _server_public_key: &'life1 russh_keys::key::PublicKey
+    ) -> core::pin::Pin<Box<dyn core::future::Future<Output = Result<bool, Self::Error> > + Send + 'async_trait>>
+    where
+        'life0: 'async_trait,
+        'life1: 'async_trait,
+        Self: 'async_trait
+    {
         Box::pin(async move {
             Ok(true)
         })
@@ -28,14 +36,9 @@ impl Connection
 {
     fn get_key_files() -> Result<(PathBuf, PathBuf), String>
     {
-        let home_dir = if let Some(home) = dirs::home_dir()
-        {
-            home
-        }
-        else
-        {
-            return Err("Home directory not found".into())
-        };
+        let home_dir = dirs::home_dir()
+            .ok_or_else(|| "Home directory not found".to_string())?;
+
         let ssh_dir = home_dir.join(".ssh");
         if !ssh_dir.is_dir()
         {
@@ -66,32 +69,16 @@ impl Connection
     pub fn new(connection_str: &str, password: Option<&str>) -> Result<Self, Box<dyn Error>>
     {
         let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build()?;
-        let (username, host) = 
-        if let Some((username, host)) = connection_str.split_once('@')
-        {
-            (username, host)
-        }
-        else
-        {
-            return Err("Invalid connection string".into())
-        };
+        let (username, host) = connection_str.split_once('@')
+            .ok_or_else(|| Box::<dyn Error>::from("Invalid connection string"))?;
 
-        let (hostname, port) = 
-        if let Some((hostname, port)) = host.split_once(':')
-        {
-            if let Ok(port) = port.parse::<u16>()
-            {
-                (hostname, port)
-            }
-            else
-            {
-                return Err("Invalid port".into())
-            }
-        }
-        else
-        {
-            (host, 22)
-        };
+        let (hostname, port) = host.split_once(':')
+            .map_or(
+                Ok((host, 22)),
+                |(hostname, port)| port.parse::<u16>()
+                    .map(|port| (hostname, port))
+                    .map_err(|_| Box::<dyn Error>::from("Invalid port"))
+            )?;
 
         let config = client::Config::default();
 
@@ -188,13 +175,13 @@ impl Connection
 
     pub fn is_file(&self, path: &str) -> bool
     {
-        self.runtime.block_on(self.sftp.metadata(path)).map_or(false, 
+        self.runtime.block_on(self.sftp.metadata(path)).map_or(false,
         |metadata| !metadata.is_dir())
     }
 
     pub fn is_dir(&self, path: &str) -> bool
     {
-        self.runtime.block_on(self.sftp.metadata(path)).map_or(false, 
+        self.runtime.block_on(self.sftp.metadata(path)).map_or(false,
             |metadata| metadata.is_dir())
     }
 }

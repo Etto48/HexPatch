@@ -15,7 +15,7 @@ pub struct Plugin
 
 impl Plugin {
     pub fn new_from_source(
-        source: &str, 
+        source: &str,
         app_context: &mut AppContext
     ) -> Result<Self, Box<dyn Error>>
     {
@@ -33,15 +33,15 @@ impl Plugin {
         {
             lua.scope(|scope|{
                 let context = app_context.to_lua(&lua, scope);
-                init.call(context)
+                init.call::<_, ()>(context)
             })?;
         }
-        
+
         Ok(Plugin { lua , commands: app_context.take_exported_commands() })
     }
 
     pub fn new_from_file(
-        path: &str, 
+        path: &str,
         app_context: &mut AppContext
     ) -> Result<Self, Box<dyn Error>>
     {
@@ -147,7 +147,7 @@ impl Plugin {
                     on_mouse.call::<_,()>((event, context))
                 })
             },
-            Event::Focus => 
+            Event::Focus =>
             {
                 let on_focus = self.lua.globals().get::<_, Function>("on_focus").unwrap();
                 self.lua.scope(|scope| {
@@ -155,7 +155,7 @@ impl Plugin {
                     on_focus.call::<_,()>(context)
                 })
             },
-            Event::Blur => 
+            Event::Blur =>
             {
                 let on_blur = self.lua.globals().get::<_, Function>("on_blur").unwrap();
                 self.lua.scope(|scope| {
@@ -163,8 +163,8 @@ impl Plugin {
                     on_blur.call::<_,()>(context)
                 })
             },
-            Event::Paste { 
-                text } => 
+            Event::Paste {
+                text } =>
             {
                 let on_paste = self.lua.globals().get::<_, Function>("on_paste").unwrap();
                 self.lua.scope(|scope| {
@@ -173,9 +173,9 @@ impl Plugin {
                     on_paste.call::<_,()>((text, context))
                 })
             },
-            Event::Resize { 
-                width, 
-                height } => 
+            Event::Resize {
+                width,
+                height } =>
             {
                 let on_resize = self.lua.globals().get::<_, Function>("on_resize").unwrap();
                 self.lua.scope(|scope| {
@@ -189,7 +189,7 @@ impl Plugin {
     }
 
     pub fn handle(
-        &mut self, 
+        &mut self,
         event: Event,
         app_context: &mut AppContext)
     {
@@ -200,8 +200,8 @@ impl Plugin {
     }
 
     pub fn run_command(
-        &mut self, 
-        command: &str, 
+        &mut self,
+        command: &str,
         app_context: &mut AppContext) -> mlua::Result<()>
     {
         let command_fn = self.lua.globals().get::<_, Function>(command)?;
@@ -339,9 +339,12 @@ mod test
         assert_eq!(app.settings.key.up, KeyEvent::from(KeyCode::Down));
         assert_eq!(app.settings.custom.get("string").unwrap(), &SettingsValue::from("World"));
         assert_eq!(app.settings.custom.get("integer").unwrap(), &SettingsValue::from(42));
-        assert_eq!(app.settings.custom.get("float").unwrap(), &SettingsValue::from(3.14));
+        #[allow(clippy::approx_constant)]
+        {
+            assert_eq!(app.settings.custom.get("float").unwrap(), &SettingsValue::from(3.14));
+        }
         assert_eq!(app.settings.custom.get("boolean").unwrap(), &SettingsValue::from(true));
-        assert!(app.settings.custom.get("nil").is_none());
+        assert!(!app.settings.custom.contains_key("nil"));
         assert_eq!(app.settings.custom.get("style").unwrap(), &SettingsValue::from(
             Style::new()
                 .fg(ratatui::style::Color::Rgb(0xff, 0, 0))
@@ -368,13 +371,13 @@ mod test
         let mut app_context = get_app_context!(app);
         let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
 
-        let event = Event::Key { 
+        let event = Event::Key {
             event: KeyEvent::from(KeyCode::Down)
         };
         plugin.handle_with_error(event, &mut app_context).unwrap();
         assert_eq!(app_context.data.bytes[0], 0);
-        let event = Event::Key { 
-            event: app_context.settings.key.confirm, 
+        let event = Event::Key {
+            event: app_context.settings.key.confirm,
         };
         plugin.handle_with_error(event, &mut app_context).unwrap();
         assert_eq!(app.data.bytes[0], 42);
@@ -430,7 +433,7 @@ mod test
         app.logger.clear();
         let mut app_context = get_app_context!(app);
 
-        assert!(Plugin::new_from_source(source, &mut app_context).is_err(), 
+        assert!(Plugin::new_from_source(source, &mut app_context).is_err(),
             "Should not be able to export a command without defining it first");
 
         let source = "
@@ -469,7 +472,7 @@ mod test
         plugin.run_command(
             "test",
             &mut app_context).unwrap();
-        
+
         let commands = plugin.commands.get_commands();
         assert_eq!(commands.len(), 2);
         assert_eq!(commands[0].command, "test3");
@@ -479,11 +482,11 @@ mod test
 
         assert!(plugin.run_command(
             "test2",
-            &mut app_context).is_err(), 
+            &mut app_context).is_err(),
             "Should not be able to add a command that is not defined");
-        
+
         let commands = plugin.commands.get_commands();
-        assert_eq!(commands.len(), 2, 
+        assert_eq!(commands.len(), 2,
             "No commands should be lost when an error occurs");
         assert_eq!(commands[0].command, "test3");
         assert_eq!(commands[0].description, "Test command 3");
@@ -491,18 +494,18 @@ mod test
         assert_eq!(commands[1].description, "Test command 2");
 
         plugin.run_command(
-            "test3",   
+            "test3",
             &mut app_context).unwrap();
 
         let commands = plugin.commands.get_commands();
-        assert_eq!(commands.len(), 3, 
+        assert_eq!(commands.len(), 3,
             "No duplicate commands should be added");
         assert_eq!(commands[0].command, "test3");
         assert_eq!(commands[0].description, "Test command 3");
         assert_eq!(commands[1].command, "test2");
         assert_eq!(commands[1].description, "Test command 2");
         assert_eq!(commands[2].command, "test");
-        assert_eq!(commands[2].description, "Test command 1", 
+        assert_eq!(commands[2].description, "Test command 1",
             "Should overwrite the description of the command");
     }
 
@@ -516,7 +519,7 @@ mod test
                 context.log(1, context.header.entry_point)
             end
         ";
-        
+
         let mut app = App::mockup(vec![0;0x100]);
         let mut app_context = get_app_context!(app);
 
