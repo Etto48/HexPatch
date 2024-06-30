@@ -1,3 +1,8 @@
 name: HexPatch
 theme: jekyll-theme-minimal
-markdown: kramdown
+markdown: GFM
+
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
