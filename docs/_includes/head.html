@@ -6,5 +6,8 @@
 <link rel="alternate stylesheet" title="hljs-light" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-light.min.css" disabled="disabled">
 <link rel="alternate stylesheet" title="hljs-dark" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" disabled="disabled">
 <link rel="stylesheet" href="{{ "/assets/css/global.css" | relative_url }}">
+{% if page.style %}
+<link rel="stylesheet" href="{{ page.style | relative_url }}">
+{% endif %}
 {% seo %}
 <meta name="viewport" content="width=device-width, initial-scale=1">

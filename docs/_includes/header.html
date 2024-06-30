@@ -6,8 +6,17 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-sm-0">
-                {% for ipage in site.pages %}
-                    {% if ipage.title != "HexPatch" and ipage.title %}
+                {% for ipage in site.nav %}
+                    {% if ipage.items %}
+                        <li class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" id="navbarDropdown{{ forloop.index }}" role="button" data-bs-toggle="dropdown" aria-expanded="false">{{ ipage.title }}</a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown{{ forloop.index }}">
+                                {% for item in ipage.items %}
+                                    <li><a href="{{ item.url | relative_url }}" class="dropdown-item {% if page.url == item.url %}active{% endif %}">{{ item.title }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </li>    
+                    {% else %}
                         <li class="nav-item">
                             <a href="{{ ipage.url | relative_url }}" class="nav-link {% if page.url == ipage.url %}active{% endif %}">{{ ipage.title }}</a>
                         </li>

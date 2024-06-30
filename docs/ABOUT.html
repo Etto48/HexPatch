@@ -1,0 +1,22 @@
+---
+layout: base
+---
+<main class="page-content py-3" aria-label="Content">
+    <div class="container d-flex flex-md-row flex-column">
+        <div class="d-flex col-md me-md-3 mb-md-0 mb-3">
+            <img class="rounded img-fluid" style="object-fit: cover;" src="{{ "/assets/thumbnail.svg" | relative_url }}" alt="Thumbnail" />
+        </div>
+        <div class="d-flex flex-column col-md">
+            <a href="{{ "/" | relative_url }}" class="d-flex flex-column link-primary link-underline link-underline-opacity-0 w-fit-content">
+                <h1 class="mt-0">{{ site.title }}</h1>
+            </a>
+            <p> {{ site.description }} </p>
+            <a href="{{ site.github.repository_url }}" class="d-flex flex-column link-tertiary link-underline link-underline-opacity-0 w-fit-content">
+                <small>View the Project on GitHub</small>
+                <small class="text-secondary">{{ site.github.repository_nwo }}</small>
+            </a>
+            <p class="mt-4">This project is mantained by <a href="">{{ site.author.name }}</a></p>
+            <small class="text-secondary">Hosted on GitHub Pages</small>
+        </div>
+    </div>
+</main>

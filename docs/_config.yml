@@ -7,3 +7,28 @@ plugins:
   - jekyll-feed
   - jekyll-seo-tag
   - jekyll-sitemap
+
+author:
+  name: Ettore Ricci
+  email: ettore.ricci.coding@gmail.com
+
+defaults:
+  - scope:
+      path: ""
+      type: "pages"
+    values:
+      layout: "pages"
+
+nav:
+  - title: Documentation
+    items:
+    - title: Plugin API
+      url: /PLUGIN_API.html
+  - title: Community
+    items:
+    - title: Code of Conduct
+      url: /CODE_OF_CONDUCT.html
+    - title: Security Policy
+      url: /SECURITY.html
+  - title: About
+    url: /ABOUT.html
