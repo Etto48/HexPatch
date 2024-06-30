@@ -1,0 +1,5 @@
+docs:
+  - title: Home
+    url: /
+  - title: Plugins API
+    url: /plugins_api
