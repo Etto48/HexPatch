@@ -28,7 +28,7 @@ There are many ways to contribute, including reporting bugs, improving documenta
 
 ## Coding Guidelines
 
-- Run `cargo test` and `cargo clippy` before submitting a pull request. It's not mandatory, however it may save you time to do so instead of waiting for GitHub to run the checks.
+- Run `cargo make ci` before submitting a pull request. It's not mandatory, however it may save you time to do so instead of waiting for GitHub to run the checks.
 - Please avoid using `unsafe` code.
 - Remember to link to any related issue in your pull request.
 
