@@ -1,0 +1,29 @@
+[tasks.lint-format]
+description = "Check that the code is formatted correctly"
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--all", "--check"]
+
+[tasks.lint-typos]
+description = "Check for typos"
+install_crate = { crate_name = "typos_cli", binary = "typos", test_arg = "--version" }
+command = "typos"
+
+[tasks.clippy]
+description = "Run clippy"
+command = "cargo"
+args = ["clippy"]
+
+[tasks.test]
+description = "Run all tests"
+command = "cargo"
+args = ["test"]
+
+[tasks.check]
+description = "Check for warnings and errors"
+command = "cargo"
+args = ["check"]
+
+[tasks.ci]
+description = "Run all CI tasks"
+dependencies = ["lint-format", "lint-typos", "clippy", "test", "check"]
