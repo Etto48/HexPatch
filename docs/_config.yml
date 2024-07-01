@@ -2,6 +2,7 @@ markdown: GFM
 
 include: 
   - CODE_OF_CONDUCT.md
+  - CONTRIBUTING.md
 
 plugins:
   - jekyll-feed
