@@ -2,6 +2,7 @@ pub mod app_context;
 pub mod event;
 pub mod exported_commands;
 pub mod exported_header_parsers;
+pub mod header_context;
 pub mod header_parser_info;
 pub mod instruction_info;
 pub mod plugin;

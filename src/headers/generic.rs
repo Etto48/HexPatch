@@ -5,7 +5,7 @@ use pdb::FallibleIterator;
 
 use crate::app::files::{filesystem::FileSystem, path};
 
-use super::header::Section;
+use super::{bitness::Bitness, section::Section};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FileType {
@@ -19,12 +19,6 @@ pub enum FileType {
     Pe64,
     Xcoff32,
     Xcoff64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Bitness {
-    Bit32,
-    Bit64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -7,7 +7,7 @@ use crate::{
     },
     asm::assembler::assemble,
     get_app_context,
-    headers::{Header, Section},
+    headers::{section::Section, Header},
 };
 
 use super::{

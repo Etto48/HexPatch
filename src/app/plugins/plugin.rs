@@ -2,10 +2,13 @@ use std::error::Error;
 
 use mlua::{Function, Lua};
 
-use crate::app::{
-    commands::command_info::CommandInfo,
-    log::NotificationLevel,
-    settings::register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua},
+use crate::{
+    app::{
+        commands::command_info::CommandInfo,
+        log::NotificationLevel,
+        settings::register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua},
+    },
+    headers::custom_header::CustomHeader,
 };
 
 use super::{
@@ -13,6 +16,7 @@ use super::{
     event::{Event, Events},
     exported_commands::ExportedCommands,
     exported_header_parsers::ExportedHeaderParsers,
+    header_context::HeaderContext,
     popup_context::PopupContext,
     register_userdata::{
         register_settings, register_string, register_text, register_usize, register_vec_u8,
@@ -219,6 +223,35 @@ impl Plugin {
             let context = app_context.to_lua(&self.lua, scope);
             callback.call::<_, ()>((popup_context, context))
         })
+    }
+
+    pub fn try_parse_header(&self, app_context: &mut AppContext) -> Option<CustomHeader> {
+        for parser in self.header_parsers.parsers.iter() {
+            let mut header_context = HeaderContext::default();
+            let parser_fn = self
+                .lua
+                .globals()
+                .get::<&str, Function>(parser.parser.as_ref())
+                .unwrap();
+            let result = self.lua.scope(|scope| {
+                let context = app_context.to_lua(&self.lua, scope);
+                let header_context = scope.create_userdata_ref_mut(&mut header_context)?;
+                parser_fn.call::<_, ()>((header_context, context))
+            });
+            match result {
+                Err(e) => {
+                    app_context
+                        .logger
+                        .log(NotificationLevel::Error, &format!("In plugin: {}", e));
+                }
+                Ok(()) => {
+                    if let Some(header) = header_context.try_into_custom_header() {
+                        return Some(header);
+                    }
+                }
+            }
+        }
+        None
     }
 }
 
