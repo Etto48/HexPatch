@@ -26,6 +26,8 @@ nav:
       url: /PLUGIN_API.html
   - title: Community
     items:
+    - title: Contributing
+      url: /CONTRIBUTING.html
     - title: Code of Conduct
       url: /CODE_OF_CONDUCT.html
     - title: Security Policy
