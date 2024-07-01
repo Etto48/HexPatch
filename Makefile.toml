@@ -12,7 +12,12 @@ command = "typos"
 [tasks.clippy]
 description = "Run clippy"
 command = "cargo"
-args = ["clippy"]
+args = ["clippy", "--all-targets", "--all-features"]
+
+[tasks.clippy-json]
+description = "Run clippy with JSON output"
+command = "cargo"
+args = ["clippy", "--all-targets", "--all-features", "--message-format=json"]
 
 [tasks.test]
 description = "Run all tests"
