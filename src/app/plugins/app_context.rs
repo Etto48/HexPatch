@@ -4,7 +4,7 @@ use mlua::{Function, Lua, Scope};
 
 use crate::{app::{data::Data, log::{logger::Logger, NotificationLevel}, popup::popup_state::PopupState, settings::Settings}, headers::Header};
 
-use super::{exported_commands::ExportedCommands, instruction_info::InstructionInfo};
+use super::{exported_commands::ExportedCommands, exported_header_parsers::ExportedHeaderParsers, instruction_info::InstructionInfo};
 
 #[macro_export]
 macro_rules! get_app_context {
@@ -26,6 +26,7 @@ macro_rules! get_app_context {
 
 pub struct AppContext<'app> {
     pub exported_commands: Arc<Mutex<ExportedCommands>>,
+    pub exported_header_parsers: Arc<Mutex<ExportedHeaderParsers>>,
     pub plugin_index: Option<usize>,
 
     pub screen_height: u16,
@@ -53,6 +54,7 @@ impl<'app> AppContext<'app> {
         popup: &'app mut Option<PopupState>) -> Self {
         Self {
             exported_commands: Arc::new(Mutex::new(ExportedCommands::default())),
+            exported_header_parsers: Arc::new(Mutex::new(ExportedHeaderParsers::default())),
             plugin_index: None,
             screen_height,
             screen_width,
@@ -70,12 +72,24 @@ impl<'app> AppContext<'app> {
         self.exported_commands = Arc::new(Mutex::new(ExportedCommands::default()));
     }
 
+    pub fn reset_exported_header_parsers(&mut self) {
+        self.exported_header_parsers = Arc::new(Mutex::new(ExportedHeaderParsers::default()));
+    }
+
     pub fn set_exported_commands(&mut self, exported_commands: ExportedCommands) {
         self.exported_commands = Arc::new(Mutex::new(exported_commands));
     }
 
+    pub fn set_exported_header_parsers(&mut self, exported_header_parsers: ExportedHeaderParsers) {
+        self.exported_header_parsers = Arc::new(Mutex::new(exported_header_parsers));
+    }
+
     pub fn take_exported_commands(&mut self) -> ExportedCommands {
         self.exported_commands.lock().unwrap().take()
+    }
+
+    pub fn take_exported_header_parsers(&mut self) -> ExportedHeaderParsers {
+        self.exported_header_parsers.lock().unwrap().take()
     }
 
     pub fn to_lua<'lua>(
@@ -116,6 +130,37 @@ impl<'app> AppContext<'app> {
                 else
                 {
                     Err(mlua::Error::external(format!("Command '{}' not found", command)))
+                }
+            }).unwrap()
+        ).unwrap();
+
+        let exported_header_parsers = self.exported_header_parsers.clone();
+        context.set("add_header_parser", 
+            scope.create_function_mut(move |_, parser: String|
+            {
+                if let Ok(_header_parser_fn) = lua.globals().get::<_,Function>(parser.clone())
+                {
+                    exported_header_parsers.lock().unwrap().add_header_parser(parser);
+                    Ok(())
+                }
+                else
+                {
+                    Err(mlua::Error::external(format!("Function '{}' not found but needed to export the header parser", parser)))
+                }
+            }).unwrap()
+        ).unwrap();
+
+        let exported_header_parsers = self.exported_header_parsers.clone();
+        context.set("remove_header_parser", 
+            scope.create_function_mut(move |_, parser: String|
+            {
+                if exported_header_parsers.lock().unwrap().remove_header_parser(&parser)
+                {
+                    Ok(())
+                }
+                else
+                {
+                    Err(mlua::Error::external(format!("Header parser '{}' not found", parser)))
                 }
             }).unwrap()
         ).unwrap();

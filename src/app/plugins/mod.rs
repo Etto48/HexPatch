@@ -6,3 +6,5 @@ pub mod exported_commands;
 pub mod instruction_info;
 pub mod app_context;
 pub mod popup_context;
+pub mod exported_header_parsers;
+pub mod header_parser_info;

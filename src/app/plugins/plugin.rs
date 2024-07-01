@@ -4,13 +4,14 @@ use mlua::{Function, Lua};
 
 use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel, settings::register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua}};
 
-use super::{app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, popup_context::PopupContext, register_userdata::{register_settings, register_string, register_text, register_usize, register_vec_u8}};
+use super::{app_context::AppContext, event::{Event, Events}, exported_commands::ExportedCommands, exported_header_parsers::ExportedHeaderParsers, popup_context::PopupContext, register_userdata::{register_settings, register_string, register_text, register_usize, register_vec_u8}};
 
 #[derive(Debug)]
 pub struct Plugin
 {
     lua: Lua,
     commands: ExportedCommands,
+    header_parsers: ExportedHeaderParsers,
 }
 
 impl Plugin {
@@ -29,6 +30,7 @@ impl Plugin {
         register_usize(&lua)?;
 
         app_context.reset_exported_commands();
+        app_context.reset_exported_header_parsers();
         if let Ok(init) = lua.globals().get::<_, Function>("init")
         {
             lua.scope(|scope|{
@@ -37,7 +39,7 @@ impl Plugin {
             })?;
         }
 
-        Ok(Plugin { lua , commands: app_context.take_exported_commands() })
+        Ok(Plugin { lua , commands: app_context.take_exported_commands() , header_parsers: app_context.take_exported_header_parsers() })
     }
 
     pub fn new_from_file(
@@ -96,6 +98,7 @@ impl Plugin {
     pub fn handle_with_error(&mut self, event: Event, app_context: &mut AppContext) -> mlua::Result<()>
     {
         app_context.set_exported_commands(self.commands.take());
+        app_context.set_exported_header_parsers(self.header_parsers.take());
         let ret = match event
         {
             Event::Open =>
@@ -185,6 +188,7 @@ impl Plugin {
             },
         };
         self.commands = app_context.take_exported_commands();
+        self.header_parsers = app_context.take_exported_header_parsers();
         ret
     }
 
@@ -206,11 +210,13 @@ impl Plugin {
     {
         let command_fn = self.lua.globals().get::<_, Function>(command)?;
         app_context.set_exported_commands(self.commands.take());
+        app_context.set_exported_header_parsers(self.header_parsers.take());
         let ret = self.lua.scope(|scope| {
             let context = app_context.to_lua(&self.lua, scope);
             command_fn.call::<_,()>(context)
         });
         self.commands = app_context.take_exported_commands();
+        self.header_parsers = app_context.take_exported_header_parsers();
         ret
     }
 
