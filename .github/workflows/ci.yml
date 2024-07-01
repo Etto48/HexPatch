@@ -4,10 +4,10 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 env:
   CARGO_TERM_COLOR: always
