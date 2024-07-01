@@ -3,23 +3,20 @@ use ratatui::text::{Line, Span};
 use crate::app::settings::color_settings::ColorSettings;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum SimpleChoice
-{
+pub enum SimpleChoice {
     Yes,
     No,
-    Cancel
+    Cancel,
 }
 
-impl SimpleChoice
-{
-    pub fn to_line(&self, color_settings: &ColorSettings) -> Line<'static>
-    {
+impl SimpleChoice {
+    pub fn to_line(&self, color_settings: &ColorSettings) -> Line<'static> {
         let mut ret = Line::from(vec![
             Span::styled("Yes", color_settings.yes),
             Span::raw("  "),
             Span::styled("No", color_settings.no),
             Span::raw("  "),
-            Span::styled("Cancel", color_settings.menu_text)
+            Span::styled("Cancel", color_settings.menu_text),
         ]);
 
         match self {
@@ -31,23 +28,19 @@ impl SimpleChoice
         ret
     }
 
-    pub fn next(&self) -> Self
-    {
-        match self
-        {
+    pub fn next(&self) -> Self {
+        match self {
             SimpleChoice::Yes => SimpleChoice::No,
             SimpleChoice::No => SimpleChoice::Cancel,
-            SimpleChoice::Cancel => SimpleChoice::Yes
+            SimpleChoice::Cancel => SimpleChoice::Yes,
         }
     }
 
-    pub fn previous(&self) -> Self
-    {
-        match self
-        {
+    pub fn previous(&self) -> Self {
+        match self {
             SimpleChoice::Yes => SimpleChoice::Cancel,
             SimpleChoice::No => SimpleChoice::Yes,
-            SimpleChoice::Cancel => SimpleChoice::No
+            SimpleChoice::Cancel => SimpleChoice::No,
         }
     }
 }

@@ -29,8 +29,7 @@ macro_rules! RegisterColorSettings {(
     };
 }
 
-pub(super) fn get_style<'lua>(lua: &'lua mlua::Lua, style: &Style) -> mlua::Result<Table<'lua>>
-{
+pub(super) fn get_style<'lua>(lua: &'lua mlua::Lua, style: &Style) -> mlua::Result<Table<'lua>> {
     let table = lua.create_table()?;
     table.set("fg", get_color(lua, &style.fg)?)?;
     table.set("bg", get_color(lua, &style.bg)?)?;
@@ -40,73 +39,88 @@ pub(super) fn get_style<'lua>(lua: &'lua mlua::Lua, style: &Style) -> mlua::Resu
     Ok(table)
 }
 
-pub(super) fn set_style<'lua>(_lua: &'lua mlua::Lua, style: &mut Style, value: Table<'lua>) -> mlua::Result<()>
-{
-    match value.get("fg")
-    {
+pub(super) fn set_style<'lua>(
+    _lua: &'lua mlua::Lua,
+    style: &mut Style,
+    value: Table<'lua>,
+) -> mlua::Result<()> {
+    match value.get("fg") {
         Ok(value) => set_color(_lua, &mut style.fg, value)?,
-        Err(e) => match e
-        {
-            mlua::Error::FromLuaConversionError { from: "nil", to: "Table", message: _ } => style.fg = None,
-            _ => return Err(e)
-        }
+        Err(e) => match e {
+            mlua::Error::FromLuaConversionError {
+                from: "nil",
+                to: "Table",
+                message: _,
+            } => style.fg = None,
+            _ => return Err(e),
+        },
     }
-    match value.get("bg")
-    {
+    match value.get("bg") {
         Ok(value) => set_color(_lua, &mut style.bg, value)?,
-        Err(e) => match e
-        {
-            mlua::Error::FromLuaConversionError { from: "nil", to: "Table", message: _ } => style.bg = None,
-            _ => return Err(e)
-        }
+        Err(e) => match e {
+            mlua::Error::FromLuaConversionError {
+                from: "nil",
+                to: "Table",
+                message: _,
+            } => style.bg = None,
+            _ => return Err(e),
+        },
     }
-    match value.get("underline")
-    {
+    match value.get("underline") {
         Ok(value) => set_color(_lua, &mut style.underline_color, value)?,
-        Err(e) => match e
-        {
-            mlua::Error::FromLuaConversionError { from: "nil", to: "Table", message: _ } => style.underline_color = None,
-            _ => return Err(e)
-        }
+        Err(e) => match e {
+            mlua::Error::FromLuaConversionError {
+                from: "nil",
+                to: "Table",
+                message: _,
+            } => style.underline_color = None,
+            _ => return Err(e),
+        },
     }
-    style.add_modifier = ratatui::style::Modifier::from_bits_truncate(
-        match value.get::<_, u16>("add_modifier")
-        {
+    style.add_modifier =
+        ratatui::style::Modifier::from_bits_truncate(match value.get::<_, u16>("add_modifier") {
             Ok(value) => value,
-            Err(e) => match e
-            {
-                mlua::Error::FromLuaConversionError { from: "nil", to: "u16", message: _ } => 0,
-                _ => return Err(e)
-            }
+            Err(e) => match e {
+                mlua::Error::FromLuaConversionError {
+                    from: "nil",
+                    to: "u16",
+                    message: _,
+                } => 0,
+                _ => return Err(e),
+            },
         });
-    style.sub_modifier = ratatui::style::Modifier::from_bits_truncate(
-        match value.get::<_, u16>("sub_modifier")
-        {
+    style.sub_modifier =
+        ratatui::style::Modifier::from_bits_truncate(match value.get::<_, u16>("sub_modifier") {
             Ok(value) => value,
-            Err(e) => match e
-            {
-                mlua::Error::FromLuaConversionError { from: "nil", to: "u16", message: _ } => 0,
-                _ => return Err(e)
-            }
+            Err(e) => match e {
+                mlua::Error::FromLuaConversionError {
+                    from: "nil",
+                    to: "u16",
+                    message: _,
+                } => 0,
+                _ => return Err(e),
+            },
         });
     Ok(())
 }
 
-pub(super) fn get_color<'lua>(lua: &'lua mlua::Lua, color: &Option<ratatui::style::Color>) -> mlua::Result<mlua::Value<'lua>>
-{
-    Ok(match color
-    {
+pub(super) fn get_color<'lua>(
+    lua: &'lua mlua::Lua,
+    color: &Option<ratatui::style::Color>,
+) -> mlua::Result<mlua::Value<'lua>> {
+    Ok(match color {
         Some(color) => mlua::Value::String(lua.create_string(color.to_string())?),
         None => mlua::Value::Nil,
     })
 }
 
-pub(super) fn set_color<'lua>(_lua: &'lua mlua::Lua, color: &mut Option<ratatui::style::Color>, value: mlua::Value<'lua>) -> mlua::Result<()>
-{
-    match value
-    {
-        mlua::Value::String(value) =>
-        {
+pub(super) fn set_color<'lua>(
+    _lua: &'lua mlua::Lua,
+    color: &mut Option<ratatui::style::Color>,
+    value: mlua::Value<'lua>,
+) -> mlua::Result<()> {
+    match value {
+        mlua::Value::String(value) => {
             let new_color = <ratatui::style::Color as std::str::FromStr>::from_str(value.to_str()?);
             if let Ok(new_color) = new_color {
                 *color = Some(new_color);
@@ -116,7 +130,8 @@ pub(super) fn set_color<'lua>(_lua: &'lua mlua::Lua, color: &mut Option<ratatui:
             }
         }
         mlua::Value::Integer(value) => {
-            let new_color = <ratatui::style::Color as std::str::FromStr>::from_str(&value.to_string());
+            let new_color =
+                <ratatui::style::Color as std::str::FromStr>::from_str(&value.to_string());
             if let Ok(new_color) = new_color {
                 *color = Some(new_color);
                 Ok(())
@@ -128,6 +143,8 @@ pub(super) fn set_color<'lua>(_lua: &'lua mlua::Lua, color: &mut Option<ratatui:
             *color = None;
             Ok(())
         }
-        ty => Err(mlua::Error::RuntimeError(format!("Invalid color type: {ty:?}")))
+        ty => Err(mlua::Error::RuntimeError(format!(
+            "Invalid color type: {ty:?}"
+        ))),
     }
 }

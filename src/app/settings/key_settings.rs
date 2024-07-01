@@ -1,4 +1,6 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MediaKeyCode, ModifierKeyCode};
+use crossterm::event::{
+    KeyCode, KeyEvent, KeyEventKind, KeyModifiers, MediaKeyCode, ModifierKeyCode,
+};
 use serde::{Deserialize, Serialize};
 
 use crate::RegisterKeySettings;
@@ -6,8 +8,7 @@ use crate::RegisterKeySettings;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 #[derive(RegisterKeySettings!)]
-pub struct KeySettings
-{
+pub struct KeySettings {
     pub up: KeyEvent,
     pub down: KeyEvent,
     pub left: KeyEvent,
@@ -43,15 +44,11 @@ pub struct KeySettings
 
     pub new_line: KeyEvent,
     pub clear_log: KeyEvent,
-
 }
 
-impl KeySettings
-{
-    pub fn key_code_to_string(code: KeyCode) -> String
-    {
-        match code
-        {
+impl KeySettings {
+    pub fn key_code_to_string(code: KeyCode) -> String {
+        match code {
             KeyCode::Backspace => "Backspace".to_string(),
             KeyCode::Enter => "Enter".to_string(),
             KeyCode::Left => "Left".to_string(),
@@ -77,8 +74,7 @@ impl KeySettings
             KeyCode::Pause => "Pause".to_string(),
             KeyCode::Menu => "Menu".to_string(),
             KeyCode::KeypadBegin => "KeypadBegin".to_string(),
-            KeyCode::Media(mcode) => match mcode
-            {
+            KeyCode::Media(mcode) => match mcode {
                 MediaKeyCode::Play => "Media(Play)".to_string(),
                 MediaKeyCode::Pause => "Media(Pause)".to_string(),
                 MediaKeyCode::PlayPause => "Media(PlayPause)".to_string(),
@@ -93,8 +89,7 @@ impl KeySettings
                 MediaKeyCode::RaiseVolume => "Media(RaiseVolume)".to_string(),
                 MediaKeyCode::MuteVolume => "Media(MuteVolume)".to_string(),
             },
-            KeyCode::Modifier(modifier) => match modifier 
-            {
+            KeyCode::Modifier(modifier) => match modifier {
                 ModifierKeyCode::LeftShift => "Modifier(LeftShift)".to_string(),
                 ModifierKeyCode::LeftControl => "Modifier(LeftControl)".to_string(),
                 ModifierKeyCode::LeftAlt => "Modifier(LeftAlt)".to_string(),
@@ -113,10 +108,8 @@ impl KeySettings
         }
     }
 
-    pub fn string_to_key_code(string: &str) -> Result<KeyCode, String>
-    {
-        match string 
-        {
+    pub fn string_to_key_code(string: &str) -> Result<KeyCode, String> {
+        match string {
             "Backspace" => Ok(KeyCode::Backspace),
             "Enter" => Ok(KeyCode::Enter),
             "Left" => Ok(KeyCode::Left),
@@ -143,8 +136,7 @@ impl KeySettings
             "F10" => Ok(KeyCode::F(10)),
             "F11" => Ok(KeyCode::F(11)),
             "F12" => Ok(KeyCode::F(12)),
-            c if c.len() == 1 && c.chars().next().is_some() =>
-            {
+            c if c.len() == 1 && c.chars().next().is_some() => {
                 Ok(KeyCode::Char(c.chars().next().unwrap()))
             }
             "Null" => Ok(KeyCode::Null),
@@ -187,20 +179,16 @@ impl KeySettings
         }
     }
 
-    pub fn key_event_kind_to_string(kind: KeyEventKind) -> String
-    {
-        match kind
-        {
+    pub fn key_event_kind_to_string(kind: KeyEventKind) -> String {
+        match kind {
             KeyEventKind::Press => "Press".to_string(),
             KeyEventKind::Repeat => "Repeat".to_string(),
             KeyEventKind::Release => "Release".to_string(),
         }
     }
 
-    pub fn string_to_key_event_kind(string: &str) -> Result<KeyEventKind, String>
-    {
-        match string
-        {
+    pub fn string_to_key_event_kind(string: &str) -> Result<KeyEventKind, String> {
+        match string {
             "Press" => Ok(KeyEventKind::Press),
             "Repeat" => Ok(KeyEventKind::Repeat),
             "Release" => Ok(KeyEventKind::Release),
@@ -209,12 +197,9 @@ impl KeySettings
     }
 }
 
-impl Default for KeySettings
-{
-    fn default() -> Self
-    {
-        Self
-        {
+impl Default for KeySettings {
+    fn default() -> Self {
+        Self {
             up: KeyEvent::new(KeyCode::Up, KeyModifiers::empty()),
             down: KeyEvent::new(KeyCode::Down, KeyModifiers::empty()),
             left: KeyEvent::new(KeyCode::Left, KeyModifiers::empty()),
