@@ -12,6 +12,7 @@ use super::{
     app_context::AppContext,
     event::{Event, Events},
     exported_commands::ExportedCommands,
+    exported_header_parsers::ExportedHeaderParsers,
     popup_context::PopupContext,
     register_userdata::{
         register_settings, register_string, register_text, register_usize, register_vec_u8,
@@ -50,6 +51,7 @@ impl Plugin {
         Ok(Plugin {
             lua,
             commands: app_context.take_exported_commands(),
+            header_parsers: app_context.take_exported_header_parsers(),
         })
     }
 

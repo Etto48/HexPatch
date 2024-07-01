@@ -1,5 +1,4 @@
 #[derive(Debug, Clone)]
-pub struct HeaderParserInfo
-{
-    pub parser: String,   
+pub struct HeaderParserInfo {
+    pub parser: String,
 }

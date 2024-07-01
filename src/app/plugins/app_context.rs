@@ -12,7 +12,10 @@ use crate::{
     headers::Header,
 };
 
-use super::{exported_commands::ExportedCommands, exported_header_parsers::ExportedHeaderParsers, instruction_info::InstructionInfo};
+use super::{
+    exported_commands::ExportedCommands, exported_header_parsers::ExportedHeaderParsers,
+    instruction_info::InstructionInfo,
+};
 
 #[macro_export]
 macro_rules! get_app_context {
