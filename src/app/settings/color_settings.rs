@@ -7,8 +7,7 @@ use crate::RegisterColorSettings;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 #[derive(RegisterColorSettings!)]
-pub struct ColorSettings
-{
+pub struct ColorSettings {
     pub address_selected: Style,
     pub address_default: Style,
 
@@ -76,24 +75,27 @@ pub struct ColorSettings
     pub placeholder: Style,
 }
 
-impl Default for ColorSettings
-{
-    fn default() -> Self
-    {
+impl Default for ColorSettings {
+    fn default() -> Self {
         let status_bar_bg = Color::Rgb(255, 223, 168);
-        Self
-        {
+        Self {
             address_selected: Style::default().fg(Color::Black).bg(Color::White),
             address_default: Style::default().fg(Color::DarkGray),
 
             hex_selected: Style::default().fg(Color::Black).bg(Color::White),
             hex_null: Style::default().fg(Color::DarkGray),
             hex_alphanumeric: Style::default().fg(Color::Rgb(204, 152, 113)),
-            hex_symbol: Style::default().fg(Color::Rgb(204, 152, 113)).add_modifier(Modifier::DIM),
+            hex_symbol: Style::default()
+                .fg(Color::Rgb(204, 152, 113))
+                .add_modifier(Modifier::DIM),
             hex_end_of_line: Style::default().fg(Color::LightRed),
             hex_whitespace: Style::default().fg(Color::Rgb(244, 202, 183)),
-            hex_current_instruction: Style::default().fg(Color::Black).bg(Color::Rgb(215, 170, 92)),
-            hex_current_section: Style::default().fg(Color::Black).bg(Color::Rgb(215, 170, 92)),
+            hex_current_instruction: Style::default()
+                .fg(Color::Black)
+                .bg(Color::Rgb(215, 170, 92)),
+            hex_current_section: Style::default()
+                .fg(Color::Black)
+                .bg(Color::Rgb(215, 170, 92)),
             hex_default: Style::default(),
 
             text_selected: Style::default().fg(Color::Black).bg(Color::White),
@@ -101,7 +103,9 @@ impl Default for ColorSettings
             assembly_symbol: Style::default().fg(Color::LightGreen),
             assembly_selected: Style::default().fg(Color::Black).bg(Color::White),
             assembly_address: Style::default().fg(Color::DarkGray),
-            assembly_virtual_address: Style::default().fg(Color::DarkGray).add_modifier(Modifier::DIM),
+            assembly_virtual_address: Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::DIM),
             assembly_nop: Style::default().fg(Color::DarkGray),
             assembly_bad: Style::default().fg(Color::LightRed),
             assembly_section: Style::default().fg(Color::LightBlue),
@@ -152,10 +156,8 @@ impl Default for ColorSettings
     }
 }
 
-impl App
-{
-    pub(in crate::app) fn get_style_for_byte(color_settings: &ColorSettings, byte: u8) -> Style
-    {
+impl App {
+    pub(in crate::app) fn get_style_for_byte(color_settings: &ColorSettings, byte: u8) -> Style {
         match byte
         {
             // null

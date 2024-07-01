@@ -1,4 +1,4 @@
-pub mod section_tag;
-pub mod instruction_tag;
-pub mod assembly_line;
 pub mod assembly;
+pub mod assembly_line;
+pub mod instruction_tag;
+pub mod section_tag;
