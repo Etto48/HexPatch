@@ -2,8 +2,7 @@
 extern crate winres;
 
 #[cfg(windows)]
-fn main() -> Result<(), Box<dyn std::error::Error>>
-{
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut res = winres::WindowsResource::new();
     res.set_icon("docs/assets/logo.ico");
     res.set("OriginalFilename", "hex-patch.exe");

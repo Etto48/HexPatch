@@ -1,0 +1,98 @@
+name: Continuous Integration
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+env:
+  CARGO_TERM_COLOR: always
+
+# ensure that the workflow is only triggered once per PR,  subsequent pushes to the PR will cancel
+# and restart the workflow. See https://docs.github.com/en/actions/using-jobs/using-concurrency
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+# lint, clippy and coveraget jobs are intentionally early in the workflow to catch simple
+# formatting, typos, and missing tests as early as possible. This allows us to fix these and
+# resubmit the PR without having to wait for the comprehensive matrix of tests to complete.
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        run: cargo make lint-format
+      - name: Check typos
+        uses: crate-ci/typos@master
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Run cargo make clippy-all
+        run: cargo make clippy
+
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Run cargo make check
+        run: cargo make check
+        env:
+          RUST_BACKTRACE: full
+
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-make
+        uses: taiki-e/install-action@cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Test
+        run: cargo make test
+        env:
+          RUST_BACKTRACE: full

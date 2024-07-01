@@ -11,62 +11,51 @@ pub struct Logger {
 }
 
 impl Logger {
-    pub fn new() -> Self
-    {
+    pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn log(&mut self, level: NotificationLevel, message: &str)
-    {
+    pub fn log(&mut self, level: NotificationLevel, message: &str) {
         self.notification.bump_notification_level(level);
         self.log.push(LogLine::new(level, message.to_string()));
     }
 
-    pub fn clear(&mut self)
-    {
+    pub fn clear(&mut self) {
         self.log.clear();
         self.notification.reset();
     }
 
-    pub fn get_notification_level(&self) -> NotificationLevel
-    {
+    pub fn get_notification_level(&self) -> NotificationLevel {
         self.notification
     }
 
-    pub fn len(&self) -> usize
-    {
+    pub fn len(&self) -> usize {
         self.log.len()
     }
 
-    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &LogLine> + ExactSizeIterator
-    {
+    pub fn iter(&self) -> impl DoubleEndedIterator<Item = &LogLine> + ExactSizeIterator {
         self.log.iter()
     }
 
-    pub fn is_empty(&self) -> bool
-    {
+    pub fn is_empty(&self) -> bool {
         self.log.is_empty()
     }
 
-    pub fn reset_notification_level(&mut self)
-    {
+    pub fn reset_notification_level(&mut self) {
         self.notification.reset();
     }
 
-    pub fn merge(&mut self, other: &Self)
-    {
-        for log_line in &other.log
-        {
+    pub fn merge(&mut self, other: &Self) {
+        for log_line in &other.log {
             self.log.push(log_line.clone());
         }
-        self.notification.bump_notification_level(other.notification);
+        self.notification
+            .bump_notification_level(other.notification);
     }
 }
 
-impl Default for Logger
-{
-    fn default() -> Self
-    {
+impl Default for Logger {
+    fn default() -> Self {
         Self {
             log: Vec::new(),
             notification: NotificationLevel::None,
@@ -74,32 +63,26 @@ impl Default for Logger
     }
 }
 
-impl Index<usize> for Logger
-{
+impl Index<usize> for Logger {
     type Output = LogLine;
 
-    fn index(&self, index: usize) -> &Self::Output
-    {
+    fn index(&self, index: usize) -> &Self::Output {
         &self.log[index]
     }
 }
 
-impl App
-{
-    pub(in crate::app) fn log(&mut self, level: NotificationLevel, message: &str)
-    {
+impl App {
+    pub(in crate::app) fn log(&mut self, level: NotificationLevel, message: &str) {
         self.logger.log(level, message);
     }
 }
 
 #[cfg(test)]
-mod test
-{
+mod test {
     use super::*;
 
     #[test]
-    fn test_logger()
-    {
+    fn test_logger() {
         let mut logger = Logger::new();
         assert_eq!(logger.len(), 0);
         assert!(logger.is_empty());
@@ -114,8 +97,7 @@ mod test
     }
 
     #[test]
-    fn test_logger_merge()
-    {
+    fn test_logger_merge() {
         let mut logger1 = Logger::new();
         let mut logger2 = Logger::new();
         logger1.log(NotificationLevel::Error, "Test error message");
