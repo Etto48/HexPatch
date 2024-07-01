@@ -2,14 +2,15 @@ name: Continuous Integration
 
 on:
   # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
   push:
     branches:
       - main
   pull_request:
     branches:
       - main
-  merge_group:
+
+env:
+  CARGO_TERM_COLOR: always
 
 # ensure that the workflow is only triggered once per PR,  subsequent pushes to the PR will cancel
 # and restart the workflow. See https://docs.github.com/en/actions/using-jobs/using-concurrency
