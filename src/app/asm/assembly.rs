@@ -363,7 +363,11 @@ impl App {
                 return;
             }
 
-            let to_instruction = self.assembly_offsets.get(to_byte).cloned().unwrap_or(self.assembly_instructions.len());
+            let to_instruction = self
+                .assembly_offsets
+                .get(to_byte)
+                .cloned()
+                .unwrap_or(self.assembly_instructions.len());
 
             let mut original_instruction_count = 1;
             let mut original_instruction_ip = self.assembly_offsets[from_byte];
@@ -395,9 +399,7 @@ impl App {
                             self.assembly_instructions[i].file_address()
                         ),
                     );
-                }
-                else
-                {
+                } else {
                     break;
                 }
             }
