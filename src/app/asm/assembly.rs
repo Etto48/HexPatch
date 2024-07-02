@@ -329,7 +329,7 @@ impl App {
 
             loop {
                 if current_byte >= maximum_code_byte {
-                    to_byte = maximum_code_byte.saturating_sub(1);
+                    to_byte = maximum_code_byte;
                     break;
                 }
                 let bytes = &self.data.bytes[current_byte..maximum_code_byte];
@@ -363,7 +363,7 @@ impl App {
                 return;
             }
 
-            let to_instruction = self.assembly_offsets[to_byte];
+            let to_instruction = self.assembly_offsets.get(to_byte).cloned().unwrap_or(self.assembly_instructions.len());
 
             let mut original_instruction_count = 1;
             let mut original_instruction_ip = self.assembly_offsets[from_byte];
@@ -395,6 +395,10 @@ impl App {
                             self.assembly_instructions[i].file_address()
                         ),
                     );
+                }
+                else
+                {
+                    break;
                 }
             }
             for instruction in instructions.iter() {
