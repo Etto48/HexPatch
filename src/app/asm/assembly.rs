@@ -329,6 +329,7 @@ impl App {
 
             loop {
                 if current_byte >= maximum_code_byte {
+                    to_byte = maximum_code_byte.saturating_sub(1);
                     break;
                 }
                 let bytes = &self.data.bytes[current_byte..maximum_code_byte];
