@@ -169,7 +169,8 @@ impl<'app> AppContext<'app> {
                 "add_header_parser",
                 scope
                     .create_function_mut(move |lua, callback: String| {
-                        if let Ok(_header_parser_fn) = lua.globals().get::<_, Function>(callback.clone())
+                        if let Ok(_header_parser_fn) =
+                            lua.globals().get::<_, Function>(callback.clone())
                         {
                             exported_header_parsers
                                 .lock()
@@ -186,14 +187,18 @@ impl<'app> AppContext<'app> {
                     .unwrap(),
             )
             .unwrap();
-        
+
         let exported_header_parsers = self.exported_header_parsers.clone();
         context
             .set(
                 "remove_header_parser",
                 scope
                     .create_function_mut(move |_, callback: String| {
-                        if exported_header_parsers.lock().unwrap().remove_header_parser(&callback) {
+                        if exported_header_parsers
+                            .lock()
+                            .unwrap()
+                            .remove_header_parser(&callback)
+                        {
                             Ok(())
                         } else {
                             Err(mlua::Error::external(format!(
