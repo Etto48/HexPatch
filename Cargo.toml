@@ -8,7 +8,7 @@ Also, it can edit remote files via SSH."""
 version = "1.5.3"
 authors = ["Ettore Ricci"]
 edition = "2021"
-readme = "README.md"
+readme = "docs/README.md"
 license-file = "LICENSE"
 repository = "https://github.com/Etto48/HexPatch"
 keywords = ["reverse-engineering","tui","hex-editor","binary-patching"]
