@@ -645,6 +645,7 @@ mod test {
         let header_32 = std::fs::read("test/custom_header_32.bin").unwrap();
         let header_64 = std::fs::read("test/custom_header_64.bin").unwrap();
         let mut app = App::mockup(header_32);
+        app.logger.clear();
         let mut app_context = get_app_context!(app);
         let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
         assert_eq!(plugin.header_parsers.parsers.len(), 1);
@@ -670,6 +671,7 @@ mod test {
         assert_eq!(header.symbols[&0x40], "_start");
 
         let mut app = App::mockup(header_64);
+        app.logger.clear();
         let mut app_context = get_app_context!(app);
         let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
         assert_eq!(plugin.header_parsers.parsers.len(), 1);
