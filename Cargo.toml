@@ -10,6 +10,7 @@ authors = ["Ettore Ricci"]
 edition = "2021"
 readme = "docs/README.md"
 license = "MIT"
+homepage = "https://etto48.github.io/HexPatch/"
 repository = "https://github.com/Etto48/HexPatch"
 keywords = ["reverse-engineering","tui","hex-editor","binary-patching"]
 categories = ["command-line-utilities","development-tools"]
