@@ -225,9 +225,10 @@ impl Plugin {
         })
     }
 
-    pub fn try_parse_header(&self, app_context: &mut AppContext) -> Option<CustomHeader> {
+    pub fn try_parse_header(&mut self, app_context: &mut AppContext) -> Option<CustomHeader> {
         for parser in self.header_parsers.parsers.iter() {
             let mut header_context = HeaderContext::default();
+            app_context.set_exported_commands(self.commands.take());
             let parser_fn = self
                 .lua
                 .globals()
@@ -238,6 +239,7 @@ impl Plugin {
                 let header_context = scope.create_userdata_ref_mut(&mut header_context)?;
                 parser_fn.call::<_, ()>((header_context, context))
             });
+            self.commands = app_context.take_exported_commands();
             match result {
                 Err(e) => {
                     app_context
@@ -606,48 +608,13 @@ mod test {
 
     #[test]
     fn test_parse_custom() {
-        let source = "
-            function init(context)
-                context.add_header_parser(\"test\")
-            end
-
-            function test(header_context, context)
-                if context.data:get(0) == 0x43 and 
-                    context.data:get(1) == 0x55 and
-                    context.data:get(2) == 0x53 and
-                    context.data:get(3) == 0x54 and
-                    context.data:get(4) == 0x4f and
-                    context.data:get(5) == 0x4d and
-                    context.data:get(6) == 0x00 then
-                    header_context:set_endianness(\"little\")
-                    if context.data:get(7) == 0x32 then
-                        header_context:set_architecture(\"X86_64_X32\")
-                        header_context:set_bitness(32)
-                    elseif context.data:get(7) == 0x64 then
-                        header_context:set_architecture(\"X86_64\")
-                        header_context:set_bitness(64)
-                    else
-                        error(\"Unknown architecture\")
-                    end
-                    
-                    entry = context.data:get(8) + context.data:get(9) * 0x100 
-                        + context.data:get(10) * 0x10000 + context.data:get(11) * 0x1000000
-                    header_context:set_entry(entry)
-                    text_start = context.data:get(12) + context.data:get(13) * 0x100 
-                        + context.data:get(14) * 0x10000 + context.data:get(15) * 0x1000000
-                    text_size = context.data:get(16) + context.data:get(17) * 0x100 
-                        + context.data:get(18) * 0x10000 + context.data:get(19) * 0x1000000
-                    header_context:add_section(\".text\", text_start, text_start, text_size)
-                    header_context:add_symbol(entry, \"_start\")
-                end
-            end
-        ";
-        let header_32 = std::fs::read("test/custom_header_32.bin").unwrap();
-        let header_64 = std::fs::read("test/custom_header_64.bin").unwrap();
+        let source = std::fs::read_to_string("test/custom_header/plugins/custom.lua").unwrap();
+        let header_32 = std::fs::read("test/custom_header/32.bin").unwrap();
+        let header_64 = std::fs::read("test/custom_header/64.bin").unwrap();
         let mut app = App::mockup(header_32);
         app.logger.clear();
         let mut app_context = get_app_context!(app);
-        let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
+        let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
         assert_eq!(plugin.header_parsers.parsers.len(), 1);
         let header = match plugin.try_parse_header(&mut app_context) {
             Some(header) => header,
@@ -673,7 +640,7 @@ mod test {
         let mut app = App::mockup(header_64);
         app.logger.clear();
         let mut app_context = get_app_context!(app);
-        let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
+        let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
         assert_eq!(plugin.header_parsers.parsers.len(), 1);
         let header = match plugin.try_parse_header(&mut app_context) {
             Some(header) => header,

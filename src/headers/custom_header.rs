@@ -4,6 +4,7 @@ use object::{Architecture, Endianness};
 
 use super::{bitness::Bitness, section::Section};
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CustomHeader {
     pub bitness: Bitness,
     pub entry: u64,
