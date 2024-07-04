@@ -1,4 +1,4 @@
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 use capstone::{
     arch::{self, BuildsCapstone},
@@ -10,40 +10,14 @@ use object::Architecture;
 
 use crate::app::files::filesystem::FileSystem;
 
-use super::generic::GenericHeader;
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct Section {
-    pub name: String,
-    pub virtual_address: u64,
-    pub file_offset: u64,
-    pub size: u64,
-}
-
-impl Display for Section {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(
-            f,
-            "{}: [{:X} - {:X})",
-            self.name,
-            self.file_offset,
-            self.file_offset + self.size
-        )
-    }
-}
-
-impl UserData for Section {
-    fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
-        fields.add_field_method_get("name", |_, this| Ok(this.name.clone()));
-        fields.add_field_method_get("virtual_address", |_, this| Ok(this.virtual_address));
-        fields.add_field_method_get("file_offset", |_, this| Ok(this.file_offset));
-        fields.add_field_method_get("size", |_, this| Ok(this.size));
-    }
-}
+use super::{
+    bitness::Bitness, custom_header::CustomHeader, generic::GenericHeader, section::Section,
+};
 
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum Header {
     GenericHeader(GenericHeader),
+    CustomHeader(CustomHeader),
     #[default]
     None,
 }
@@ -60,8 +34,12 @@ impl Header {
     pub fn bitness(&self) -> u32 {
         match self {
             Header::GenericHeader(header) => match header.bitness {
-                super::generic::Bitness::Bit32 => 32,
-                super::generic::Bitness::Bit64 => 64,
+                Bitness::Bit32 => 32,
+                Bitness::Bit64 => 64,
+            },
+            Header::CustomHeader(header) => match header.bitness {
+                Bitness::Bit32 => 32,
+                Bitness::Bit64 => 64,
             },
             Header::None => 64,
         }
@@ -70,6 +48,7 @@ impl Header {
     pub fn entry_point(&self) -> u64 {
         match self {
             Header::GenericHeader(header) => header.entry,
+            Header::CustomHeader(header) => header.entry,
             Header::None => 0,
         }
     }
@@ -77,6 +56,7 @@ impl Header {
     pub fn architecture(&self) -> Architecture {
         match self {
             Header::GenericHeader(header) => header.architecture,
+            Header::CustomHeader(header) => header.architecture,
             Header::None => Architecture::Unknown,
         }
     }
@@ -84,6 +64,7 @@ impl Header {
     pub fn get_sections(&self) -> Vec<Section> {
         match self {
             Header::GenericHeader(header) => header.sections.clone(),
+            Header::CustomHeader(header) => header.sections.clone(),
             Header::None => Vec::new(),
         }
     }
@@ -98,6 +79,14 @@ impl Header {
                 }
                 None
             }
+            Header::CustomHeader(header) => {
+                for section in &header.sections {
+                    if section.name == ".text" || section.name == "__text" {
+                        return Some(section.clone());
+                    }
+                }
+                None
+            }
             Header::None => None,
         }
     }
@@ -105,6 +94,7 @@ impl Header {
     pub fn get_symbols(&self) -> Option<&HashMap<u64, String>> {
         match self {
             Header::GenericHeader(header) => Some(&header.symbols),
+            Header::CustomHeader(header) => Some(&header.symbols),
             Header::None => None,
         }
     }
@@ -112,6 +102,7 @@ impl Header {
     pub fn symbol_to_address(&self, symbol: &str) -> Option<u64> {
         match self {
             Header::GenericHeader(header) => header.symbols_by_name.get(symbol).cloned(),
+            Header::CustomHeader(header) => header.symbols_by_name.get(symbol).cloned(),
             Header::None => None,
         }
     }
@@ -211,6 +202,7 @@ impl Header {
     pub fn get_decoder(&self) -> CsResult<Capstone> {
         let ret = match self {
             Header::GenericHeader(header) => Self::get_decoder_for_arch(&header.architecture),
+            Header::CustomHeader(header) => Self::get_decoder_for_arch(&header.architecture),
             Header::None => Capstone::new()
                 .x86()
                 .mode(capstone::arch::x86::ArchMode::Mode64)
@@ -225,6 +217,7 @@ impl Header {
     pub fn get_encoder(&self) -> Result<Keystone, KeystoneError> {
         match self {
             Header::GenericHeader(header) => Self::get_encoder_for_arch(&header.architecture),
+            Header::CustomHeader(header) => Self::get_encoder_for_arch(&header.architecture),
             Header::None => Keystone::new(Arch::X86, Mode::MODE_64),
         }
     }

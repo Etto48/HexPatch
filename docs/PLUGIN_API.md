@@ -162,6 +162,21 @@ The popup must be opened using `context.open_popup("FILL_POPUP_NAME")`.
 |`popup_context`|`PopupContext`|The popup context.|
 |`context`|`Context`|The application context.|
 
+### Custom Headers
+
+```lua
+function HEADER_PARSER_NAME(header_context, context) end
+```
+
+This function is called whenever a new header is parsed, the first parser that returns a valid header will be used.
+If during the parsing you decide that the header is not valid, you can raise an error or avoid setting values in the `header_context`.
+The parser must be registered using `context.add_header_parser("HEADER_PARSER_NAME")`.
+
+| Argument | Type | Description |
+|----------|------|-------------|
+|`header_context`|`HeaderContext`|The header context.|
+|`context`|`Context`|The application context.|
+
 ## Types
 
 ### Context
@@ -183,6 +198,8 @@ And the following functions:
 |`log`|`(level: u8, message: String)`|Logs a message in the UI.|
 |`add_command`|`(command_name: String)`|Registers a command, this must be called to make the command appear in the command list.|
 |`remove_command`|`(command_name: String)`|Removes a command, this removes the command from the command list.|
+|`add_header_parser`|`(parser_name: String)`|Registers a header parser, this must be called to make the parser be used when a new file is opened.|
+|`remove_header_parser`|`(parser_name: String)`|Removes a header parser, this removes the parser from the list of parsers.|
 |`open_popup`|`(popup_handler: String)`|Opens a popup, each time the popup is drawn the handler function is called|
 |`get_popup`|`() -> Option<String>`|Returns the name of the `popup_handler` of the currently open popup if there is one opened by this plugin. `nil` otherwise.|
 |`close_popup`|`(popup_handler: Option<String>)`|Closes a popup opened by this plugin. If `popup_handler` is not `nil` it will also check if that is the currently open popup. If no popup is open, this plugin does not own the currently open popup, or the provided handler does not match the function will raise an error.|
@@ -433,6 +450,20 @@ This type has the following fields:
 |`virtual_address`|`u64`|The starting virtual address of the section.|
 |`file_offset`|`u64`|The starting file offset of the section.|
 |`size`|`usize`|The size of the section.|
+
+### HeaderContext
+
+This table contains the following fields:
+| Function | Arguments | Description | Required |
+|----------|-----------|-------------|----------|
+|`set_bitness`|`(bitness: u8)`|Sets the bitness of the file. `bitness` must be either `32` or `64`| Yes |
+|`set_entry`|`(entry_point: u64)`|Sets the virtual address of the entry point.| Yes |
+|`set_endianness`|`(endianness: String)`|Sets the endianness of the file. `endianness` mut be either `little` or `big`.| Yes |
+|`set_architecture`|`(architecture: String)`|Sets the architecture of the file. The possible values are listed in [Header.architecture](#headerarchitecture).| Yes |
+|`add_section`|`(name: String, virtual_address: u64, file_offset: u64, size: u64)`|Adds a section to the file.| No |
+|`add_symbol`|`(address: u64, name: String)`|Adds a symbol to the file.| No |
+
+A function marked as required must be called to create a valid header. Those functions can only be called once.
 
 ### Style
 

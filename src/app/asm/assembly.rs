@@ -7,7 +7,7 @@ use crate::{
     },
     asm::assembler::assemble,
     get_app_context,
-    headers::{Header, Section},
+    headers::{section::Section, Header},
 };
 
 use super::{
@@ -418,6 +418,14 @@ impl App {
 
             self.assembly_instructions
                 .splice(from_instruction..to_instruction, instructions);
+        }
+    }
+
+    pub(in crate::app) fn parse_header(&mut self) -> Header {
+        let mut app_context = get_app_context!(self);
+        match self.plugin_manager.try_parse_header(&mut app_context) {
+            Some(header) => Header::CustomHeader(header),
+            None => Header::parse_header(&self.data.bytes, self.filesystem.pwd(), &self.filesystem),
         }
     }
 }

@@ -2,7 +2,10 @@ use std::path::{Path, PathBuf};
 
 use crossterm::event::{KeyEvent, MouseEvent};
 
-use crate::app::{commands::command_info::CommandInfo, log::NotificationLevel};
+use crate::{
+    app::{commands::command_info::CommandInfo, log::NotificationLevel},
+    headers::custom_header::CustomHeader,
+};
 
 use super::{
     app_context::AppContext,
@@ -206,6 +209,16 @@ impl PluginManager {
         app_context: AppContext,
     ) -> mlua::Result<()> {
         self.plugins[plugin_index].fill_popup(callback, popup_context, app_context)
+    }
+
+    pub fn try_parse_header(&mut self, app_context: &mut AppContext) -> Option<CustomHeader> {
+        for (i, plugin) in self.plugins.iter_mut().enumerate() {
+            app_context.plugin_index = Some(i);
+            if let Some(header) = plugin.try_parse_header(app_context) {
+                return Some(header);
+            }
+        }
+        None
     }
 }
 

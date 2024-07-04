@@ -2,16 +2,21 @@ use std::error::Error;
 
 use mlua::{Function, Lua};
 
-use crate::app::{
-    commands::command_info::CommandInfo,
-    log::NotificationLevel,
-    settings::register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua},
+use crate::{
+    app::{
+        commands::command_info::CommandInfo,
+        log::NotificationLevel,
+        settings::register_key_settings_macro::{key_event_to_lua, mouse_event_to_lua},
+    },
+    headers::custom_header::CustomHeader,
 };
 
 use super::{
     app_context::AppContext,
     event::{Event, Events},
     exported_commands::ExportedCommands,
+    exported_header_parsers::ExportedHeaderParsers,
+    header_context::HeaderContext,
     popup_context::PopupContext,
     register_userdata::{
         register_settings, register_string, register_text, register_usize, register_vec_u8,
@@ -22,6 +27,7 @@ use super::{
 pub struct Plugin {
     lua: Lua,
     commands: ExportedCommands,
+    header_parsers: ExportedHeaderParsers,
 }
 
 impl Plugin {
@@ -49,6 +55,7 @@ impl Plugin {
         Ok(Plugin {
             lua,
             commands: app_context.take_exported_commands(),
+            header_parsers: app_context.take_exported_header_parsers(),
         })
     }
 
@@ -186,11 +193,13 @@ impl Plugin {
     pub fn run_command(&mut self, command: &str, app_context: &mut AppContext) -> mlua::Result<()> {
         let command_fn = self.lua.globals().get::<_, Function>(command)?;
         app_context.set_exported_commands(self.commands.take());
+        app_context.set_exported_header_parsers(self.header_parsers.take());
         let ret = self.lua.scope(|scope| {
             let context = app_context.to_lua(&self.lua, scope);
             command_fn.call::<_, ()>(context)
         });
         self.commands = app_context.take_exported_commands();
+        self.header_parsers = app_context.take_exported_header_parsers();
         ret
     }
 
@@ -215,6 +224,37 @@ impl Plugin {
             callback.call::<_, ()>((popup_context, context))
         })
     }
+
+    pub fn try_parse_header(&mut self, app_context: &mut AppContext) -> Option<CustomHeader> {
+        for parser in self.header_parsers.parsers.iter() {
+            let mut header_context = HeaderContext::default();
+            app_context.set_exported_commands(self.commands.take());
+            let parser_fn = self
+                .lua
+                .globals()
+                .get::<&str, Function>(parser.parser.as_ref())
+                .unwrap();
+            let result = self.lua.scope(|scope| {
+                let context = app_context.to_lua(&self.lua, scope);
+                let header_context = scope.create_userdata_ref_mut(&mut header_context)?;
+                parser_fn.call::<_, ()>((header_context, context))
+            });
+            self.commands = app_context.take_exported_commands();
+            match result {
+                Err(e) => {
+                    app_context
+                        .logger
+                        .log(NotificationLevel::Error, &format!("In plugin: {}", e));
+                }
+                Ok(()) => {
+                    if let Some(header) = header_context.try_into_custom_header() {
+                        return Some(header);
+                    }
+                }
+            }
+        }
+        None
+    }
 }
 
 #[cfg(test)]
@@ -226,6 +266,7 @@ mod test {
     use crate::{
         app::{log::NotificationLevel, settings::settings_value::SettingsValue, App},
         get_app_context,
+        headers::{bitness::Bitness, section::Section},
     };
 
     use super::*;
@@ -563,5 +604,77 @@ mod test {
             0.to_string(),
             "Default entry point is 0"
         );
+    }
+
+    #[test]
+    fn test_parse_custom() {
+        let source = std::fs::read_to_string("test/custom_header/plugins/custom.lua").unwrap();
+        let header_32 = std::fs::read("test/custom_header/32.bin").unwrap();
+        let header_64 = std::fs::read("test/custom_header/64.bin").unwrap();
+        let mut app = App::mockup(header_32);
+        app.logger.clear();
+        let mut app_context = get_app_context!(app);
+        let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
+        assert_eq!(plugin.header_parsers.parsers.len(), 1);
+        let header = match plugin.try_parse_header(&mut app_context) {
+            Some(header) => header,
+            None => {
+                let log = app_context.logger.iter().collect::<Vec<_>>();
+                panic!("Failed to parse header: {:?}", log);
+            }
+        };
+        assert_eq!(header.bitness, Bitness::Bit32);
+        assert_eq!(header.architecture, Architecture::X86_64_X32);
+        assert_eq!(header.entry, 0x40);
+        assert_eq!(
+            header.sections[0],
+            Section {
+                name: ".text".to_string(),
+                virtual_address: 0x40,
+                file_offset: 0x40,
+                size: 0x100 - 0x40
+            }
+        );
+        assert_eq!(header.symbols[&0x40], "_start");
+
+        let mut app = App::mockup(header_64);
+        app.logger.clear();
+        let mut app_context = get_app_context!(app);
+        let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
+        assert_eq!(plugin.header_parsers.parsers.len(), 1);
+        let header = match plugin.try_parse_header(&mut app_context) {
+            Some(header) => header,
+            None => {
+                let log = app_context.logger.iter().collect::<Vec<_>>();
+                panic!("Failed to parse header: {:?}", log);
+            }
+        };
+        assert_eq!(header.bitness, Bitness::Bit64);
+        assert_eq!(header.architecture, Architecture::X86_64);
+        assert_eq!(header.entry, 0x50);
+        assert_eq!(
+            header.sections[0],
+            Section {
+                name: ".text".to_string(),
+                virtual_address: 0x40,
+                file_offset: 0x40,
+                size: 0x100 - 0x40
+            }
+        );
+
+        plugin.try_parse_header(&mut app_context).unwrap();
+        assert_eq!(header.bitness, Bitness::Bit64);
+        assert_eq!(header.architecture, Architecture::X86_64);
+        assert_eq!(header.entry, 0x50);
+        assert_eq!(
+            header.sections[0],
+            Section {
+                name: ".text".to_string(),
+                virtual_address: 0x40,
+                file_offset: 0x40,
+                size: 0x100 - 0x40
+            }
+        );
+        assert_eq!(header.symbols[&0x50], "_start");
     }
 }

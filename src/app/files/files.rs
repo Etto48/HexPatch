@@ -123,6 +123,8 @@ impl App {
                     NotificationLevel::Info,
                     &format!("File type: {:?}", header.file_type()),
                 ),
+                // TODO: maybe add info for a more detailed log
+                Header::CustomHeader(_) => self.log(NotificationLevel::Info, "File type: Custom"),
                 Header::None => unreachable!(),
             }
             self.log(
@@ -195,7 +197,7 @@ impl App {
         } else {
             None
         };
-        self.header = Header::parse_header(&self.data.bytes, path, &self.filesystem);
+        self.header = self.parse_header();
 
         terminal = if let Some(terminal) = terminal {
             Self::print_loading_status(
