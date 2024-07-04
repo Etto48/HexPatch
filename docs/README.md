@@ -37,7 +37,7 @@ The first key found will be used.
 
 ## Supported file formats and architectures
 
-The following file formats are supported:
+The following file formats are supported by default:
 
 - Coff
 - CoffBig
@@ -49,6 +49,8 @@ The following file formats are supported:
 - Pe64
 - Xcoff32
 - Xcoff64
+
+Other file formats can be added with [plugins](#plugins).
 
 The following architectures are supported:
 
