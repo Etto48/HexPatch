@@ -11,9 +11,7 @@ Also, it can edit remote files via SSH.
 You will need the Rust toolchain, you can get it [here](https://www.rust-lang.org/tools/install).
 
 ```bash
-git clone https://github.com/Etto48/HexPatch.git
-cd HexPatch
-cargo install --path .
+cargo install hex-patch
 ```
 
 ## SSH connection
