@@ -1,6 +1,10 @@
 # ![Logo](./assets/logo.svg) HexPatch
 
-[![Continuous Integration](https://github.com/Etto48/HexPatch/actions/workflows/ci.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/ci.yml) [![Continuous Deployment](https://github.com/Etto48/HexPatch/actions/workflows/cd.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/cd.yml) [![rust-clippy analyze](https://github.com/Etto48/HexPatch/actions/workflows/rust-clippy.yml/badge.svg)](https://github.com/Etto48/HexPatch/actions/workflows/rust-clippy.yml)
+<div align=center>
+
+[![Crate Badge]][Crate] [![CI Badge]][CI] [![Deps.rs Badge]][Deps.rs] [![License Badge]][License]
+
+</div>
 
 HexPatch is a binary patcher and editor with terminal user interface (TUI), it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
@@ -142,3 +146,12 @@ You can find more information about the Plugin Lua API [here](./PLUGIN_API.md).
 ## Special thanks
 
 Thanks to [Lorenzo Colombini](https://github.com/Lorenzinco) for the instruction highlighting.
+
+[Crate]: https://crates.io/crates/hex-patch
+[Crate Badge]: https://img.shields.io/crates/v/hex-patch?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
+[CI]: https://github.com/Etto48/HexPatch/actions/workflows/ci.yml
+[CI Badge]: https://img.shields.io/github/actions/workflow/status/Etto48/HexPatch/ci.yml?style=flat-square&logo=github
+[Deps.rs]: https://deps.rs/repo/github/Etto48/HexPatch
+[Deps.rs Badge]: https://deps.rs/repo/github/Etto48/HexPatch/status.svg?style=flat-square
+[License]: https://github.com/Etto48/HexPatch/blob/master/LICENSE
+[License Badge]: https://img.shields.io/github/license/Etto48/HexPatch?style=flat-square&color=blue
