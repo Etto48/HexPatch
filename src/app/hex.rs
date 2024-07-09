@@ -226,7 +226,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn resize() {
+    fn test_resize() {
         let data = vec![0; 0x100];
         let mut app = App::mockup(data);
         app.resize_to_size(80, 24);
@@ -244,5 +244,17 @@ mod test {
         app.resize_to_size(1, 24);
         app.resize_to_size(1, 1);
         app.resize_to_size(80, 24);
+    }
+
+    #[test]
+    fn test_u8_to_hex() {
+        assert_eq!(App::u8_to_hex(0x00), ['0', '0']);
+        assert_eq!(App::u8_to_hex(0x01), ['0', '1']);
+        assert_eq!(App::u8_to_hex(0x0A), ['0', 'A']);
+        assert_eq!(App::u8_to_hex(0x0F), ['0', 'F']);
+        assert_eq!(App::u8_to_hex(0x10), ['1', '0']);
+        assert_eq!(App::u8_to_hex(0x1F), ['1', 'F']);
+        assert_eq!(App::u8_to_hex(0xF0), ['F', '0']);
+        assert_eq!(App::u8_to_hex(0xFF), ['F', 'F']);
     }
 }

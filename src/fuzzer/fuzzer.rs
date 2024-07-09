@@ -11,8 +11,7 @@ pub fn fuzzy_search_in_place<T>(key: &str, entries: &mut [T])
 where
     T: AsRef<str> + Clone,
 {
-    entries.sort_by_cached_key(|source| score(source.as_ref(), key));
-    entries.reverse();
+    entries.sort_by_cached_key(|source| -score(source.as_ref(), key));
 }
 
 fn score(source: &str, key: &str) -> isize {
@@ -41,4 +40,16 @@ fn score(source: &str, key: &str) -> isize {
         score += key_char_not_found_penalty;
     }
     score
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fuzzy_search() {
+        let entries = vec!["abc", "def", "ghi", "jkl"];
+        let result = fuzzy_search_cloned("d", &entries);
+        assert_eq!(result, vec!["def", "abc", "ghi", "jkl"]);
+    }
 }

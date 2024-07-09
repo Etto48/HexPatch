@@ -259,9 +259,11 @@ impl Plugin {
 
 #[cfg(test)]
 mod test {
+    use std::io::Stdout;
+
     use crossterm::event::{KeyCode, KeyEvent};
     use object::Architecture;
-    use ratatui::style::Style;
+    use ratatui::{backend::CrosstermBackend, style::Style};
 
     use crate::{
         app::{log::NotificationLevel, settings::settings_value::SettingsValue, App},
@@ -609,9 +611,11 @@ mod test {
     #[test]
     fn test_parse_custom() {
         let source = std::fs::read_to_string("test/custom_header/plugins/custom.lua").unwrap();
-        let header_32 = std::fs::read("test/custom_header/32.bin").unwrap();
-        let header_64 = std::fs::read("test/custom_header/64.bin").unwrap();
-        let mut app = App::mockup(header_32);
+        let header_32 = "test/custom_header/32.bin";
+        let header_64 = "test/custom_header/64.bin";
+        let mut app = App::default();
+        app.open_file::<CrosstermBackend<Stdout>>(header_32, None)
+            .unwrap();
         app.logger.clear();
         let mut app_context = get_app_context!(app);
         let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
@@ -637,7 +641,9 @@ mod test {
         );
         assert_eq!(header.symbols[&0x40], "_start");
 
-        let mut app = App::mockup(header_64);
+        let mut app = App::default();
+        app.open_file::<CrosstermBackend<Stdout>>(header_64, None)
+            .unwrap();
         app.logger.clear();
         let mut app_context = get_app_context!(app);
         let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();

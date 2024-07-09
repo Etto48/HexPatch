@@ -129,3 +129,33 @@ impl App {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_bytes_to_styled_text() {
+        let color_settings = ColorSettings::default();
+        let bytes = b"CAFEBABE";
+        let block_size = 8;
+        let blocks_per_row = 2;
+        let selected_byte_offset = 0;
+        let text = App::bytes_to_styled_text(
+            &color_settings,
+            bytes,
+            block_size,
+            blocks_per_row,
+            selected_byte_offset,
+        );
+        assert_eq!(text.lines.len(), 1);
+        let mut char_index = 0;
+        for char in text.lines[0].spans.iter().map(|span| span.content.chars()).flatten() {
+            if char.is_alphanumeric() {
+                assert_eq!(char, bytes[char_index] as char);
+                char_index += 1;
+            }
+        }
+        assert_eq!(char_index, bytes.len());
+    }
+}
