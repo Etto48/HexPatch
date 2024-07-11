@@ -27,7 +27,7 @@ alias = "tarpaulin"
 description = "Calculate test coverage using tarpaulin"
 install_crate = "cargo-tarpaulin"
 command = "cargo"
-args = ["tarpaulin", "--out", "Html", "--all-features", "--all-targets", "--skip-clean"]
+args = ["tarpaulin", "--out", "Html", "--all-features", "--all-targets"]
 
 [tasks.test]
 description = "Run all tests"
