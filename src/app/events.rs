@@ -666,7 +666,7 @@ mod tests {
 
     #[test]
     fn test_handle_string_edit() {
-        let mut string = String::from("Hello, World!");
+        let mut string = String::from("ABCDEFGHIJKLM");
         let mut cursor = 13;
         let event = Event::Key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::empty()));
         let charset = None;
@@ -683,7 +683,7 @@ mod tests {
             &key_settings,
         )
         .unwrap();
-        assert_eq!(string, "Hello, World");
+        assert_eq!(string, "ABCDEFGHIJKL");
         assert_eq!(cursor, 12);
 
         let event = Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::empty()));
@@ -697,7 +697,7 @@ mod tests {
             &key_settings,
         )
         .unwrap();
-        assert_eq!(string, "Hello, World");
+        assert_eq!(string, "ABCDEFGHIJKL");
         assert_eq!(cursor, 11);
 
         let event = Event::Key(KeyEvent::new(KeyCode::Delete, KeyModifiers::empty()));
@@ -711,7 +711,7 @@ mod tests {
             &key_settings,
         )
         .unwrap();
-        assert_eq!(string, "Hello, Worl");
+        assert_eq!(string, "ABCDEFGHIJK");
         assert_eq!(cursor, 11);
 
         let event = Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::empty()));
@@ -725,7 +725,7 @@ mod tests {
             &key_settings,
         )
         .unwrap();
-        assert_eq!(string, "Hello, Worl");
+        assert_eq!(string, "ABCDEFGHIJK");
         assert_eq!(cursor, 10);
 
         let event = Event::Key(KeyEvent::new(KeyCode::Right, KeyModifiers::empty()));
@@ -739,7 +739,7 @@ mod tests {
             &key_settings,
         )
         .unwrap();
-        assert_eq!(string, "Hello, Worl");
+        assert_eq!(string, "ABCDEFGHIJK");
         assert_eq!(cursor, 11);
 
         let event = Event::Key(KeyEvent::new(KeyCode::Up, KeyModifiers::empty()));
@@ -753,7 +753,7 @@ mod tests {
             &key_settings,
         )
         .unwrap();
-        assert_eq!(string, "Hello, Worl");
+        assert_eq!(string, "ABCDEFGHIJK");
         assert_eq!(cursor, 0);
 
         let event = Event::Key(KeyEvent::new(KeyCode::Down, KeyModifiers::empty()));
@@ -767,8 +767,7 @@ mod tests {
             &key_settings,
         )
         .unwrap();
-        assert_eq!(string, "Hello, Worl");
+        assert_eq!(string, "ABCDEFGHIJK");
         assert_eq!(cursor, 11);
-
     }
 }

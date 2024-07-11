@@ -150,7 +150,11 @@ mod tests {
         );
         assert_eq!(text.lines.len(), 1);
         let mut char_index = 0;
-        for char in text.lines[0].spans.iter().map(|span| span.content.chars()).flatten() {
+        for char in text.lines[0]
+            .spans
+            .iter()
+            .flat_map(|span| span.content.chars())
+        {
             if char.is_alphanumeric() {
                 assert_eq!(char, bytes[char_index] as char);
                 char_index += 1;
