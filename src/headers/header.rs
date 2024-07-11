@@ -6,7 +6,7 @@ use capstone::{
 };
 use keystone_engine::{Arch, Keystone, KeystoneError, Mode};
 use mlua::UserData;
-use object::Architecture;
+use object::{Architecture, Endianness};
 
 use crate::app::files::filesystem::FileSystem;
 
@@ -42,6 +42,14 @@ impl Header {
                 Bitness::Bit64 => 64,
             },
             Header::None => 64,
+        }
+    }
+
+    pub fn endianness(&self) -> Endianness {
+        match self {
+            Header::GenericHeader(header) => header.endianness,
+            Header::CustomHeader(header) => header.endianness,
+            Header::None => object::Endianness::Little,
         }
     }
 
@@ -259,26 +267,28 @@ mod test {
     fn test_parse_elf() {
         let data = include_bytes!("../../test/elf.bin");
         let header = Header::parse_header(data, "./elf.bin", &FileSystem::new_local(".").unwrap());
-        if let Header::GenericHeader(header) = header {
+        if let Header::GenericHeader(header) = &header {
             assert_eq!(header.file_type, FileType::Elf64);
-            assert_eq!(header.architecture, Architecture::X86_64);
-            assert_eq!(header.endianness, object::Endianness::Little);
         } else {
             panic!("Failed to parse ELF header.");
         }
+        assert_eq!(header.architecture(), Architecture::X86_64);
+        assert_eq!(header.bitness(), 64);
+        assert_eq!(header.endianness(), Endianness::Little);
     }
 
     #[test]
     fn test_parse_pe() {
         let data = include_bytes!("../../test/pe.bin");
         let header = Header::parse_header(data, "./pe.bin", &FileSystem::new_local(".").unwrap());
-        if let Header::GenericHeader(header) = header {
+        if let Header::GenericHeader(header) = &header {
             assert_eq!(header.file_type, FileType::Pe64);
-            assert_eq!(header.architecture, Architecture::X86_64);
-            assert_eq!(header.endianness, object::Endianness::Little);
         } else {
             panic!("Failed to parse PE header.");
         }
+        assert_eq!(header.architecture(), Architecture::X86_64);
+        assert_eq!(header.bitness(), 64);
+        assert_eq!(header.endianness(), Endianness::Little);
     }
 
     #[test]
@@ -286,12 +296,13 @@ mod test {
         let data = include_bytes!("../../test/macho.bin");
         let header =
             Header::parse_header(data, "./macho.bin", &FileSystem::new_local(".").unwrap());
-        if let Header::GenericHeader(header) = header {
+        if let Header::GenericHeader(header) = &header {
             assert_eq!(header.file_type, FileType::MachO64);
-            assert_eq!(header.architecture, Architecture::X86_64);
-            assert_eq!(header.endianness, object::Endianness::Little);
         } else {
             panic!("Failed to parse Mach-O header.");
         }
+        assert_eq!(header.architecture(), Architecture::X86_64);
+        assert_eq!(header.bitness(), 64);
+        assert_eq!(header.endianness(), Endianness::Little);
     }
 }
