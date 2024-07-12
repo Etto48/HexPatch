@@ -659,3 +659,115 @@ impl App {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_handle_string_edit() {
+        let mut string = String::from("ABCDEFGHIJKLM");
+        let mut cursor = 13;
+        let event = Event::Key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::empty()));
+        let charset = None;
+        let max_len = None;
+        let multiline = true;
+        let key_settings = KeySettings::default();
+        App::handle_string_edit(
+            &mut string,
+            &mut cursor,
+            &event,
+            charset,
+            max_len,
+            multiline,
+            &key_settings,
+        )
+        .unwrap();
+        assert_eq!(string, "ABCDEFGHIJKL");
+        assert_eq!(cursor, 12);
+
+        let event = Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::empty()));
+        App::handle_string_edit(
+            &mut string,
+            &mut cursor,
+            &event,
+            charset,
+            max_len,
+            multiline,
+            &key_settings,
+        )
+        .unwrap();
+        assert_eq!(string, "ABCDEFGHIJKL");
+        assert_eq!(cursor, 11);
+
+        let event = Event::Key(KeyEvent::new(KeyCode::Delete, KeyModifiers::empty()));
+        App::handle_string_edit(
+            &mut string,
+            &mut cursor,
+            &event,
+            charset,
+            max_len,
+            multiline,
+            &key_settings,
+        )
+        .unwrap();
+        assert_eq!(string, "ABCDEFGHIJK");
+        assert_eq!(cursor, 11);
+
+        let event = Event::Key(KeyEvent::new(KeyCode::Left, KeyModifiers::empty()));
+        App::handle_string_edit(
+            &mut string,
+            &mut cursor,
+            &event,
+            charset,
+            max_len,
+            multiline,
+            &key_settings,
+        )
+        .unwrap();
+        assert_eq!(string, "ABCDEFGHIJK");
+        assert_eq!(cursor, 10);
+
+        let event = Event::Key(KeyEvent::new(KeyCode::Right, KeyModifiers::empty()));
+        App::handle_string_edit(
+            &mut string,
+            &mut cursor,
+            &event,
+            charset,
+            max_len,
+            multiline,
+            &key_settings,
+        )
+        .unwrap();
+        assert_eq!(string, "ABCDEFGHIJK");
+        assert_eq!(cursor, 11);
+
+        let event = Event::Key(KeyEvent::new(KeyCode::Up, KeyModifiers::empty()));
+        App::handle_string_edit(
+            &mut string,
+            &mut cursor,
+            &event,
+            charset,
+            max_len,
+            multiline,
+            &key_settings,
+        )
+        .unwrap();
+        assert_eq!(string, "ABCDEFGHIJK");
+        assert_eq!(cursor, 0);
+
+        let event = Event::Key(KeyEvent::new(KeyCode::Down, KeyModifiers::empty()));
+        App::handle_string_edit(
+            &mut string,
+            &mut cursor,
+            &event,
+            charset,
+            max_len,
+            multiline,
+            &key_settings,
+        )
+        .unwrap();
+        assert_eq!(string, "ABCDEFGHIJK");
+        assert_eq!(cursor, 11);
+    }
+}

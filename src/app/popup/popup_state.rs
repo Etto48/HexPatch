@@ -844,3 +844,45 @@ impl App {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_line_from_string_and_cursor() {
+        let color_settings = ColorSettings::default();
+        let s = "Hello, World!";
+        let line =
+            App::get_line_from_string_and_cursor(&color_settings, s, 0, "Placeholder", 8, true);
+        let text = line
+            .spans
+            .iter()
+            .flat_map(|s| s.content.chars())
+            .collect::<String>();
+        assert!(text.contains("Hello"), "text: {}", text);
+
+        let line =
+            App::get_line_from_string_and_cursor(&color_settings, s, 0, "Placeholder", 40, true);
+        let text = line
+            .spans
+            .iter()
+            .flat_map(|s| s.content.chars())
+            .collect::<String>();
+        assert!(text.contains("Hello, World!"), "text: {}", text);
+    }
+
+    #[test]
+    fn test_get_multiline_from_string_and_cursor() {
+        let color_settings = ColorSettings::default();
+        let s = "Hello, World!\nThis is a test\n";
+        let (lines, _) =
+            App::get_multiline_from_string_and_cursor(&color_settings, s, 0, "Placeholder", 40);
+        let text = lines
+            .iter()
+            .flat_map(|l| l.spans.iter().flat_map(|s| s.content.chars()))
+            .collect::<String>();
+        assert!(text.contains("Hello, World!"), "text: {}", text);
+        assert!(text.contains("This is a test"), "text: {}", text);
+    }
+}

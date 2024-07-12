@@ -19,6 +19,16 @@ description = "Run clippy with JSON output"
 command = "cargo"
 args = ["clippy", "--all-targets", "--all-features", "--message-format=json"]
 
+[tasks.coverage]
+description = "Calculate test coverage"
+alias = "tarpaulin"
+
+[tasks.tarpaulin]
+description = "Calculate test coverage using tarpaulin"
+install_crate = "cargo-tarpaulin"
+command = "cargo"
+args = ["tarpaulin", "--out", "Html", "--all-features", "--all-targets", "--output-dir", "coverage"]
+
 [tasks.test]
 description = "Run all tests"
 command = "cargo"
