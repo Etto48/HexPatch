@@ -568,6 +568,23 @@
       "modifiers": "",
       "kind": "Press",
       "state": ""
+    },
+    "undo": {
+      "code": {
+        "Char": "z"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "redo": {
+      "code": {
+        "Char": "y"
+      },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
     }
-  }
+  },
+  "custom": {}
 }

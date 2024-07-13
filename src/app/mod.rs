@@ -10,6 +10,7 @@ pub mod events;
 pub mod files;
 pub mod help;
 pub mod hex;
+pub mod history;
 pub mod info_mode;
 pub mod instruction;
 pub mod log;

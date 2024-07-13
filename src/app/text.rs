@@ -61,8 +61,7 @@ impl App {
 
     fn found_text_here(&self, starting_from: usize, text: &str) -> bool {
         for (i, byte) in text.bytes().enumerate() {
-            if self.data.bytes.len() <= starting_from + i
-                || self.data.bytes[starting_from + i] != byte
+            if self.data.len() <= starting_from + i || self.data.bytes()[starting_from + i] != byte
             {
                 return false;
             }
@@ -73,8 +72,8 @@ impl App {
     pub(super) fn get_text_view(&self, start_row: usize, end_row: usize) -> Text<'static> {
         let start_byte = start_row * self.blocks_per_row * self.block_size;
         let end_byte = end_row * self.blocks_per_row * self.block_size;
-        let end_byte = std::cmp::min(end_byte, self.data.bytes.len());
-        let bytes = &self.data.bytes[start_byte..end_byte];
+        let end_byte = std::cmp::min(end_byte, self.data.len());
+        let bytes = &self.data.bytes()[start_byte..end_byte];
         let selected_byte_offset = self
             .get_cursor_position()
             .global_byte_index
@@ -89,7 +88,7 @@ impl App {
     }
 
     pub(super) fn find_text(&mut self, text: &str) {
-        if text.is_empty() || self.data.bytes.is_empty() {
+        if text.is_empty() || self.data.is_empty() {
             return;
         }
         let already_searched = self.text_last_searched_string == text;
@@ -103,9 +102,9 @@ impl App {
         } else {
             search_here = 0;
         }
-        let max_search_index = self.data.bytes.len() + search_here;
+        let max_search_index = self.data.len() + search_here;
         while search_here < max_search_index {
-            let actual_search_here = search_here % self.data.bytes.len();
+            let actual_search_here = search_here % self.data.len();
             if Self::found_text_here(self, actual_search_here, text) {
                 self.jump_to(actual_search_here, false);
                 return;
