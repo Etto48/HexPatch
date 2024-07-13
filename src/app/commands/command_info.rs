@@ -33,6 +33,8 @@ impl CommandInfo {
             CommandInfo::new("patch", "Patch assembly."),
             CommandInfo::new("jump", "Jump to address."),
             CommandInfo::new("view", "Switch between text and assembly."),
+            CommandInfo::new("undo", "Undo the last change."),
+            CommandInfo::new("redo", "Redo the last change."),
         ]
     }
 

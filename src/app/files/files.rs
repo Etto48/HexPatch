@@ -210,7 +210,7 @@ impl App {
             None
         };
         (self.assembly_offsets, self.assembly_instructions) =
-            Self::sections_from_bytes(&self.data.bytes, &self.header);
+            Self::sections_from_bytes(self.data.bytes(), &self.header);
 
         if let Some(terminal) = terminal {
             Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
@@ -237,8 +237,8 @@ impl App {
         let mut app_context = get_app_context!(self);
         self.plugin_manager.on_save(&mut app_context);
         self.filesystem
-            .write(self.filesystem.pwd(), &self.data.bytes)?;
-        self.data.dirty = false;
+            .write(self.filesystem.pwd(), self.data.bytes())?;
+        self.data.reset_dirty();
         match &self.filesystem {
             FileSystem::Local { path } => {
                 self.log(NotificationLevel::Info, &format!("Saved to {}", path));

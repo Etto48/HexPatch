@@ -241,11 +241,10 @@ impl App {
             let mut app_context = get_app_context!(self);
             app_context.offset = offset;
             self.plugin_manager.on_edit(&mut bytes, &mut app_context);
-            bytes.truncate(self.data.bytes.len().checked_sub(offset).unwrap());
-            let bytes_len = bytes.len();
-            self.data.bytes.splice(offset..offset + bytes_len, bytes);
-            self.data.dirty = true;
-            self.edit_assembly(bytes_len + instruction_offset);
+
+            let modified_bytes = self.data.push_change(offset, bytes);
+
+            self.edit_assembly(modified_bytes + instruction_offset);
         }
     }
 
@@ -313,7 +312,7 @@ impl App {
                         text_section.file_offset as usize + text_section.size as usize,
                     )
                 } else {
-                    (true, self.data.bytes.len())
+                    (true, self.data.len())
                 };
             if !is_inside_text_section {
                 return;
@@ -321,7 +320,7 @@ impl App {
             let decoder = self.header.get_decoder().expect("Failed to create decoder");
             let mut offsets = Vec::new();
             let mut instructions = Vec::new();
-            let mut to_byte = self.data.bytes.len();
+            let mut to_byte = self.data.len();
 
             let from_instruction = self.assembly_offsets[from_byte];
             let mut current_byte = from_byte;
@@ -332,7 +331,7 @@ impl App {
                     to_byte = maximum_code_byte;
                     break;
                 }
-                let bytes = &self.data.bytes[current_byte..maximum_code_byte];
+                let bytes = &self.data.bytes()[current_byte..maximum_code_byte];
                 let decoded = decoder
                     .disasm_count(bytes, virtual_address + ip_offset, 1)
                     .expect("Failed to disassemble");
@@ -425,7 +424,9 @@ impl App {
         let mut app_context = get_app_context!(self);
         match self.plugin_manager.try_parse_header(&mut app_context) {
             Some(header) => Header::CustomHeader(header),
-            None => Header::parse_header(&self.data.bytes, self.filesystem.pwd(), &self.filesystem),
+            None => {
+                Header::parse_header(self.data.bytes(), self.filesystem.pwd(), &self.filesystem)
+            }
         }
     }
 }
@@ -540,7 +541,7 @@ mod test {
         let expected_data = vec![0x90, 0x90, 0x90, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
         let mut expected_instructions = vec!["nop", "nop", "nop", "mov rcx, rax", "mov rax, rax"];
         expected_instructions.reverse();
-        assert_eq!(app.data.bytes, expected_data);
+        assert_eq!(app.data.bytes(), expected_data);
         text_found = false;
         for line in app.assembly_instructions.iter() {
             match line {
@@ -572,7 +573,7 @@ mod test {
         let expected_data = vec![0x90, 0xff, 0xe0, 0x48, 0x89, 0xc1, 0x48, 0x89, 0xc0];
         let mut expected_instructions = vec!["nop", "jmp rax", "mov rcx, rax", "mov rax, rax"];
         expected_instructions.reverse();
-        assert_eq!(app.data.bytes, expected_data);
+        assert_eq!(app.data.bytes(), expected_data);
         text_found = false;
         for line in app.assembly_instructions.iter() {
             match line {

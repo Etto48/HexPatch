@@ -200,11 +200,11 @@ impl App {
                     .block(Block::default().borders(Borders::NONE));
 
                 let scrolled_amount = self.get_cursor_position().global_byte_index;
-                let total_amount = self.data.bytes.len();
+                let total_amount = self.data.len();
                 let scrollbar =
                     Scrollbar::new(scrolled_amount, total_amount, self.settings.color.scrollbar);
 
-                if !self.data.bytes.is_empty() {
+                if !self.data.is_empty() {
                     let line_start_index = self.scroll;
                     let line_end_index = (self.scroll + f.size().height as usize).saturating_sub(2);
 
@@ -218,7 +218,7 @@ impl App {
                     );
 
                     let editor_title =
-                        format!("Hex Editor{}", if self.data.dirty { " *" } else { "" });
+                        format!("Hex Editor{}", if self.data.dirty() { " *" } else { "" });
 
                     let hex_editor_block = ratatui::widgets::Paragraph::new(hex_view).block(
                         Block::default()

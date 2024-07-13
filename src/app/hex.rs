@@ -145,7 +145,7 @@ impl App {
         if value.is_ascii_hexdigit() {
             let cursor_position = self.get_cursor_position();
 
-            let old_byte = self.data.bytes[cursor_position.global_byte_index];
+            let old_byte = self.data.bytes()[cursor_position.global_byte_index];
             let old_byte_str = format!("{:02X}", old_byte);
             let new_byte_str = if cursor_position.high_byte {
                 format!("{}{}", value, old_byte_str.chars().nth(1).unwrap())
@@ -159,22 +159,12 @@ impl App {
 
             self.plugin_manager
                 .on_edit(&mut new_bytes, &mut app_context);
-            new_bytes.truncate(
-                self.data
-                    .bytes
-                    .len()
-                    .checked_sub(cursor_position.global_byte_index)
-                    .unwrap(),
-            );
 
-            self.data.bytes[cursor_position.global_byte_index
-                ..cursor_position.global_byte_index + new_bytes.len()]
-                .copy_from_slice(&new_bytes);
+            let modified_bytes = self
+                .data
+                .push_change(cursor_position.global_byte_index, new_bytes);
 
-            if old_byte != new_byte {
-                self.data.dirty = true;
-            }
-            self.edit_assembly(new_bytes.len());
+            self.edit_assembly(modified_bytes);
         }
         Ok(())
     }
@@ -183,8 +173,8 @@ impl App {
     pub(super) fn get_hex_view(&self, start_row: usize, end_row: usize) -> Text<'static> {
         let start_byte = start_row * self.blocks_per_row * self.block_size;
         let end_byte = end_row * self.blocks_per_row * self.block_size;
-        let end_byte = std::cmp::min(end_byte, self.data.bytes.len());
-        let bytes = &self.data.bytes[start_byte..end_byte];
+        let end_byte = std::cmp::min(end_byte, self.data.len());
+        let bytes = &self.data.bytes()[start_byte..end_byte];
         let selected_byte_index = self
             .get_cursor_position()
             .global_byte_index

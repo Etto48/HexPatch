@@ -44,6 +44,9 @@ pub struct KeySettings {
 
     pub new_line: KeyEvent,
     pub clear_log: KeyEvent,
+
+    pub undo: KeyEvent,
+    pub redo: KeyEvent,
 }
 
 impl KeySettings {
@@ -235,6 +238,9 @@ impl Default for KeySettings {
 
             new_line: KeyEvent::new(KeyCode::Enter, KeyModifiers::SHIFT),
             clear_log: KeyEvent::new(KeyCode::Delete, KeyModifiers::empty()),
+
+            undo: KeyEvent::new(KeyCode::Char('z'), KeyModifiers::CONTROL),
+            redo: KeyEvent::new(KeyCode::Char('y'), KeyModifiers::CONTROL),
         }
     }
 }

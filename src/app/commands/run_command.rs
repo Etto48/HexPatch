@@ -42,7 +42,7 @@ impl App {
                 self.quit(Some(true))?;
             }
             "save" => {
-                if self.data.dirty {
+                if self.data.dirty() {
                     self.save_file()?;
                 }
             }
@@ -79,6 +79,12 @@ impl App {
             "view" => {
                 self.request_view_change();
             }
+            "undo" => {
+                self.undo();
+            }
+            "redo" => {
+                self.redo();
+            }
             any_other_command => {
                 let mut app_context = get_app_context!(self);
                 self.plugin_manager
@@ -92,7 +98,7 @@ impl App {
         match save {
             Some(true) => {
                 self.log(NotificationLevel::Debug, "Saving and quitting...");
-                if self.data.dirty {
+                if self.data.dirty() {
                     self.save_file()?;
                 }
                 self.needs_to_exit = true;
@@ -103,7 +109,7 @@ impl App {
             }
             None => {
                 self.log(NotificationLevel::Debug, "Quitting...");
-                if self.data.dirty {
+                if self.data.dirty() {
                     self.log(NotificationLevel::Warning, "You have unsaved changes.")
                 } else {
                     self.needs_to_exit = true;
@@ -114,7 +120,7 @@ impl App {
     }
 
     pub(in crate::app) fn request_quit(&mut self) {
-        if self.data.dirty {
+        if self.data.dirty() {
             self.popup = Some(PopupState::QuitDirtySave(SimpleChoice::Cancel));
         } else {
             self.needs_to_exit = true;
@@ -122,13 +128,13 @@ impl App {
     }
 
     pub(in crate::app) fn request_save(&mut self) {
-        if self.data.dirty {
+        if self.data.dirty() {
             self.popup = Some(PopupState::Save(BinaryChoice::No));
         }
     }
 
     pub(in crate::app) fn request_save_and_quit(&mut self) {
-        if self.data.dirty {
+        if self.data.dirty() {
             self.popup = Some(PopupState::SaveAndQuit(BinaryChoice::No));
         } else {
             self.needs_to_exit = true;
@@ -216,6 +222,66 @@ impl App {
             InfoMode::Assembly => {
                 self.info_mode = InfoMode::Text;
             }
+        }
+    }
+
+    pub(in crate::app) fn undo(&mut self) {
+        if let Some(change) = self.data.undo().cloned() {
+            let instruction_offset = self.get_instruction_at(change.offset()).file_address();
+            let instruction_offset = change
+                .offset()
+                .checked_sub(instruction_offset as usize)
+                .unwrap();
+            self.edit_assembly(change.offset() + instruction_offset);
+        } else {
+            self.log(NotificationLevel::Warning, "Nothing to undo.")
+        }
+    }
+
+    pub(in crate::app) fn redo(&mut self) {
+        if let Some(change) = self.data.redo().cloned() {
+            let instruction_offset = self.get_instruction_at(change.offset()).file_address();
+            let instruction_offset = change
+                .offset()
+                .checked_sub(instruction_offset as usize)
+                .unwrap();
+            self.edit_assembly(change.offset() + instruction_offset);
+        } else {
+            self.log(NotificationLevel::Warning, "Nothing to redo.")
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::app::asm::assembly_line::AssemblyLine;
+
+    use super::*;
+
+    #[test]
+    fn test_undo_redo() {
+        let mut app = App::mockup(vec![0x90; 4]);
+        app.patch_bytes(&[0, 0], false);
+        if let AssemblyLine::Instruction(instruction) = app.assembly_instructions[1].clone() {
+            assert_eq!(instruction.instruction.mnemonic, "add");
+        } else {
+            panic!("Expected an instruction.")
+        }
+
+        app.undo();
+        assert_eq!(app.data.bytes(), vec![0x90; 4].as_slice());
+        if let AssemblyLine::Instruction(instruction) = app.assembly_instructions[1].clone() {
+            assert_eq!(instruction.instruction.mnemonic, "nop");
+        } else {
+            panic!("Expected an instruction.")
+        }
+
+        app.redo();
+        assert_eq!(app.data.bytes(), vec![0x00, 0x00, 0x90, 0x90].as_slice());
+        if let AssemblyLine::Instruction(instruction) = app.assembly_instructions[1].clone() {
+            assert_eq!(instruction.instruction.mnemonic, "add");
+        } else {
+            panic!("Expected an instruction.")
         }
     }
 }

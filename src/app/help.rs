@@ -172,6 +172,14 @@ impl App {
                 &Self::key_event_to_string(key_settings.clear_log),
                 "Clear log (with log open)",
             ),
+            HelpLine::new(
+                &Self::key_event_to_string(key_settings.undo),
+                "Undo last change",
+            ),
+            HelpLine::new(
+                &Self::key_event_to_string(key_settings.redo),
+                "Redo last change",
+            ),
             HelpLine::new(&Self::key_event_to_string(key_settings.help), "Help"),
         ]
     }

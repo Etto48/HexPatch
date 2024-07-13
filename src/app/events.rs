@@ -78,6 +78,10 @@ impl App {
                     self.request_popup_jump();
                 } else if event == self.settings.key.change_view {
                     self.request_view_change();
+                } else if event == self.settings.key.undo {
+                    self.undo();
+                } else if event == self.settings.key.redo {
+                    self.redo();
                 } else if let KeyCode::Char(c) = event.code {
                     match c {
                         '0'..='9' | 'A'..='F' | 'a'..='f' => {
