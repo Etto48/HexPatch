@@ -6,7 +6,8 @@ use std::{
 };
 
 use super::{
-    color_settings::ColorSettings, key_settings::KeySettings, settings_value::SettingsValue,
+    app_settings::AppSettings, color_settings::ColorSettings, key_settings::KeySettings,
+    settings_value::SettingsValue,
 };
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Default)]
@@ -14,6 +15,7 @@ use super::{
 pub struct Settings {
     pub color: ColorSettings,
     pub key: KeySettings,
+    pub app: AppSettings,
     pub custom: HashMap<String, SettingsValue>,
 }
 

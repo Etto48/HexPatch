@@ -210,7 +210,7 @@ For more information on the types, see the following sections.
 
 This type contains the settings of the application.
 A setting can be accessed using the `.` operator with its full name (dots are replaced with underscores).
-e.g. `context.settings.color_address_selected` or `context.settings.key_up`.
+e.g. `context.settings.color_address_selected`, `context.settings.key_up`, `context.settings.app_history_limit`.
 
 WARNING: You should get and set the setting altogether, e.g. `context.settings.color_address_selected = {fg = "Red"}`. Trying to set a single field will not work.
 
