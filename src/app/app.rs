@@ -99,7 +99,7 @@ impl App {
         args: Args,
         terminal: &mut ratatui::Terminal<B>,
     ) -> Result<Self, String> {
-        let mut logger = Logger::new();
+        let mut logger = Logger::default();
         let settings = match Settings::load_or_create(args.config.as_deref()) {
             Ok(settings) => settings,
             Err(e) => {
@@ -110,6 +110,7 @@ impl App {
                 Settings::default()
             }
         };
+        logger.change_limit(settings.app.log_limit);
         Self::print_loading_status(
             &settings.color,
             &format!("Opening \"{}\"...", args.path),
@@ -329,7 +330,7 @@ impl Default for App {
             plugin_manager: PluginManager::default(),
             filesystem: FileSystem::default(),
             header: Header::None,
-            logger: Logger::new(),
+            logger: Logger::default(),
             help_list: Self::help_list(&Settings::default().key),
             data: Data::default(),
             assembly_offsets: Vec::new(),

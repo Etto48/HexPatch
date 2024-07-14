@@ -2,8 +2,8 @@ use mlua::{FromLua, IntoLua, Lua, UserDataFields, UserDataMethods};
 use ratatui::text::Text;
 
 use crate::app::settings::{
-    color_settings::ColorSettings, key_settings::KeySettings, settings_value::SettingsValue,
-    Settings,
+    app_settings::AppSettings, color_settings::ColorSettings, key_settings::KeySettings,
+    settings_value::SettingsValue, Settings,
 };
 
 pub fn register_vec_u8(lua: &Lua) -> mlua::Result<()> {
@@ -70,6 +70,7 @@ pub fn register_settings(lua: &Lua) -> mlua::Result<()> {
     lua.register_userdata_type(|data: &mut mlua::UserDataRegistry<Settings>| {
         ColorSettings::register_userdata(data);
         KeySettings::register_userdata(data);
+        AppSettings::register_userdata(data);
         data.add_method("get_custom", |_lua, this, key: String| {
             Ok(this.custom.get(&key).cloned())
         });

@@ -189,7 +189,10 @@ impl App {
         } else {
             None
         };
-        self.data = Data::new(self.filesystem.read(self.filesystem.pwd())?);
+        self.data = Data::new(
+            self.filesystem.read(self.filesystem.pwd())?,
+            self.settings.app.history_limit,
+        );
 
         terminal = if let Some(terminal) = terminal {
             Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;

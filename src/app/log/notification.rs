@@ -1,7 +1,8 @@
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum NotificationLevel {
+    #[default]
     None,
     Debug,
     Info,

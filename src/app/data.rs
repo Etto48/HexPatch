@@ -10,10 +10,10 @@ pub struct Data {
 }
 
 impl Data {
-    pub fn new(bytes: Vec<u8>) -> Self {
+    pub fn new(bytes: Vec<u8>, history_limit: usize) -> Self {
         Self {
             bytes,
-            history: History::default(),
+            history: History::with_limit(history_limit),
             dirty: false,
         }
     }
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_data_push_change() {
-        let mut data = Data::new(vec![0, 1, 2, 3, 4]);
+        let mut data = Data::new(vec![0, 1, 2, 3, 4], 0);
         assert_eq!(data.push_change(2, vec![9, 8, 7]), 3);
         assert_eq!(data.bytes(), &[0, 1, 9, 8, 7]);
         assert_eq!(data.push_change(2, vec![9, 8, 7]), 0);
@@ -133,13 +133,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_data_push_change_out_of_bounds() {
-        let mut data = Data::new(vec![0, 1, 2, 3, 4]);
+        let mut data = Data::new(vec![0, 1, 2, 3, 4], 0);
         data.push_change(5, vec![9, 8, 7]);
     }
 
     #[test]
     fn test_data_undo_redo() {
-        let mut data = Data::new(vec![0, 1, 2, 3, 4]);
+        let mut data = Data::new(vec![0, 1, 2, 3, 4], 0);
         data.push_change(2, vec![9, 8, 7]);
         assert_eq!(data.bytes(), &[0, 1, 9, 8, 7]);
         data.push_change(0, vec![9, 8]);
@@ -158,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_data_clear_history() {
-        let mut data = Data::new(vec![0, 1, 2, 3, 4]);
+        let mut data = Data::new(vec![0, 1, 2, 3, 4], 0);
         data.push_change(2, vec![9, 8, 7]);
         data.push_change(0, vec![9, 8]);
         data.push_change(4, vec![9]);

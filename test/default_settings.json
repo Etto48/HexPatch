@@ -586,5 +586,9 @@
       "state": ""
     }
   },
+  "app": {
+    "history_limit": 1024,
+    "log_limit": 1024
+  },
   "custom": {}
 }
