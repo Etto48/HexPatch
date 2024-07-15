@@ -23,6 +23,8 @@ defaults:
 nav:
   - title: Documentation
     items:
+    - title: Settings
+      url: /SETTINGS.html
     - title: Plugin API
       url: /PLUGIN_API.html
   - title: Community

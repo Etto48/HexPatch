@@ -71,31 +71,9 @@ The following architectures are supported:
 - S390x
 - Sparc64
 
-## Configuration
+## Settings
 
-A configuration file named `settings.json` is created in hex-patch's configuration directory.
-The configuration directory is located in the following paths:
-| OS | Path | Example |
-|----|------|---------|
-|Windows|`%APPDATA%\HexPatch`|`C:\Users\Alice\AppData\Roaming\HexPatch`|
-|Linux|`$XDG_CONFIG_HOME/HexPatch` or `~/.config/HexPatch`|`/home/alice/.config/HexPatch`|
-|macOS|`$HOME/Library/Application Support/HexPatch`|`/Users/Alice/Library/Application Support/HexPatch`|
-
-A different configuration file can be specified with the `--config` flag.
-
-The file will be created with the default settings if it doesn't exist.
-If a setting is not present in the configuration file, the default value will be used.
-Custom settings can be added to the configuration using the following format:
-
-```json
-{
-    "custom": {
-        "setting_name": "value"
-    }
-}
-```
-
-Custom settings can be accessed by plugins.
+Read the [settings documentation](./SETTINGS.md) for more information.
 
 ## Plugins
 
