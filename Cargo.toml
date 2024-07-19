@@ -34,8 +34,8 @@ object = "0.36"
 pdb = "0.8"
 ratatui = { version = "0.27", features = ["serde"] }
 regex = "1.10"
-russh = "0.43"
-russh-keys = "0.43"
+russh = "0.44"
+russh-keys = "0.44"
 russh-sftp = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
