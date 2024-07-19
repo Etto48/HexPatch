@@ -1,14 +1,18 @@
-#![doc(html_favicon_url = "https://raw.githubusercontent.com/Etto48/HexPatch/master/docs/assets/logo.ico")]
+#![doc(
+    html_favicon_url = "https://raw.githubusercontent.com/Etto48/HexPatch/master/docs/assets/logo.ico"
+)]
 /*!
 # HexPatch
 
-HexPatch is a binary patcher and editor with terminal user interface (TUI), it's capable of disassembling instructions and assembling patches.
+HexPatch is a binary patcher and editor with terminal user interface (TUI),
+it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
 Also, it can edit remote files via SSH.
 
 ## Documentation
 
-The up-to-date documentation on the frontend applicaiton can be found [here](https://etto48.github.io/HexPatch/).
+The up-to-date documentation on the frontend application can be found
+[here](https://etto48.github.io/HexPatch/).
 
 ## Disclaimer
 
