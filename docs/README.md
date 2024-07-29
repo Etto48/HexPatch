@@ -12,11 +12,19 @@ Also, it can edit remote files via SSH.
 
 ## Installation
 
-You will need the Rust toolchain, you can get it [here](https://www.rust-lang.org/tools/install).
+If you already have the requirements installed, you only need to run the following command:
 
 ```bash
 cargo install hex-patch
 ```
+
+### Requirements
+
+- [CMake](https://cmake.org/download/)
+- [MSVC](https://visualstudio.microsoft.com/visual-cpp-build-tools/) on Windows
+- [GCC](https://gcc.gnu.org/) on Linux
+- [Xcode Command Line Tools](https://developer.apple.com/) on macOS
+- [Rust](https://www.rust-lang.org/tools/install)
 
 ## SSH connection
 
