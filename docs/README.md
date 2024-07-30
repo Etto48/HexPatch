@@ -21,6 +21,7 @@ cargo install hex-patch
 ### Requirements
 
 - [CMake](https://cmake.org/download/)
+- [Python](https://www.python.org/downloads/)
 - [MSVC](https://visualstudio.microsoft.com/visual-cpp-build-tools/) on Windows
 - [GCC](https://gcc.gnu.org/) on Linux
 - [Xcode Command Line Tools](https://developer.apple.com/) on macOS
