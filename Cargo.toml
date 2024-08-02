@@ -39,6 +39,6 @@ russh-keys = "0.44"
 russh-sftp = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-symbolic-demangle = "12.9"
+symbolic-demangle = "12.10"
 tempfile = "3.10"
-tokio = "1.38"
+tokio = "1.39"
