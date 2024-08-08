@@ -6,7 +6,7 @@ use ratatui::{
     backend::Backend,
     layout::Rect,
     text::{Line, Text},
-    widgets::{Block, Borders, Clear},
+    widgets::{Block, Borders, Clear, ScrollbarOrientation, ScrollbarState},
 };
 
 use super::{
@@ -19,7 +19,7 @@ use super::{
     plugins::plugin_manager::PluginManager,
     popup::popup_state::PopupState,
     settings::{color_settings::ColorSettings, Settings},
-    widgets::{logo::Logo, scrollbar::Scrollbar},
+    widgets::logo::Logo,
 };
 
 use crate::{args::Args, get_app_context, headers::Header};
@@ -58,9 +58,9 @@ impl App {
     ) -> Result<(), String> {
         terminal
             .draw(|f| {
-                let size = f.size();
+                let area = f.area();
                 let mut text = Text::default();
-                for _ in 0..(size.height.saturating_sub(1)) {
+                for _ in 0..(area.height.saturating_sub(1)) {
                     text.lines.push(ratatui::text::Line::default());
                 }
                 text.lines
@@ -69,13 +69,13 @@ impl App {
                     .block(Block::default().borders(Borders::NONE));
                 let logo = Logo::default();
                 let logo_size = logo.get_size();
-                f.render_widget(paragraph, size);
-                if logo_size.0 < size.width && logo_size.1 < size.height {
+                f.render_widget(paragraph, area);
+                if logo_size.0 < area.width && logo_size.1 < area.height {
                     f.render_widget(
                         logo,
                         Rect::new(
-                            size.width / 2 - logo_size.0 / 2,
-                            size.height / 2 - logo_size.1 / 2,
+                            area.width / 2 - logo_size.0 / 2,
+                            area.height / 2 - logo_size.1 / 2,
                             logo_size.0,
                             logo_size.1,
                         ),
@@ -178,24 +178,24 @@ impl App {
 
             terminal.draw(|f| {
                 let min_width = self.block_size as u16 * 3 + 17 + 3;
-                if f.size().width < min_width {
+                if f.area().width < min_width {
                     return;
                 }
-                let output_rect = Rect::new(0, f.size().height - 1, f.size().width, 1);
-                let address_rect = Rect::new(0, 0, 17, f.size().height - output_rect.height);
+                let output_rect = Rect::new(0, f.area().height - 1, f.area().width, 1);
+                let address_rect = Rect::new(0, 0, 17, f.area().height - output_rect.height);
                 let hex_editor_rect = Rect::new(
                     address_rect.width,
                     0,
                     (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16,
-                    f.size().height - output_rect.height,
+                    f.area().height - output_rect.height,
                 );
                 let info_view_rect = Rect::new(
                     address_rect.width + hex_editor_rect.width,
                     0,
-                    f.size().width - hex_editor_rect.width - address_rect.width - 2,
-                    f.size().height - output_rect.height,
+                    f.area().width - hex_editor_rect.width - address_rect.width - 2,
+                    f.area().height - output_rect.height,
                 );
-                let scrollbar_rect = Rect::new(f.size().width - 1, 0, 1, f.size().height);
+                let scrollbar_rect = Rect::new(f.area().width - 1, 0, 1, f.area().height);
 
                 let output_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
                     .block(Block::default().borders(Borders::NONE));
@@ -203,11 +203,17 @@ impl App {
                 let scrolled_amount = self.get_cursor_position().global_byte_index;
                 let total_amount = self.data.len();
                 let scrollbar =
-                    Scrollbar::new(scrolled_amount, total_amount, self.settings.color.scrollbar);
+                    ratatui::widgets::Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                        .style(self.settings.color.scrollbar)
+                        .begin_symbol(None)
+                        .end_symbol(None)
+                        .track_symbol(None);
+                let mut scrollbar_state =
+                    ScrollbarState::new(total_amount).position(scrolled_amount);
 
                 if !self.data.is_empty() {
                     let line_start_index = self.scroll;
-                    let line_end_index = (self.scroll + f.size().height as usize).saturating_sub(2);
+                    let line_end_index = (self.scroll + f.area().height as usize).saturating_sub(2);
 
                     let address_view = self.get_address_view(line_start_index, line_end_index);
                     let hex_view = self.get_hex_view(line_start_index, line_end_index);
@@ -244,7 +250,7 @@ impl App {
                         InfoMode::Assembly => {
                             let assembly_start_index = self.get_assembly_view_scroll();
                             let assembly_end_index =
-                                (assembly_start_index + f.size().height as usize - 2)
+                                (assembly_start_index + f.area().height as usize - 2)
                                     .min(self.assembly_instructions.len());
                             let assembly_subview_lines = &self.assembly_instructions
                                 [assembly_start_index..assembly_end_index];
@@ -277,7 +283,7 @@ impl App {
                     f.render_widget(info_view_block, info_view_rect);
                 }
                 f.render_widget(output_block, output_rect);
-                f.render_widget(scrollbar, scrollbar_rect);
+                f.render_stateful_widget(scrollbar, scrollbar_rect, &mut scrollbar_state);
 
                 // Draw popup
                 if self.popup.is_some() {
@@ -294,11 +300,11 @@ impl App {
                         &mut popup_width,
                     );
 
-                    popup_height = popup_height.min(f.size().height.saturating_sub(2) as usize);
-                    popup_width = popup_width.min(f.size().width.saturating_sub(1) as usize);
+                    popup_height = popup_height.min(f.area().height.saturating_sub(2) as usize);
+                    popup_width = popup_width.min(f.area().width.saturating_sub(1) as usize);
                     let popup_rect = Rect::new(
-                        (f.size().width / 2).saturating_sub((popup_width / 2 + 1) as u16),
-                        (f.size().height / 2).saturating_sub((popup_height / 2) as u16),
+                        (f.area().width / 2).saturating_sub((popup_width / 2 + 1) as u16),
+                        (f.area().height / 2).saturating_sub((popup_height / 2) as u16),
                         popup_width as u16,
                         popup_height as u16,
                     );
