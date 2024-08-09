@@ -14,7 +14,6 @@ function on_edit(new_bytes, context)
     context.log(1, "Data edited: @" .. context.offset)
 end
 
-popup_additional_text = "Press Enter!"
 function on_key(key_event, context)
     modifiers = ""
     if key_event.modifiers.shift then
@@ -41,7 +40,7 @@ function on_key(key_event, context)
     end
 
     if context.get_popup() == "fill_popup" and key_event.code == "Enter" then
-        popup_additional_text = "Enter pressed!"
+        last_time_enter_pressed = context.get_instant_now()
     end
 end
 
@@ -69,16 +68,20 @@ function debug(context)
     context.open_popup("fill_popup")
 end
 
-fill_popup_calls = 0
+last_time_enter_pressed = nil
 function fill_popup(popup_context, context)
     popup_context.title:set("Debug")
     popup_context.height:set(7)
     popup_context.text:push_line("Debugging information")
     popup_context.text:set_style({fg="green"})
     popup_context.text:set_alignment("left")
-    popup_context.text:push_line("Calls: ")
+    popup_context.text:push_line("Time from last enter: ")
     popup_context.text:reset_style()
-    popup_context.text:push_span(fill_popup_calls)
+    if last_time_enter_pressed == nil then
+        popup_context.text:push_span("Never")
+    else
+        popup_context.text:push_span(last_time_enter_pressed:elapsed())
+    end
     popup_context.text:set_style({fg="green"})
     popup_context.text:push_line("Popup size: ")
     popup_context.text:reset_style()
@@ -88,7 +91,9 @@ function fill_popup(popup_context, context)
     popup_context.text:reset_style()
     popup_context.text:push_span(context.screen_width .. "x" .. context.screen_height)
     popup_context.text:reset_alignment()
-    popup_context.text:push_line(popup_additional_text)
-    fill_popup_calls = fill_popup_calls + 1
-    popup_additional_text = "Press Enter!"
+    if last_time_enter_pressed == nil or last_time_enter_pressed:elapsed() > 1 then
+        popup_context.text:push_line("Press Enter!")
+    else
+        popup_context.text:push_line("Enter Pressed!")
+    end
 end

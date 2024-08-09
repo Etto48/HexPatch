@@ -9,3 +9,4 @@ pub mod plugin;
 pub mod plugin_manager;
 pub mod popup_context;
 pub mod register_userdata;
+pub mod plugin_instant;

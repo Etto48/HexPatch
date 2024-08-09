@@ -729,4 +729,26 @@ mod test {
         assert_eq!(popup_text.lines[2].alignment, Some(Alignment::Left));
         assert_eq!(popup_text.lines[2].spans[0].content, "span4");
     }
+
+    #[test]
+    fn test_plugin_instant() {
+        let source = "
+            function init(context)
+                start = context.get_instant_now()
+
+                counter = 0
+                while counter < 100 do
+                    counter = counter + 1
+                end
+
+                if start:elapsed() <= 0 then
+                    error(\"Timer is not increasing\")
+                end
+            end
+        ";
+
+        let mut app = App::mockup(vec![0; 0x100]);
+        let mut app_context = get_app_context!(app);
+        Plugin::new_from_source(source, &mut app_context).unwrap();
+    }
 }

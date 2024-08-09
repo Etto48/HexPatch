@@ -14,7 +14,7 @@ use crate::{
 
 use super::{
     exported_commands::ExportedCommands, exported_header_parsers::ExportedHeaderParsers,
-    instruction_info::InstructionInfo,
+    instruction_info::InstructionInfo, plugin_instant::PluginInstant,
 };
 
 #[macro_export]
@@ -313,7 +313,14 @@ impl<'app> AppContext<'app> {
                 scope.create_any_userdata_ref_mut(self.settings).unwrap(),
             )
             .unwrap();
-
+        context
+            .set(
+                "get_instant_now",
+                scope.create_function(|_, ()| {
+                    Ok(PluginInstant::now())
+                }).unwrap()
+            )
+            .unwrap();
         context
     }
 }
