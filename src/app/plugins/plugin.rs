@@ -691,15 +691,15 @@ mod test {
                 context.open_popup(\"fill_popup\")
             end
 
-            function fill_popup(context)
-                context.text:push_line(\"span1\")
-                context.text:set_style({fg=\"#ff0000\"})
-                context.text:push_line(\"span2\")
-                context.text:reset_style()
-                context.text:push_span(\"span3\")
-                context.text:set_alignment(\"left\")
-                context.text:push_line(\"span4\")
-                context.text:reset_alignment()
+            function fill_popup(popup_context, context)
+                popup_context.text:push_line(\"span1\")
+                popup_context.text:set_style({fg=\"#ff0000\"})
+                popup_context.text:push_line(\"span2\")
+                popup_context.text:reset_style()
+                popup_context.text:push_span(\"span3\")
+                popup_context.text:set_alignment(\"left\")
+                popup_context.text:push_line(\"span4\")
+                popup_context.text:reset_alignment()
             end
         ";
 
