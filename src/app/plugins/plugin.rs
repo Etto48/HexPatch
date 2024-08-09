@@ -263,7 +263,7 @@ mod test {
 
     use crossterm::event::{KeyCode, KeyEvent};
     use object::Architecture;
-    use ratatui::{backend::CrosstermBackend, style::Style};
+    use ratatui::{backend::CrosstermBackend, layout::Alignment, style::Style, text::Text};
 
     use crate::{
         app::{log::NotificationLevel, settings::settings_value::SettingsValue, App},
@@ -682,5 +682,51 @@ mod test {
             }
         );
         assert_eq!(header.symbols[&0x50], "_start");
+    }
+
+    #[test]
+    fn test_custom_popup() {
+        let source = "
+            function init(context)
+                context.open_popup(\"fill_popup\")
+            end
+
+            function fill_popup(context)
+                context.text:push_line(\"span1\")
+                context.text:set_style({fg=\"#ff0000\"})
+                context.text:push_line(\"span2\")
+                context.text:reset_style()
+                context.text:push_span(\"span3\")
+                context.text:set_alignment(\"left\")
+                context.text:push_line(\"span4\")
+                context.text:reset_alignment()
+            end
+        ";
+
+        let mut app = App::mockup(vec![0; 0x100]);
+        let mut app_context = get_app_context!(app);
+        app_context.plugin_index = Some(0);
+        let plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
+        let mut popup_text = Text::default();
+        let mut title = String::new();
+        let mut height = 0;
+        let mut width = 0;
+        let popup_context = PopupContext::new(&mut popup_text, &mut title, &mut height, &mut width);
+        plugin
+            .fill_popup("fill_popup", popup_context, app_context)
+            .unwrap();
+        assert_eq!(popup_text.lines.len(), 3);
+        assert_eq!(popup_text.lines[0].spans.len(), 1);
+        assert_eq!(popup_text.lines[1].spans.len(), 2);
+        assert_eq!(popup_text.lines[2].spans.len(), 1);
+        assert_eq!(popup_text.lines[0].spans[0].content, "span1");
+        assert_eq!(
+            popup_text.lines[1].spans[0].style.fg,
+            Some(ratatui::style::Color::Rgb(0xff, 0, 0))
+        );
+        assert_eq!(popup_text.lines[1].spans[0].content, "span2");
+        assert_eq!(popup_text.lines[1].spans[1].content, "span3");
+        assert_eq!(popup_text.lines[2].alignment, Some(Alignment::Left));
+        assert_eq!(popup_text.lines[2].spans[0].content, "span4");
     }
 }
