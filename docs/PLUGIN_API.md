@@ -203,6 +203,7 @@ And the following functions:
 |`open_popup`|`(popup_handler: String)`|Opens a popup, each time the popup is drawn the handler function is called|
 |`get_popup`|`() -> Option<String>`|Returns the name of the `popup_handler` of the currently open popup if there is one opened by this plugin. `nil` otherwise.|
 |`close_popup`|`(popup_handler: Option<String>)`|Closes a popup opened by this plugin. If `popup_handler` is not `nil` it will also check if that is the currently open popup. If no popup is open, this plugin does not own the currently open popup, or the provided handler does not match the function will raise an error.|
+|`get_instant_now`|`() -> Instant`|Gets an instant relative to the time this function was called. The Instant type is explained at [Instant](#instant).|
 
 For more information on the types, see the following sections.
 
@@ -534,3 +535,10 @@ A custom setting can be one of the following types:
 - `KeyEvent`
 
 In the case of a `Style` or `KeyEvent`, the value is effectively a table with the same fields as the type.
+
+### Instant
+
+This type represents a point in time.
+
+This type has the following functions:
+|`elapsed`|`() -> f64`|Gets the time elapsed in seconds since the instant was created. This is a float so the precision should go up to nanoseconds.|
