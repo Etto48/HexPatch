@@ -4,12 +4,14 @@ use mlua::UserData;
 
 #[derive(Clone, Copy, Debug)]
 pub struct PluginInstant {
-    pub inner: Instant
+    pub inner: Instant,
 }
 
 impl PluginInstant {
     pub fn now() -> Self {
-        Self { inner: Instant::now() }
+        Self {
+            inner: Instant::now(),
+        }
     }
 }
 

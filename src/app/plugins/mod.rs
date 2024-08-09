@@ -6,7 +6,7 @@ pub mod header_context;
 pub mod header_parser_info;
 pub mod instruction_info;
 pub mod plugin;
+pub mod plugin_instant;
 pub mod plugin_manager;
 pub mod popup_context;
 pub mod register_userdata;
-pub mod plugin_instant;

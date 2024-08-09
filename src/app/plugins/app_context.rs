@@ -316,9 +316,9 @@ impl<'app> AppContext<'app> {
         context
             .set(
                 "get_instant_now",
-                scope.create_function(|_, ()| {
-                    Ok(PluginInstant::now())
-                }).unwrap()
+                scope
+                    .create_function(|_, ()| Ok(PluginInstant::now()))
+                    .unwrap(),
             )
             .unwrap();
         context
