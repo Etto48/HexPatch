@@ -39,7 +39,7 @@ pub(super) fn get_style<'lua>(lua: &'lua mlua::Lua, style: &Style) -> mlua::Resu
     Ok(table)
 }
 
-pub(super) fn set_style<'lua>(
+pub(in crate::app) fn set_style<'lua>(
     _lua: &'lua mlua::Lua,
     style: &mut Style,
     value: Table<'lua>,

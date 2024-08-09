@@ -365,6 +365,10 @@ To add text to a popup, use the following functions:
 |----------|-----------|-------------|
 |`push_line`|`(line: String)`|Adds a line of text to the popup.|
 |`push_span`|`(span: String)`|Adds text without a newline to the popup.|
+|`set_style`|`(style: Style)`|Sets the style of the text, this will be applied to every line or span until another style is set or `reset_style` is used.|
+|`reset_style`|`()`|Resets the style to the default one. If this function is not called before the end of the FILL_POPUP function, the previously set style will replace the default style for the popup.|
+|`set_alignment`|`(alignment: String)`|Sets the alignment of the text, the possible values are `left`, `center` and `right`, this will be applied to every line until another alignment is set or `reset_alignment` is used.|
+|`reset_alignment`|`()`|Resets the alignment to the default one. If this function is not called before the end of the FILL_POPUP function, the previously set alignment will replace the default alignment for the popup.|
 
 ### MutString
 

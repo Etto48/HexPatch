@@ -1,9 +1,12 @@
-use mlua::{FromLua, IntoLua, Lua, UserDataFields, UserDataMethods};
-use ratatui::text::Text;
+use mlua::{FromLua, IntoLua, Lua, Table, UserDataFields, UserDataMethods};
+use ratatui::{
+    layout::Alignment,
+    text::{Span, Text},
+};
 
 use crate::app::settings::{
     app_settings::AppSettings, color_settings::ColorSettings, key_settings::KeySettings,
-    settings_value::SettingsValue, Settings,
+    register_color_settings_macro::set_style, settings_value::SettingsValue, Settings,
 };
 
 pub fn register_vec_u8(lua: &Lua) -> mlua::Result<()> {
@@ -30,14 +33,42 @@ pub fn register_vec_u8(lua: &Lua) -> mlua::Result<()> {
 }
 
 pub fn register_text(lua: &Lua) -> mlua::Result<()> {
-    // TODO: maybe write a wrapper for Text that allows for easier manipulation
     lua.register_userdata_type(|data: &mut mlua::UserDataRegistry<Text>| {
         data.add_method_mut("push_line", |_lua, this, value: String| {
-            this.push_line(value);
+            let span = Span::styled(value, this.style);
+            let line = match &this.alignment {
+                Some(alignment) => match alignment {
+                    Alignment::Left => span.into_left_aligned_line(),
+                    Alignment::Center => span.into_centered_line(),
+                    Alignment::Right => span.into_right_aligned_line(),
+                },
+                None => span.into(),
+            };
+            this.push_line(line);
             Ok(())
         });
         data.add_method_mut("push_span", |_lua, this, value: String| {
-            this.push_span(value);
+            this.push_span(Span::styled(value, this.style));
+            Ok(())
+        });
+        data.add_method_mut("set_style", |lua, this, value: Table| {
+            set_style(lua, &mut this.style, value)
+        });
+        data.add_method_mut("reset_style", |_lua, this, ()| {
+            this.style = Default::default();
+            Ok(())
+        });
+        data.add_method_mut("set_alignment", |_lua, this, value: String| {
+            match value.as_str() {
+                "left" => this.alignment = Some(Alignment::Left),
+                "center" => this.alignment = Some(Alignment::Center),
+                "right" => this.alignment = Some(Alignment::Right),
+                _ => return Err(mlua::Error::RuntimeError("Invalid alignment".to_string())),
+            }
+            Ok(())
+        });
+        data.add_method_mut("reset_alignment", |_lua, this, ()| {
+            this.alignment = None;
             Ok(())
         });
     })?;
