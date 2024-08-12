@@ -3,7 +3,7 @@ use ratatui::layout::Rect;
 
 use super::rect_borders::RectBorders;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Point {
     pub x: u16,
     pub y: u16,

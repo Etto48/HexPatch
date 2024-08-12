@@ -209,3 +209,102 @@ impl App {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use ratatui::Terminal;
+
+    use crate::app::{mockup::test::MockupBackend, plugins::ui_location::{point::Point, ui_location_info::UiLocationInfo}, App};
+
+
+    #[test]
+    /// This test is strongly dependent on the app layout, so if the layout changes, this test will need to be updated
+    fn test_get_ui_location() {
+        let mut data = vec![0x90;0x100];
+        data[0] = 0x41;
+        data[0x8] = 0x42;
+        let mut app = App::mockup(data);
+        app.resize_to_size(80, 25);
+        let mut terminal = Terminal::new(MockupBackend::new(80, 25)).unwrap();
+        app.draw(&mut terminal).unwrap();
+
+        // Address
+        let global_location = Point::new(1, 1);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::AddressView { file_address: Some(0) });
+        assert_eq!(ui_location.relative_location, Point::new(1, 1));
+        
+        let global_location = Point::new(1, 2);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::AddressView { file_address: Some(0x8) });
+        assert_eq!(ui_location.relative_location, Point::new(1, 2));
+
+        let global_location = Point::new(1, 0);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::AddressView { file_address: None });
+        assert_eq!(ui_location.relative_location, Point::new(1, 0));
+        
+        // Hex
+        let global_location = Point::new(18, 1);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::HexView { file_address: Some(0x0), high: Some(true), virtual_address: Some(0x0), byte: Some(0x41) });
+        assert_eq!(ui_location.relative_location, Point::new(1, 1));
+
+        let global_location = Point::new(18, 2);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::HexView { file_address: Some(0x8), high: Some(true), virtual_address: Some(0x8), byte: Some(0x42) });
+        assert_eq!(ui_location.relative_location, Point::new(1, 2));
+
+        let global_location = Point::new(17, 1);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::HexView { file_address: None, high: None, virtual_address: None, byte: None });
+        assert_eq!(ui_location.relative_location, Point::new(0, 1));
+
+        // Text
+        let global_location = Point::new(42, 1);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::TextView { file_address: Some(0x0), virtual_address: Some(0x0), byte: Some(0x41), character: Some('A') });
+        assert_eq!(ui_location.relative_location, Point::new(0, 1));
+
+        let global_location = Point::new(42, 2);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::TextView { file_address: Some(0x8), virtual_address: Some(0x8), byte: Some(0x42), character: Some('B') });
+        assert_eq!(ui_location.relative_location, Point::new(0, 2));
+
+        let global_location = Point::new(42, 0);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::TextView { file_address: None, virtual_address: None, byte: None, character: None });
+        assert_eq!(ui_location.relative_location, Point::new(0, 0));
+
+        // Change to assembly view
+        app.request_view_change();
+        app.draw(&mut terminal).unwrap();
+
+        // Assembly
+        let global_location = Point::new(42, 3);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::AssemblyView { section: Some(".text".into()), file_address: Some(0x2), virtual_address: Some(0x2), instruction: Some("nop ".into()) });
+        assert_eq!(ui_location.relative_location, Point::new(0, 3));
+
+        // Scroll bar
+        let global_location = Point::new(79, 0);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::ScrollBar);
+        assert_eq!(ui_location.relative_location, Point::new(0, 0));
+
+        // Status bar
+        let global_location = Point::new(0, 24);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::StatusBar);
+        assert_eq!(ui_location.relative_location, Point::new(0, 0));
+
+        // Open popup
+        app.request_popup_run();
+        app.draw(&mut terminal).unwrap();
+
+        // Popup
+        let global_location = Point::new(40, 12);
+        let ui_location = app.get_ui_location(global_location).unwrap();
+        assert_eq!(ui_location.info, UiLocationInfo::Popup { name: "Run".into() });
+    }
+}
