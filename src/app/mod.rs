@@ -8,6 +8,7 @@ pub mod cursor_position;
 pub mod data;
 pub mod events;
 pub mod files;
+pub mod frame_info;
 pub mod help;
 pub mod hex;
 pub mod history;

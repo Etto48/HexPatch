@@ -10,3 +10,4 @@ pub mod plugin_instant;
 pub mod plugin_manager;
 pub mod popup_context;
 pub mod register_userdata;
+pub mod ui_location;

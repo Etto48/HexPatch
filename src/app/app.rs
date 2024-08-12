@@ -13,6 +13,7 @@ use super::{
     asm::assembly_line::AssemblyLine,
     data::Data,
     files::filesystem::FileSystem,
+    frame_info::{FrameInfo, InfoViewFrameInfo},
     help::HelpLine,
     info_mode::InfoMode,
     log::{logger::Logger, NotificationLevel},
@@ -48,6 +49,8 @@ pub struct App {
     pub(super) vertical_margin: u16,
     pub(super) block_size: usize,
     pub(super) blocks_per_row: usize,
+
+    pub(super) last_frame_info: FrameInfo,
 }
 
 impl App {
@@ -148,14 +151,188 @@ impl App {
 
         if app.filesystem.is_file(app.filesystem.pwd()) {
             let path = app.filesystem.pwd().to_string();
-            app.open_file(&path, Some(terminal))
-                .map_err(|e| e.to_string())?;
+            app.open_file(&path, terminal).map_err(|e| e.to_string())?;
         } else {
             let dir = app.filesystem.pwd().to_string();
             Self::open_dir(&mut app.popup, &dir, &mut app.filesystem).map_err(|e| e.to_string())?;
         }
 
         Ok(app)
+    }
+
+    pub fn draw<B: Backend>(
+        &mut self,
+        terminal: &mut ratatui::Terminal<B>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        terminal.draw(|f| {
+            let min_width = self.block_size as u16 * 3 + 17 + 3;
+            if f.area().width < min_width {
+                return;
+            }
+            let status_rect = Rect::new(0, f.area().height - 1, f.area().width, 1);
+            let address_rect = Rect::new(0, 0, 17, f.area().height - status_rect.height);
+            let hex_editor_rect = Rect::new(
+                address_rect.width,
+                0,
+                (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16,
+                f.area().height - status_rect.height,
+            );
+            let info_view_rect = Rect::new(
+                address_rect.width + hex_editor_rect.width,
+                0,
+                f.area().width - hex_editor_rect.width - address_rect.width - 2,
+                f.area().height - status_rect.height,
+            );
+            let scrollbar_rect = Rect::new(f.area().width - 1, 0, 1, f.area().height);
+
+            let status_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
+                .block(Block::default().borders(Borders::NONE));
+
+            let scrolled_amount = self.get_cursor_position().global_byte_index;
+            let total_amount = self.data.len();
+            let scrollbar = ratatui::widgets::Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .style(self.settings.color.scrollbar)
+                .begin_symbol(None)
+                .end_symbol(None)
+                .track_symbol(None);
+            let mut scrollbar_state = ScrollbarState::new(total_amount).position(scrolled_amount);
+
+            let mut info_view_frame_info = InfoViewFrameInfo::TextView;
+
+            if !self.data.is_empty() {
+                let line_start_index = self.scroll;
+                let line_end_index = (self.scroll + f.area().height as usize).saturating_sub(2);
+
+                let address_view = self.get_address_view(line_start_index, line_end_index);
+                let hex_view = self.get_hex_view(line_start_index, line_end_index);
+
+                let address_block = ratatui::widgets::Paragraph::new(address_view).block(
+                    Block::default()
+                        .title("Address")
+                        .borders(Borders::LEFT | Borders::TOP),
+                );
+
+                let editor_title =
+                    format!("Hex Editor{}", if self.data.dirty() { " *" } else { "" });
+
+                let hex_editor_block = ratatui::widgets::Paragraph::new(hex_view).block(
+                    Block::default()
+                        .title(editor_title)
+                        .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT),
+                );
+
+                let info_view_block = match &self.info_mode {
+                    InfoMode::Text => {
+                        let text_subview_lines =
+                            self.get_text_view(line_start_index, line_end_index);
+                        info_view_frame_info = InfoViewFrameInfo::TextView;
+                        let mut text_subview = Text::default();
+                        text_subview
+                            .lines
+                            .extend(text_subview_lines.iter().cloned());
+                        ratatui::widgets::Paragraph::new(text_subview).block(
+                            Block::default()
+                                .title("Text View")
+                                .borders(Borders::TOP | Borders::RIGHT),
+                        )
+                    }
+                    InfoMode::Assembly => {
+                        let assembly_start_index = self.get_assembly_view_scroll();
+                        info_view_frame_info = InfoViewFrameInfo::AssemblyView {
+                            scroll: assembly_start_index,
+                        };
+                        let assembly_end_index = (assembly_start_index + f.area().height as usize
+                            - 2)
+                        .min(self.assembly_instructions.len());
+                        let assembly_subview_lines =
+                            &self.assembly_instructions[assembly_start_index..assembly_end_index];
+                        let mut assembly_subview = Text::default();
+                        let address_min_width = self
+                            .assembly_instructions
+                            .last()
+                            .map(|x| format!("{:X}", x.file_address()).len() + 1)
+                            .unwrap_or(1);
+                        assembly_subview
+                            .lines
+                            .extend(assembly_subview_lines.iter().map(|x| {
+                                x.to_line(
+                                    &self.settings.color,
+                                    self.get_cursor_position().global_byte_index,
+                                    &self.header,
+                                    address_min_width,
+                                )
+                            }));
+                        ratatui::widgets::Paragraph::new(assembly_subview).block(
+                            Block::default()
+                                .title("Assembly View")
+                                .borders(Borders::TOP | Borders::RIGHT),
+                        )
+                    }
+                };
+
+                f.render_widget(address_block, address_rect);
+                f.render_widget(hex_editor_block, hex_editor_rect);
+                f.render_widget(info_view_block, info_view_rect);
+            }
+            f.render_widget(status_block, status_rect);
+            f.render_stateful_widget(scrollbar, scrollbar_rect, &mut scrollbar_state);
+
+            let mut this_frame_info = FrameInfo {
+                popup: None,
+                status_bar: status_rect,
+                scroll_bar: scrollbar_rect,
+                address_view: address_rect,
+                hex_view: hex_editor_rect,
+                info_view: info_view_rect,
+                info_view_frame_info,
+                blocks_per_row: self.blocks_per_row,
+                scroll: self.scroll,
+                file_size: self.data.len(),
+            };
+
+            // Draw popup
+            if self.popup.is_some() {
+                let mut popup_text = Text::default();
+                let mut popup_title = "Popup".into();
+
+                let mut popup_width = 60;
+                let mut popup_height = 5;
+
+                let popup_result = self.fill_popup(
+                    &mut popup_title,
+                    &mut popup_text,
+                    &mut popup_height,
+                    &mut popup_width,
+                );
+
+                popup_height = popup_height.min(f.area().height.saturating_sub(2) as usize);
+                popup_width = popup_width.min(f.area().width.saturating_sub(1) as usize);
+                let popup_rect = Rect::new(
+                    (f.area().width / 2).saturating_sub((popup_width / 2 + 1) as u16),
+                    (f.area().height / 2).saturating_sub((popup_height / 2) as u16),
+                    popup_width as u16,
+                    popup_height as u16,
+                );
+
+                match popup_result {
+                    Ok(()) => {
+                        let popup = ratatui::widgets::Paragraph::new(popup_text)
+                            .block(Block::default().title(popup_title).borders(Borders::ALL))
+                            .alignment(ratatui::layout::Alignment::Center);
+                        f.render_widget(Clear, popup_rect);
+                        f.render_widget(popup, popup_rect);
+                    }
+                    Err(e) => {
+                        self.logger
+                            .log(NotificationLevel::Error, &format!("Filling popup: {e}"));
+                    }
+                }
+                this_frame_info.popup = Some(popup_rect)
+            }
+            self.last_frame_info = this_frame_info;
+        })?;
+
+        Ok(())
     }
 
     pub fn run<B: Backend>(
@@ -176,154 +353,7 @@ impl App {
                 }
             }
 
-            terminal.draw(|f| {
-                let min_width = self.block_size as u16 * 3 + 17 + 3;
-                if f.area().width < min_width {
-                    return;
-                }
-                let output_rect = Rect::new(0, f.area().height - 1, f.area().width, 1);
-                let address_rect = Rect::new(0, 0, 17, f.area().height - output_rect.height);
-                let hex_editor_rect = Rect::new(
-                    address_rect.width,
-                    0,
-                    (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16,
-                    f.area().height - output_rect.height,
-                );
-                let info_view_rect = Rect::new(
-                    address_rect.width + hex_editor_rect.width,
-                    0,
-                    f.area().width - hex_editor_rect.width - address_rect.width - 2,
-                    f.area().height - output_rect.height,
-                );
-                let scrollbar_rect = Rect::new(f.area().width - 1, 0, 1, f.area().height);
-
-                let output_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
-                    .block(Block::default().borders(Borders::NONE));
-
-                let scrolled_amount = self.get_cursor_position().global_byte_index;
-                let total_amount = self.data.len();
-                let scrollbar =
-                    ratatui::widgets::Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                        .style(self.settings.color.scrollbar)
-                        .begin_symbol(None)
-                        .end_symbol(None)
-                        .track_symbol(None);
-                let mut scrollbar_state =
-                    ScrollbarState::new(total_amount).position(scrolled_amount);
-
-                if !self.data.is_empty() {
-                    let line_start_index = self.scroll;
-                    let line_end_index = (self.scroll + f.area().height as usize).saturating_sub(2);
-
-                    let address_view = self.get_address_view(line_start_index, line_end_index);
-                    let hex_view = self.get_hex_view(line_start_index, line_end_index);
-
-                    let address_block = ratatui::widgets::Paragraph::new(address_view).block(
-                        Block::default()
-                            .title("Address")
-                            .borders(Borders::LEFT | Borders::TOP),
-                    );
-
-                    let editor_title =
-                        format!("Hex Editor{}", if self.data.dirty() { " *" } else { "" });
-
-                    let hex_editor_block = ratatui::widgets::Paragraph::new(hex_view).block(
-                        Block::default()
-                            .title(editor_title)
-                            .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT),
-                    );
-
-                    let info_view_block = match &self.info_mode {
-                        InfoMode::Text => {
-                            let text_subview_lines =
-                                self.get_text_view(line_start_index, line_end_index);
-                            let mut text_subview = Text::default();
-                            text_subview
-                                .lines
-                                .extend(text_subview_lines.iter().cloned());
-                            ratatui::widgets::Paragraph::new(text_subview).block(
-                                Block::default()
-                                    .title("Text View")
-                                    .borders(Borders::TOP | Borders::RIGHT),
-                            )
-                        }
-                        InfoMode::Assembly => {
-                            let assembly_start_index = self.get_assembly_view_scroll();
-                            let assembly_end_index =
-                                (assembly_start_index + f.area().height as usize - 2)
-                                    .min(self.assembly_instructions.len());
-                            let assembly_subview_lines = &self.assembly_instructions
-                                [assembly_start_index..assembly_end_index];
-                            let mut assembly_subview = Text::default();
-                            let address_min_width = self
-                                .assembly_instructions
-                                .last()
-                                .map(|x| format!("{:X}", x.file_address()).len() + 1)
-                                .unwrap_or(1);
-                            assembly_subview
-                                .lines
-                                .extend(assembly_subview_lines.iter().map(|x| {
-                                    x.to_line(
-                                        &self.settings.color,
-                                        self.get_cursor_position().global_byte_index,
-                                        &self.header,
-                                        address_min_width,
-                                    )
-                                }));
-                            ratatui::widgets::Paragraph::new(assembly_subview).block(
-                                Block::default()
-                                    .title("Assembly View")
-                                    .borders(Borders::TOP | Borders::RIGHT),
-                            )
-                        }
-                    };
-
-                    f.render_widget(address_block, address_rect);
-                    f.render_widget(hex_editor_block, hex_editor_rect);
-                    f.render_widget(info_view_block, info_view_rect);
-                }
-                f.render_widget(output_block, output_rect);
-                f.render_stateful_widget(scrollbar, scrollbar_rect, &mut scrollbar_state);
-
-                // Draw popup
-                if self.popup.is_some() {
-                    let mut popup_text = Text::default();
-                    let mut popup_title = "Popup".into();
-
-                    let mut popup_width = 60;
-                    let mut popup_height = 5;
-
-                    let popup_result = self.fill_popup(
-                        &mut popup_title,
-                        &mut popup_text,
-                        &mut popup_height,
-                        &mut popup_width,
-                    );
-
-                    popup_height = popup_height.min(f.area().height.saturating_sub(2) as usize);
-                    popup_width = popup_width.min(f.area().width.saturating_sub(1) as usize);
-                    let popup_rect = Rect::new(
-                        (f.area().width / 2).saturating_sub((popup_width / 2 + 1) as u16),
-                        (f.area().height / 2).saturating_sub((popup_height / 2) as u16),
-                        popup_width as u16,
-                        popup_height as u16,
-                    );
-
-                    match popup_result {
-                        Ok(()) => {
-                            let popup = ratatui::widgets::Paragraph::new(popup_text)
-                                .block(Block::default().title(popup_title).borders(Borders::ALL))
-                                .alignment(ratatui::layout::Alignment::Center);
-                            f.render_widget(Clear, popup_rect);
-                            f.render_widget(popup, popup_rect);
-                        }
-                        Err(e) => {
-                            self.logger
-                                .log(NotificationLevel::Error, &format!("Filling popup: {e}"));
-                        }
-                    }
-                }
-            })?;
+            self.draw(terminal)?;
         }
 
         Ok(())
@@ -356,6 +386,19 @@ impl Default for App {
             vertical_margin: 2,
             block_size: 8,
             blocks_per_row: 1,
+
+            last_frame_info: FrameInfo {
+                popup: None,
+                status_bar: Rect::default(),
+                scroll_bar: Rect::default(),
+                address_view: Rect::default(),
+                hex_view: Rect::default(),
+                info_view: Rect::default(),
+                info_view_frame_info: InfoViewFrameInfo::TextView,
+                blocks_per_row: 1,
+                scroll: 0,
+                file_size: 0,
+            },
         }
     }
 }

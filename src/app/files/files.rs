@@ -35,7 +35,7 @@ impl App {
         if self.filesystem.is_dir(selected.path()) {
             Self::open_dir(popup, selected.path(), &mut self.filesystem)?;
         } else {
-            self.open_file(selected.path(), Some(terminal))?;
+            self.open_file(selected.path(), terminal)?;
             *popup = None;
         }
 
@@ -158,7 +158,7 @@ impl App {
     pub(in crate::app) fn open_file<B: Backend>(
         &mut self,
         path: &str,
-        mut terminal: Option<&mut Terminal<B>>,
+        terminal: &mut Terminal<B>,
     ) -> Result<(), Box<dyn Error>> {
         self.log(
             NotificationLevel::Info,
@@ -170,54 +170,35 @@ impl App {
         self.scroll = 0;
         self.cursor = (0, 0);
 
-        (self.screen_size, terminal) = if let Some(terminal) = terminal {
-            (Self::get_size(terminal)?, Some(terminal))
-        } else {
-            ((0, 0), None)
-        };
+        self.screen_size = Self::get_size(terminal)?;
         self.block_size = 8;
         self.vertical_margin = 2;
         self.blocks_per_row = Self::calc_blocks_per_row(self.block_size, self.screen_size.0);
 
-        terminal = if let Some(terminal) = terminal {
-            Self::print_loading_status(
-                &self.settings.color,
-                &format!("Opening \"{}\"...", path),
-                terminal,
-            )?;
-            Some(terminal)
-        } else {
-            None
-        };
+        Self::print_loading_status(
+            &self.settings.color,
+            &format!("Opening \"{}\"...", path),
+            terminal,
+        )?;
         self.data = Data::new(
             self.filesystem.read(self.filesystem.pwd())?,
             self.settings.app.history_limit,
         );
 
-        terminal = if let Some(terminal) = terminal {
-            Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
-            Some(terminal)
-        } else {
-            None
-        };
+        Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
+
         self.header = self.parse_header();
 
-        terminal = if let Some(terminal) = terminal {
-            Self::print_loading_status(
-                &self.settings.color,
-                "Disassembling executable...",
-                terminal,
-            )?;
-            Some(terminal)
-        } else {
-            None
-        };
+        Self::print_loading_status(
+            &self.settings.color,
+            "Disassembling executable...",
+            terminal,
+        )?;
+
         (self.assembly_offsets, self.assembly_instructions) =
             Self::sections_from_bytes(self.data.bytes(), &self.header);
 
-        if let Some(terminal) = terminal {
-            Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
-        }
+        Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
         self.log_header_info();
         let mut app_context = get_app_context!(self);
         self.plugin_manager.on_open(&mut app_context);

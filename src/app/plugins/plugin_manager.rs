@@ -12,6 +12,7 @@ use super::{
     event::{Event, Events},
     plugin::Plugin,
     popup_context::PopupContext,
+    ui_location::ui_location::UiLocation,
 };
 
 #[derive(Default, Debug)]
@@ -128,10 +129,18 @@ impl PluginManager {
         }
     }
 
-    pub fn on_mouse(&mut self, event: MouseEvent, app_context: &mut AppContext) {
+    pub fn on_mouse(
+        &mut self,
+        event: MouseEvent,
+        location: Option<UiLocation>,
+        app_context: &mut AppContext,
+    ) {
         for i in self.on_mouse.iter() {
             app_context.plugin_index = Some(*i);
-            let event = Event::Mouse { event };
+            let event = Event::Mouse {
+                event,
+                location: location.clone(),
+            };
             self.plugins[*i].handle(event, app_context);
         }
     }

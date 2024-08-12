@@ -15,7 +15,7 @@ function on_edit(new_bytes, context)
 end
 
 function on_key(key_event, context)
-    modifiers = ""
+    local modifiers = ""
     if key_event.modifiers.shift then
         modifiers = modifiers .. "+Shift"
     end
@@ -45,7 +45,11 @@ function on_key(key_event, context)
 end
 
 function on_mouse(mouse_event, context)
-    context.log(1, "Mouse event: " .. mouse_event.kind .. "@" .. mouse_event.row .. "," .. mouse_event.column)
+    local location = "nil"
+    if mouse_event.location ~= nil then
+        location = mouse_event.location.info.type
+    end
+    context.log(1, "Mouse event: " .. mouse_event.kind .. " on " .. location .. " @ " .. mouse_event.row .. "," .. mouse_event.column)
 end
 
 function on_focus(context)

@@ -124,6 +124,15 @@ impl Header {
             .map(|x| x.file_offset + virtual_address - x.virtual_address)
     }
 
+    pub fn physical_to_virtual_address(&self, physical_address: u64) -> Option<u64> {
+        self.get_sections()
+            .iter()
+            .find(|x| {
+                physical_address >= x.file_offset && physical_address < x.file_offset + x.size
+            })
+            .map(|x| x.virtual_address + physical_address - x.file_offset)
+    }
+
     pub(super) fn get_decoder_for_arch(architecture: &Architecture) -> CsResult<Capstone> {
         match architecture {
             Architecture::Aarch64 => Capstone::new()
