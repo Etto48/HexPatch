@@ -151,8 +151,7 @@ impl App {
 
         if app.filesystem.is_file(app.filesystem.pwd()) {
             let path = app.filesystem.pwd().to_string();
-            app.open_file(&path, Some(terminal))
-                .map_err(|e| e.to_string())?;
+            app.open_file(&path, terminal).map_err(|e| e.to_string())?;
         } else {
             let dir = app.filesystem.pwd().to_string();
             Self::open_dir(&mut app.popup, &dir, &mut app.filesystem).map_err(|e| e.to_string())?;

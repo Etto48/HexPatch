@@ -259,11 +259,9 @@ impl Plugin {
 
 #[cfg(test)]
 mod test {
-    use std::io::Stdout;
-
     use crossterm::event::{KeyCode, KeyEvent};
     use object::Architecture;
-    use ratatui::{backend::CrosstermBackend, layout::Alignment, style::Style, text::Text};
+    use ratatui::{backend::TestBackend, layout::Alignment, style::Style, text::Text, Terminal};
 
     use crate::{
         app::{log::NotificationLevel, settings::settings_value::SettingsValue, App},
@@ -614,8 +612,8 @@ mod test {
         let header_32 = "test/custom_header/32.bin";
         let header_64 = "test/custom_header/64.bin";
         let mut app = App::default();
-        app.open_file::<CrosstermBackend<Stdout>>(header_32, None)
-            .unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
+        app.open_file(header_32, &mut terminal).unwrap();
         app.logger.clear();
         let mut app_context = get_app_context!(app);
         let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
@@ -642,8 +640,8 @@ mod test {
         assert_eq!(header.symbols[&0x40], "_start");
 
         let mut app = App::default();
-        app.open_file::<CrosstermBackend<Stdout>>(header_64, None)
-            .unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
+        app.open_file(header_64, &mut terminal).unwrap();
         app.logger.clear();
         let mut app_context = get_app_context!(app);
         let mut plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();

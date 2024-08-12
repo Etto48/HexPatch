@@ -212,10 +212,9 @@ impl App {
 
 #[cfg(test)]
 mod tests {
-    use ratatui::Terminal;
+    use ratatui::{backend::TestBackend, Terminal};
 
     use crate::app::{
-        mockup::test::MockupBackend,
         plugins::ui_location::{point::Point, ui_location_info::UiLocationInfo},
         App,
     };
@@ -228,7 +227,7 @@ mod tests {
         data[0x8] = 0x42;
         let mut app = App::mockup(data);
         app.resize_to_size(80, 25);
-        let mut terminal = Terminal::new(MockupBackend::new(80, 25)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
         app.draw(&mut terminal).unwrap();
 
         // Address
