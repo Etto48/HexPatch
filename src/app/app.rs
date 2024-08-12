@@ -13,6 +13,7 @@ use super::{
     asm::assembly_line::AssemblyLine,
     data::Data,
     files::filesystem::FileSystem,
+    frame_info::{FrameInfo, InfoViewFrameInfo},
     help::HelpLine,
     info_mode::InfoMode,
     log::{logger::Logger, NotificationLevel},
@@ -48,6 +49,8 @@ pub struct App {
     pub(super) vertical_margin: u16,
     pub(super) block_size: usize,
     pub(super) blocks_per_row: usize,
+
+    pub(super) last_frame_info: FrameInfo,
 }
 
 impl App {
@@ -181,23 +184,23 @@ impl App {
                 if f.area().width < min_width {
                     return;
                 }
-                let output_rect = Rect::new(0, f.area().height - 1, f.area().width, 1);
-                let address_rect = Rect::new(0, 0, 17, f.area().height - output_rect.height);
+                let status_rect = Rect::new(0, f.area().height - 1, f.area().width, 1);
+                let address_rect = Rect::new(0, 0, 17, f.area().height - status_rect.height);
                 let hex_editor_rect = Rect::new(
                     address_rect.width,
                     0,
                     (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16,
-                    f.area().height - output_rect.height,
+                    f.area().height - status_rect.height,
                 );
                 let info_view_rect = Rect::new(
                     address_rect.width + hex_editor_rect.width,
                     0,
                     f.area().width - hex_editor_rect.width - address_rect.width - 2,
-                    f.area().height - output_rect.height,
+                    f.area().height - status_rect.height,
                 );
                 let scrollbar_rect = Rect::new(f.area().width - 1, 0, 1, f.area().height);
 
-                let output_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
+                let status_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
                     .block(Block::default().borders(Borders::NONE));
 
                 let scrolled_amount = self.get_cursor_position().global_byte_index;
@@ -210,6 +213,8 @@ impl App {
                         .track_symbol(None);
                 let mut scrollbar_state =
                     ScrollbarState::new(total_amount).position(scrolled_amount);
+
+                let mut info_view_frame_info = InfoViewFrameInfo::TextView;
 
                 if !self.data.is_empty() {
                     let line_start_index = self.scroll;
@@ -237,6 +242,7 @@ impl App {
                         InfoMode::Text => {
                             let text_subview_lines =
                                 self.get_text_view(line_start_index, line_end_index);
+                            info_view_frame_info = InfoViewFrameInfo::TextView;
                             let mut text_subview = Text::default();
                             text_subview
                                 .lines
@@ -249,6 +255,9 @@ impl App {
                         }
                         InfoMode::Assembly => {
                             let assembly_start_index = self.get_assembly_view_scroll();
+                            info_view_frame_info = InfoViewFrameInfo::AssemblyView {
+                                scroll: assembly_start_index,
+                            };
                             let assembly_end_index =
                                 (assembly_start_index + f.area().height as usize - 2)
                                     .min(self.assembly_instructions.len());
@@ -282,8 +291,21 @@ impl App {
                     f.render_widget(hex_editor_block, hex_editor_rect);
                     f.render_widget(info_view_block, info_view_rect);
                 }
-                f.render_widget(output_block, output_rect);
+                f.render_widget(status_block, status_rect);
                 f.render_stateful_widget(scrollbar, scrollbar_rect, &mut scrollbar_state);
+
+                let mut this_frame_info = FrameInfo {
+                    popup: None,
+                    status_bar: status_rect,
+                    scroll_bar: scrollbar_rect,
+                    address_view: address_rect,
+                    hex_view: hex_editor_rect,
+                    info_view: info_view_rect,
+                    info_view_frame_info,
+                    blocks_per_row: self.blocks_per_row,
+                    scroll: self.scroll,
+                    file_size: self.data.len(),
+                };
 
                 // Draw popup
                 if self.popup.is_some() {
@@ -322,7 +344,9 @@ impl App {
                                 .log(NotificationLevel::Error, &format!("Filling popup: {e}"));
                         }
                     }
+                    this_frame_info.popup = Some(popup_rect)
                 }
+                self.last_frame_info = this_frame_info;
             })?;
         }
 
@@ -356,6 +380,19 @@ impl Default for App {
             vertical_margin: 2,
             block_size: 8,
             blocks_per_row: 1,
+
+            last_frame_info: FrameInfo {
+                popup: None,
+                status_bar: Rect::default(),
+                scroll_bar: Rect::default(),
+                address_view: Rect::default(),
+                hex_view: Rect::default(),
+                info_view: Rect::default(),
+                info_view_frame_info: InfoViewFrameInfo::TextView,
+                blocks_per_row: 1,
+                scroll: 0,
+                file_size: 0,
+            },
         }
     }
 }

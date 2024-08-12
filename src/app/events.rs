@@ -4,6 +4,7 @@ use ratatui::{backend::Backend, Terminal};
 use crate::get_app_context;
 
 use super::{
+    plugins::ui_location::point::Point,
     popup::{binary_choice::BinaryChoice, popup_state::PopupState, simple_choice::SimpleChoice},
     settings::key_settings::KeySettings,
     App,
@@ -632,6 +633,7 @@ impl App {
                 self.plugin_manager.on_key(*ke, &mut app_context);
             }
             event::Event::Mouse(me) => {
+                let location = self.get_ui_location(Point::new(me.column, me.row));
                 let mut app_context = get_app_context!(self);
                 self.plugin_manager.on_mouse(*me, &mut app_context);
             }
