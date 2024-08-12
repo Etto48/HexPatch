@@ -2,7 +2,11 @@
 pub mod test {
     use std::io::{Stdout, Write};
 
-    use ratatui::{backend::CrosstermBackend, layout::{Position, Size}, prelude::Backend};
+    use ratatui::{
+        backend::CrosstermBackend,
+        layout::{Position, Size},
+        prelude::Backend,
+    };
 
     use crate::app::App;
 
@@ -23,42 +27,43 @@ pub mod test {
     impl Backend for MockupBackend {
         fn draw<'a, I>(&mut self, _content: I) -> std::io::Result<()>
         where
-            I: Iterator<Item = (u16, u16, &'a ratatui::buffer::Cell)> {
+            I: Iterator<Item = (u16, u16, &'a ratatui::buffer::Cell)>,
+        {
             Ok(())
         }
-    
+
         fn hide_cursor(&mut self) -> std::io::Result<()> {
             Ok(())
         }
-    
+
         fn show_cursor(&mut self) -> std::io::Result<()> {
             Ok(())
         }
-    
+
         fn get_cursor_position(&mut self) -> std::io::Result<Position> {
             Ok(self.cursor_position)
         }
-    
+
         fn set_cursor_position<P: Into<Position>>(&mut self, position: P) -> std::io::Result<()> {
             self.cursor_position = position.into();
             Ok(())
         }
-    
+
         fn clear(&mut self) -> std::io::Result<()> {
             Ok(())
         }
-    
+
         fn size(&self) -> std::io::Result<Size> {
             Ok(self.size)
         }
-    
+
         fn window_size(&mut self) -> std::io::Result<ratatui::backend::WindowSize> {
             Ok(ratatui::backend::WindowSize {
                 columns_rows: self.size,
                 pixels: Size::new(self.size.width * 8, self.size.height * 8),
             })
         }
-    
+
         fn flush(&mut self) -> std::io::Result<()> {
             Ok(())
         }

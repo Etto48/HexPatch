@@ -5,15 +5,27 @@ use super::ui_location::ui_location::UiLocation;
 
 pub enum Event<'app> {
     Open,
-    Edit { new_bytes: &'app mut Vec<u8> },
+    Edit {
+        new_bytes: &'app mut Vec<u8>,
+    },
     Save,
-    Key { event: KeyEvent },
+    Key {
+        event: KeyEvent,
+    },
     // TODO: provide more abstract info about where the mouse event occurred
-    Mouse { event: MouseEvent, location: Option<UiLocation> },
+    Mouse {
+        event: MouseEvent,
+        location: Option<UiLocation>,
+    },
     Focus,
     Blur,
-    Paste { text: String },
-    Resize { width: u16, height: u16 },
+    Paste {
+        text: String,
+    },
+    Resize {
+        width: u16,
+        height: u16,
+    },
 }
 
 bitflags! {

@@ -161,7 +161,10 @@ impl App {
         Ok(app)
     }
 
-    pub fn draw<B: Backend>(&mut self, terminal: &mut ratatui::Terminal<B>) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn draw<B: Backend>(
+        &mut self,
+        terminal: &mut ratatui::Terminal<B>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         terminal.draw(|f| {
             let min_width = self.block_size as u16 * 3 + 17 + 3;
             if f.area().width < min_width {
@@ -188,14 +191,12 @@ impl App {
 
             let scrolled_amount = self.get_cursor_position().global_byte_index;
             let total_amount = self.data.len();
-            let scrollbar =
-                ratatui::widgets::Scrollbar::new(ScrollbarOrientation::VerticalRight)
-                    .style(self.settings.color.scrollbar)
-                    .begin_symbol(None)
-                    .end_symbol(None)
-                    .track_symbol(None);
-            let mut scrollbar_state =
-                ScrollbarState::new(total_amount).position(scrolled_amount);
+            let scrollbar = ratatui::widgets::Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .style(self.settings.color.scrollbar)
+                .begin_symbol(None)
+                .end_symbol(None)
+                .track_symbol(None);
+            let mut scrollbar_state = ScrollbarState::new(total_amount).position(scrolled_amount);
 
             let mut info_view_frame_info = InfoViewFrameInfo::TextView;
 
@@ -241,11 +242,11 @@ impl App {
                         info_view_frame_info = InfoViewFrameInfo::AssemblyView {
                             scroll: assembly_start_index,
                         };
-                        let assembly_end_index =
-                            (assembly_start_index + f.area().height as usize - 2)
-                                .min(self.assembly_instructions.len());
-                        let assembly_subview_lines = &self.assembly_instructions
-                            [assembly_start_index..assembly_end_index];
+                        let assembly_end_index = (assembly_start_index + f.area().height as usize
+                            - 2)
+                        .min(self.assembly_instructions.len());
+                        let assembly_subview_lines =
+                            &self.assembly_instructions[assembly_start_index..assembly_end_index];
                         let mut assembly_subview = Text::default();
                         let address_min_width = self
                             .assembly_instructions
@@ -331,7 +332,7 @@ impl App {
             }
             self.last_frame_info = this_frame_info;
         })?;
-        
+
         Ok(())
     }
 

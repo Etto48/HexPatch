@@ -37,38 +37,53 @@ impl<'lua> IntoLua<'lua> for UiLocationInfo {
             UiLocationInfo::AddressView { file_address } => {
                 ret.set("type", "AddressView")?;
                 ret.set("file_address", file_address)?;
-            },
-            UiLocationInfo::HexView { file_address, high, virtual_address, byte } => {
+            }
+            UiLocationInfo::HexView {
+                file_address,
+                high,
+                virtual_address,
+                byte,
+            } => {
                 ret.set("type", "HexView")?;
                 ret.set("file_address", file_address)?;
                 ret.set("high", high)?;
                 ret.set("virtual_address", virtual_address)?;
                 ret.set("byte", byte)?;
-            },
-            UiLocationInfo::TextView { file_address, virtual_address, byte, character } => {
+            }
+            UiLocationInfo::TextView {
+                file_address,
+                virtual_address,
+                byte,
+                character,
+            } => {
                 ret.set("type", "TextView")?;
                 ret.set("file_address", file_address)?;
                 ret.set("virtual_address", virtual_address)?;
                 ret.set("byte", byte)?;
-                ret.set("character", character.map(|c|c.to_string()))?;
-            },
-            UiLocationInfo::AssemblyView { section, file_address, virtual_address, instruction } => {
+                ret.set("character", character.map(|c| c.to_string()))?;
+            }
+            UiLocationInfo::AssemblyView {
+                section,
+                file_address,
+                virtual_address,
+                instruction,
+            } => {
                 ret.set("type", "AssemblyView")?;
                 ret.set("section", section)?;
                 ret.set("file_address", file_address)?;
                 ret.set("virtual_address", virtual_address)?;
                 ret.set("instruction", instruction)?;
-            },
+            }
             UiLocationInfo::StatusBar => {
                 ret.set("type", "StatusBar")?;
-            },
+            }
             UiLocationInfo::ScrollBar => {
                 ret.set("type", "ScrollBar")?;
-            },
+            }
             UiLocationInfo::Popup { name } => {
                 ret.set("type", "Popup")?;
                 ret.set("name", name)?;
-            },
+            }
         }
         Ok(mlua::Value::Table(ret))
     }
