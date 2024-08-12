@@ -635,7 +635,7 @@ impl App {
             event::Event::Mouse(me) => {
                 let location = self.get_ui_location(Point::new(me.column, me.row));
                 let mut app_context = get_app_context!(self);
-                self.plugin_manager.on_mouse(*me, &mut app_context);
+                self.plugin_manager.on_mouse(*me, location, &mut app_context);
             }
             event::Event::Paste(s) => {
                 let mut app_context = get_app_context!(self);

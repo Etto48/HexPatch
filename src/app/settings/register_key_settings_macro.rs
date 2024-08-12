@@ -1,6 +1,8 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyEventState, KeyModifiers, MouseEvent};
 use mlua::{Lua, Table};
 
+use crate::app::plugins::ui_location::ui_location::UiLocation;
+
 use super::key_settings::KeySettings;
 
 #[macro_export]
@@ -50,7 +52,7 @@ fn key_state_to_table(lua: &Lua, state: KeyEventState) -> mlua::Result<Table> {
     Ok(ret)
 }
 
-pub fn mouse_event_to_lua<'lua>(lua: &'lua Lua, mouse: &MouseEvent) -> mlua::Result<Table<'lua>> {
+pub fn mouse_event_to_lua<'lua>(lua: &'lua Lua, mouse: &MouseEvent, location: Option<UiLocation>) -> mlua::Result<Table<'lua>> {
     let ret = lua.create_table()?;
     ret.set("kind", format!("{:?}", mouse.kind))?;
     ret.set("column", mouse.column)?;
@@ -58,6 +60,7 @@ pub fn mouse_event_to_lua<'lua>(lua: &'lua Lua, mouse: &MouseEvent) -> mlua::Res
 
     let modifiers = key_modifiers_to_table(lua, mouse.modifiers)?;
     ret.set("modifiers", modifiers)?;
+    ret.set("location", location)?;
     Ok(ret)
 }
 

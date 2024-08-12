@@ -1,3 +1,5 @@
+use mlua::IntoLua;
+
 use crate::app::{
     asm::assembly_line::AssemblyLine, frame_info::InfoViewFrameInfo,
     popup::popup_state::PopupState, App,
@@ -9,6 +11,15 @@ use super::{point::Point, rect_borders::RectBorders, ui_location_info::UiLocatio
 pub struct UiLocation {
     pub info: UiLocationInfo,
     pub relative_location: Point,
+}
+
+impl<'lua> IntoLua<'lua> for UiLocation {
+    fn into_lua(self, lua: &'lua mlua::Lua) -> mlua::Result<mlua::Value<'lua>> {
+        let ret = lua.create_table()?;
+        ret.set("info", self.info)?;
+        ret.set("relative_location", self.relative_location)?;
+        Ok(mlua::Value::Table(ret))
+    }
 }
 
 impl App {

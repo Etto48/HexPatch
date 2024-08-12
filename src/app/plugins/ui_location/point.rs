@@ -1,3 +1,4 @@
+use mlua::IntoLua;
 use ratatui::layout::Rect;
 
 use super::rect_borders::RectBorders;
@@ -32,5 +33,14 @@ impl Point {
         } else {
             None
         }
+    }
+}
+
+impl<'lua> IntoLua<'lua> for Point {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
+        let ret = lua.create_table()?;
+        ret.set("x", self.x)?;
+        ret.set("y", self.y)?;
+        Ok(mlua::Value::Table(ret))
     }
 }

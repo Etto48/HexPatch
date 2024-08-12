@@ -139,10 +139,10 @@ impl Plugin {
                     on_key.call::<_, ()>((event, context))
                 })
             }
-            Event::Mouse { event } => {
+            Event::Mouse { event, location } => {
                 // Call the on_mouse function
                 let on_mouse = self.lua.globals().get::<_, Function>("on_mouse").unwrap();
-                let event = mouse_event_to_lua(&self.lua, &event).unwrap();
+                let event = mouse_event_to_lua(&self.lua, &event, location).unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
                     on_mouse.call::<_, ()>((event, context))

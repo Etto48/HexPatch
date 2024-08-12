@@ -1,13 +1,15 @@
 use bitflags::bitflags;
 use crossterm::event::{KeyEvent, MouseEvent};
 
+use super::ui_location::ui_location::UiLocation;
+
 pub enum Event<'app> {
     Open,
     Edit { new_bytes: &'app mut Vec<u8> },
     Save,
     Key { event: KeyEvent },
     // TODO: provide more abstract info about where the mouse event occurred
-    Mouse { event: MouseEvent },
+    Mouse { event: MouseEvent, location: Option<UiLocation> },
     Focus,
     Blur,
     Paste { text: String },

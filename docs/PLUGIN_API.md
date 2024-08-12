@@ -328,7 +328,8 @@ This table contains the following fields:
 |`kind`|`String`|The kind of mouse event, a list of possible values is available at [MouseEvent.kind](#mouseeventkind)|
 |`column`|`usize`|The column of the terminal where the event happened.|
 |`row`|`usize`|The row of the terminal where the event happened.|
-|`modifiers`|`Table`|A table containing the modifiers that were pressed, the entries are explained at [KeyEvent.modifiers](#keyeventmodifiers) (This is the same table of the KeyEvent)|
+|`modifiers`|`Table`|A table containing the modifiers that were pressed, the entries are explained at [KeyEvent.modifiers](#keyeventmodifiers) (This is the same table of the KeyEvent).|
+|`location`|`Table`|A table containing the location of the mouse event, the entries are explained at [MouseEvent.location](#mouseeventlocation).|
 
 #### MouseEvent.kind
 
@@ -348,6 +349,68 @@ The following values are possible for the `kind` field:
 - `ScrollUp`
 - `ScrollLeft`
 - `ScrollRight`
+
+#### MouseEvent.location
+
+This table contains the following fields:
+| Field | Type | Description |
+|-------|------|-------------|
+|`info`|`Table`|A table containing info about the location of the mouse event, the entries are explained at [MouseEvent.location.info](#mouseeventlocationinfo).|
+|`relative_location`|`Table`|A table containing the position of the event relative to the UI section (e.g. the offset from the top left corner of a popup when the popup window is clicked). The contents of this table are just `x` and `y` integer offsets from the top left corner of the container.|
+
+##### MouseEvent.location.info
+
+This table has different values depending on which component of the UI is involved with the event.
+The table always contains the `type` key and depending on the corresponding value, it may contain other keys. These are the possible values for the `type` key and the corresponding additional keys:
+
+- `"AddressView"`
+  | Field | Type | Description |
+  |-------|------|-------------|
+  |`file_address`|`Option<u64>`|The file address pointed by the mouse during the event. `nil` if the event is not on an address.|
+- `"HexView"`
+  | Field | Type | Description |
+  |-------|------|-------------|
+  |`file_address`|`Option<u64>`|The file address of the byte pointed by the mouse during the event. `nil` if the event is not on a byte.|
+  |`high`|`Option<bool>`|Whether the mouse is on the high or low half of the byte. `nil` if the event is not on a byte.|
+  |`virtual_address`|`Option<u64>`|The virtual address of the byte pointed by the mouse during the event. `nil` if the event is not on a byte.|
+  |`byte`|`Option<u8>`|The byte pointed by the mouse during the event. `nil` if the event is not on a byte.|
+- `"TextView"`
+  | Field | Type | Description |
+  |-------|------|-------------|
+  |`file_address`|`Option<u64>`|The file address of the character pointed by the mouse during the event. `nil` if the event is not on a character.|
+  |`virtual_address`|`Option<u64>`|The virtual address of the character pointed by the mouse during the event. `nil` if the event is not on a character.|
+  |`byte`|`Option<u8>`|The byte pointed by the mouse during the event. `nil` if the event is not on a character.|
+  |`character`|`Option<char>`|The character pointed by the mouse during the event. `nil` if the event is not on a character or the byte is not a valid ASCII character.|
+- `"AssemblyView"`
+  | Field | Type | Description |
+  |-------|------|-------------|
+  |`section`|`Option<String>`|The section of the instruction pointed by the mouse during the event or the section pointed by the mouse during the event. `nil` if the event is not on an instruction nor on a section.|
+  |`file_address`|`Option<u64>`|The file address of the instruction or section pointed by the mouse during the event. `nil` if the event is not on an instruction nor on a section.|
+  |`virtual_address`|`Option<u64>`|The virtual address of the instruction or section pointed by the mouse during the event. `nil` if the event is not on an instruction nor on a section.|
+  |`instruction`|`Option<String>`|The instruction pointed by the mouse during the event. `nil` if the event is not on an instruction.|
+- `"StatusBar"`
+- `"ScrollBar"`
+- `"Popup"`
+  | Field | Type | Description |
+  |-------|------|-------------|
+  |`name`|`String`|The name of the popup, possible names are listed below.|
+  
+  The possible names for popups are:
+
+  - `"Open"`
+  - `"Run"`
+  - `"FindText"`
+  - `"FindSymbol"`
+  - `"Log"`
+  - `"InsertText"`
+  - `"Patch"`
+  - `"JumpToAddress"`
+  - `"QuitDirtySave"`
+  - `"SaveAndQuit"`
+  - `"SaveAs"`
+  - `"Save"`
+  - `"Help"`
+  - `"Custom"`
 
 ### PopupContext
 
