@@ -329,7 +329,7 @@ This table contains the following fields:
 |`column`|`usize`|The column of the terminal where the event happened.|
 |`row`|`usize`|The row of the terminal where the event happened.|
 |`modifiers`|`Table`|A table containing the modifiers that were pressed, the entries are explained at [KeyEvent.modifiers](#keyeventmodifiers) (This is the same table of the KeyEvent).|
-|`location`|`Table`|A table containing the location of the mouse event, the entries are explained at [MouseEvent.location](#mouseeventlocation).|
+|`location`|`Option<Table>`|A table containing the location of the mouse event, the entries are explained at [MouseEvent.location](#mouseeventlocation). This can be `nil` if the event is not on a specific component of the UI.|
 
 #### MouseEvent.kind
 
