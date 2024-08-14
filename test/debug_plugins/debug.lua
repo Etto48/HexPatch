@@ -1,5 +1,7 @@
+mouse_ctl = false
 function init(context)
     context.add_command("debug", "Open debug popup")
+    context.add_command("mousectl", "Toggle mouse controlled UI")
 end
 
 function on_open(context)
@@ -48,6 +50,12 @@ function on_mouse(mouse_event, context)
     local location = "nil"
     if mouse_event.location ~= nil then
         location = mouse_event.location.info.type
+        if mouse_ctl
+            and mouse_event.kind == "Down(Left)" 
+            and mouse_event.location.info.file_address ~= nil 
+        then
+            context.jump_to(mouse_event.location.info.file_address)
+        end
     end
     context.log(1, "Mouse event: " .. mouse_event.kind .. " on " .. location .. " @ " .. mouse_event.row .. "," .. mouse_event.column)
 end
@@ -70,6 +78,10 @@ end
 
 function debug(context)
     context.open_popup("fill_popup")
+end
+
+function mousectl(context)
+    mouse_ctl = not mouse_ctl
 end
 
 last_time_enter_pressed = nil

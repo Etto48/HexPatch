@@ -1,6 +1,9 @@
-use std::sync::{Arc, Mutex};
+use std::{
+    ops::Deref,
+    sync::{Arc, Mutex},
+};
 
-use mlua::{Function, Lua, Scope};
+use mlua::{Function, Lua, Scope, Table};
 
 use crate::{
     app::{
@@ -8,6 +11,7 @@ use crate::{
         log::{logger::Logger, NotificationLevel},
         popup::popup_state::PopupState,
         settings::Settings,
+        App,
     },
     headers::Header,
 };
@@ -25,6 +29,11 @@ macro_rules! get_app_context {
             $app.get_current_instruction().map(|i| i.into()),
             $app.screen_size.1,
             $app.screen_size.0,
+            $app.blocks_per_row,
+            $app.block_size,
+            $app.vertical_margin,
+            &mut $app.scroll,
+            &mut $app.cursor,
             &mut $app.data,
             &$app.header,
             &mut $app.settings,
@@ -41,7 +50,12 @@ pub struct AppContext<'app> {
 
     pub screen_height: u16,
     pub screen_width: u16,
-    pub data: &'app mut Data,
+    pub blocks_per_row: usize,
+    pub block_size: usize,
+    pub vertical_margin: u16,
+    pub data: Arc<Mutex<&'app mut Data>>,
+    pub scroll: &'app mut usize,
+    pub cursor: &'app mut (u16, u16),
     pub offset: usize,
     pub current_instruction: Option<InstructionInfo>,
     pub header: &'app Header,
@@ -57,6 +71,11 @@ impl<'app> AppContext<'app> {
         current_instruction: Option<InstructionInfo>,
         screen_height: u16,
         screen_width: u16,
+        blocks_per_row: usize,
+        block_size: usize,
+        vertical_margin: u16,
+        scroll: &'app mut usize,
+        cursor: &'app mut (u16, u16),
         data: &'app mut Data,
         header: &'app Header,
         settings: &'app mut Settings,
@@ -69,7 +88,12 @@ impl<'app> AppContext<'app> {
             plugin_index: None,
             screen_height,
             screen_width,
-            data,
+            blocks_per_row,
+            block_size,
+            vertical_margin,
+            data: Arc::new(Mutex::new(data)),
+            scroll,
+            cursor,
             offset,
             current_instruction,
             header,
@@ -297,9 +321,32 @@ impl<'app> AppContext<'app> {
 
         context.set("screen_height", self.screen_height).unwrap();
         context.set("screen_width", self.screen_width).unwrap();
-        context
-            .set("data", scope.create_userdata_ref_mut(self.data).unwrap())
-            .unwrap();
+        let data = lua.create_table().unwrap();
+        data.set("len", self.data.lock().unwrap().len()).unwrap();
+        data.set(
+            "get",
+            scope
+                .create_function_mut(|_, (_this, index): (Table, usize)| {
+                    let data = self.data.lock().unwrap();
+                    match data.get(index) {
+                        Some(byte) => Ok(byte),
+                        None => Err(mlua::Error::external("Index out of bounds")),
+                    }
+                })
+                .unwrap(),
+        )
+        .unwrap();
+        data.set(
+            "set",
+            scope
+                .create_function_mut(|_, (_this, index, byte): (Table, usize, u8)| {
+                    let mut data = self.data.lock().unwrap();
+                    data.set(index, byte)
+                })
+                .unwrap(),
+        )
+        .unwrap();
+        context.set("data", data).unwrap();
         context.set("offset", self.offset).unwrap();
         context
             .set("current_instruction", self.current_instruction.clone())
@@ -318,6 +365,26 @@ impl<'app> AppContext<'app> {
                 "get_instant_now",
                 scope
                     .create_function(|_, ()| Ok(PluginInstant::now()))
+                    .unwrap(),
+            )
+            .unwrap();
+        context
+            .set(
+                "jump_to",
+                scope
+                    .create_function_mut(|_, file_address: usize| {
+                        App::jump_to_no_self(
+                            file_address,
+                            self.data.lock().unwrap().deref(),
+                            (self.screen_width, self.screen_height),
+                            self.vertical_margin,
+                            self.scroll,
+                            self.cursor,
+                            self.block_size,
+                            self.blocks_per_row,
+                        );
+                        Ok(())
+                    })
                     .unwrap(),
             )
             .unwrap();

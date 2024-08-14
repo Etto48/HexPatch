@@ -433,7 +433,7 @@ mod test {
             event: KeyEvent::from(KeyCode::Down),
         };
         plugin.handle_with_error(event, &mut app_context).unwrap();
-        assert_eq!(app_context.data.bytes()[0], 0);
+        assert_eq!(app_context.data.lock().unwrap().bytes()[0], 0);
         let event = Event::Key {
             event: app_context.settings.key.confirm,
         };
@@ -748,5 +748,23 @@ mod test {
         let mut app = App::mockup(vec![0; 0x100]);
         let mut app_context = get_app_context!(app);
         Plugin::new_from_source(source, &mut app_context).unwrap();
+    }
+
+    #[test]
+    fn test_jump_to() {
+        let source = "
+            function on_key(key_event, context)
+                context.jump_to(0x42)
+            end
+        ";
+
+        let mut app = App::mockup(vec![0; 0x100]);
+        let mut app_context = get_app_context!(app);
+        let mut plugin = Plugin::new_from_source(source, &mut app_context).unwrap();
+        let event = Event::Key {
+            event: KeyEvent::from(KeyCode::Down),
+        };
+        plugin.handle_with_error(event, &mut app_context).unwrap();
+        assert_eq!(app.get_cursor_position().global_byte_index, 0x42);
     }
 }
