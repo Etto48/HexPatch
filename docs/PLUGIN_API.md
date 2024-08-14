@@ -204,6 +204,7 @@ And the following functions:
 |`get_popup`|`() -> Option<String>`|Returns the name of the `popup_handler` of the currently open popup if there is one opened by this plugin. `nil` otherwise.|
 |`close_popup`|`(popup_handler: Option<String>)`|Closes a popup opened by this plugin. If `popup_handler` is not `nil` it will also check if that is the currently open popup. If no popup is open, this plugin does not own the currently open popup, or the provided handler does not match the function will raise an error.|
 |`get_instant_now`|`() -> Instant`|Gets an instant relative to the time this function was called. The Instant type is explained at [Instant](#instant).|
+|`jump_to`|`(file_address: usize)`|Makes the UI jump to the specified file address.|
 
 For more information on the types, see the following sections.
 

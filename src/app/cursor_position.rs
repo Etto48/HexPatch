@@ -1,4 +1,4 @@
-use super::{log::NotificationLevel, App};
+use super::{data::Data, log::NotificationLevel, App};
 
 pub struct CursorPosition {
     pub cursor: Option<(u16, u16)>,
@@ -22,8 +22,14 @@ impl CursorPosition {
 }
 
 impl App {
-    pub(super) fn get_cursor_position(&self) -> CursorPosition {
-        if self.data.is_empty() || self.blocks_per_row == 0 {
+    pub(super) fn get_cursor_position_no_self(
+        data: &Data,
+        blocks_per_row: usize,
+        block_size: usize,
+        cursor: (u16, u16),
+        scroll: usize,
+    ) -> CursorPosition {
+        if data.is_empty() || blocks_per_row == 0 {
             return CursorPosition {
                 cursor: Some((0, 0)),
                 local_x: 0,
@@ -36,19 +42,18 @@ impl App {
                 high_byte: false,
             };
         }
-        let local_x = self.cursor.0 as usize % (self.block_size * 3 + 1);
+        let local_x = cursor.0 as usize % (block_size * 3 + 1);
         let high_byte = local_x % 3 == 0;
         let local_byte_index = local_x / 3;
-        let block_index = self.cursor.0 as usize / (self.block_size * 3 + 1)
-            + (self.scroll + self.cursor.1 as usize) * self.blocks_per_row;
-        let local_block_index = block_index % self.blocks_per_row;
-        let line_index = block_index / self.blocks_per_row;
-        let line_byte_index = local_byte_index + self.block_size * local_block_index;
-        let global_byte_index =
-            line_byte_index + line_index * self.block_size * self.blocks_per_row;
+        let block_index = cursor.0 as usize / (block_size * 3 + 1)
+            + (scroll + cursor.1 as usize) * blocks_per_row;
+        let local_block_index = block_index % blocks_per_row;
+        let line_index = block_index / blocks_per_row;
+        let line_byte_index = local_byte_index + block_size * local_block_index;
+        let global_byte_index = line_byte_index + line_index * block_size * blocks_per_row;
 
         CursorPosition {
-            cursor: Some(self.cursor),
+            cursor: Some(cursor),
             local_x,
             local_byte_index,
             block_index,
@@ -59,27 +64,38 @@ impl App {
             high_byte,
         }
     }
+    pub(super) fn get_cursor_position(&self) -> CursorPosition {
+        Self::get_cursor_position_no_self(
+            &self.data,
+            self.blocks_per_row,
+            self.block_size,
+            self.cursor,
+            self.scroll,
+        )
+    }
 
-    pub(super) fn get_expected_cursor_position(
-        &self,
+    pub(super) fn get_expected_cursor_position_no_self(
         global_byte_index: usize,
         high_byte: bool,
+        block_size: usize,
+        blocks_per_row: usize,
+        screen_size: (u16, u16),
+        vertical_margin: u16,
+        scroll: usize,
     ) -> CursorPosition {
-        let block_index = global_byte_index / self.block_size;
-        let line_index = block_index / self.blocks_per_row;
-        let local_block_index = block_index % self.blocks_per_row;
-        let local_byte_index = global_byte_index % self.block_size;
-        let local_x =
-            (local_byte_index + local_block_index * self.block_size) * 3 + local_block_index;
+        let block_index = global_byte_index / block_size;
+        let line_index = block_index / blocks_per_row;
+        let local_block_index = block_index % blocks_per_row;
+        let local_byte_index = global_byte_index % block_size;
+        let local_x = (local_byte_index + local_block_index * block_size) * 3 + local_block_index;
         let cursor_x = local_x as u16 + if high_byte { 0 } else { 1 };
-        let cursor_y = line_index as isize - self.scroll as isize;
-        let cursor = if cursor_y < 0
-            || cursor_y >= self.screen_size.1 as isize - self.vertical_margin as isize
-        {
-            None
-        } else {
-            Some((cursor_x, cursor_y as u16))
-        };
+        let cursor_y = line_index as isize - scroll as isize;
+        let cursor =
+            if cursor_y < 0 || cursor_y >= screen_size.1 as isize - vertical_margin as isize {
+                None
+            } else {
+                Some((cursor_x, cursor_y as u16))
+            };
 
         CursorPosition {
             cursor,
@@ -88,10 +104,26 @@ impl App {
             block_index,
             local_block_index,
             line_index,
-            line_byte_index: local_byte_index + local_block_index * self.block_size,
+            line_byte_index: local_byte_index + local_block_index * block_size,
             global_byte_index,
             high_byte,
         }
+    }
+
+    pub(super) fn get_expected_cursor_position(
+        &self,
+        global_byte_index: usize,
+        high_byte: bool,
+    ) -> CursorPosition {
+        Self::get_expected_cursor_position_no_self(
+            global_byte_index,
+            high_byte,
+            self.block_size,
+            self.blocks_per_row,
+            self.screen_size,
+            self.vertical_margin,
+            self.scroll,
+        )
     }
 
     pub(super) fn jump_to_fuzzy_symbol(
@@ -188,6 +220,53 @@ impl App {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
+    pub(super) fn jump_to_no_self(
+        mut address: usize,
+        data: &Data,
+        screen_size: (u16, u16),
+        vertical_margin: u16,
+        scroll: &mut usize,
+        cursor: &mut (u16, u16),
+        block_size: usize,
+        blocks_per_row: usize,
+    ) {
+        if address >= data.len() {
+            address = data.len().saturating_sub(1);
+        }
+        if screen_size.1 <= vertical_margin {
+            *scroll = 0;
+            *cursor = (0, 0);
+            return;
+        }
+
+        let expected_cursor_position = Self::get_expected_cursor_position_no_self(
+            address,
+            false,
+            block_size,
+            blocks_per_row,
+            screen_size,
+            vertical_margin,
+            *scroll,
+        );
+        let CursorPosition {
+            local_x,
+            line_index,
+            ..
+        } = expected_cursor_position;
+        let y = line_index as isize - *scroll as isize;
+
+        if y < 0 {
+            *scroll = line_index;
+            *cursor = (local_x as u16, 0);
+        } else if y < screen_size.1 as isize - vertical_margin as isize {
+            *cursor = (local_x as u16, y as u16);
+        } else {
+            *scroll = line_index - (screen_size.1 - vertical_margin - 1) as usize;
+            *cursor = (local_x as u16, (screen_size.1 - vertical_margin - 1));
+        }
+    }
+
     pub(super) fn jump_to(&mut self, mut address: usize, is_virtual: bool) {
         if is_virtual {
             if let Some(physical_address) = self.header.virtual_to_physical_address(address as u64)
@@ -201,35 +280,16 @@ impl App {
                 return;
             }
         }
-        if address >= self.data.len() {
-            address = self.data.len().saturating_sub(1);
-        }
-        if self.screen_size.1 <= self.vertical_margin {
-            self.scroll = 0;
-            self.cursor = (0, 0);
-            return;
-        }
-
-        let expected_cursor_position = self.get_expected_cursor_position(address, false);
-        let CursorPosition {
-            local_x,
-            line_index,
-            ..
-        } = expected_cursor_position;
-        let y = line_index as isize - self.scroll as isize;
-
-        if y < 0 {
-            self.scroll = line_index;
-            self.cursor = (local_x as u16, 0);
-        } else if y < self.screen_size.1 as isize - self.vertical_margin as isize {
-            self.cursor = (local_x as u16, y as u16);
-        } else {
-            self.scroll = line_index - (self.screen_size.1 - self.vertical_margin - 1) as usize;
-            self.cursor = (
-                local_x as u16,
-                (self.screen_size.1 - self.vertical_margin - 1),
-            );
-        }
+        Self::jump_to_no_self(
+            address,
+            &self.data,
+            self.screen_size,
+            self.vertical_margin,
+            &mut self.scroll,
+            &mut self.cursor,
+            self.block_size,
+            self.blocks_per_row,
+        )
     }
 
     pub(super) fn move_cursor(&mut self, dx: isize, dy: isize, best_effort: bool) {
