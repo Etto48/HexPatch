@@ -92,7 +92,7 @@ impl ColorSettings {
         let status_bar_bg = Color::Rgb(246, 184, 76);
         let dark_yellow = Color::Rgb(246, 184, 76);
         let light_brown = Color::Rgb(202, 123, 63);
-        let dark_brown = Color::Rgb(131, 91, 22);
+        let dark_orange = Color::Rgb(218, 152, 37);
         let desaturated_dark_brown = Color::Rgb(98, 83, 75);
         Self {
             address_selected: Style::default().fg(Color::White).bg(Color::Black),
@@ -104,8 +104,8 @@ impl ColorSettings {
             hex_symbol: Style::default().fg(light_brown).add_modifier(Modifier::DIM),
             hex_end_of_line: Style::default().fg(Color::Red),
             hex_whitespace: Style::default().fg(desaturated_dark_brown),
-            hex_current_instruction: Style::default().fg(Color::White).bg(dark_brown),
-            hex_current_section: Style::default().fg(Color::White).bg(dark_brown),
+            hex_current_instruction: Style::default().fg(Color::White).bg(dark_orange),
+            hex_current_section: Style::default().fg(Color::White).bg(dark_orange),
             hex_default: Style::default(),
 
             text_selected: Style::default().fg(Color::White).bg(Color::Black),
@@ -126,28 +126,28 @@ impl ColorSettings {
             patch_old_rest: Style::default().fg(Color::Gray),
             patch_line_number: Style::default().fg(Color::Gray),
 
-            help_command: Style::default().fg(Color::LightGreen),
+            help_command: Style::default().fg(Color::Green),
             help_description: Style::default().fg(Color::DarkGray),
 
             yes: Style::default().fg(Color::Green),
-            yes_selected: Style::default().fg(Color::Black).bg(Color::Green),
+            yes_selected: Style::default().fg(Color::White).bg(Color::Green),
             no: Style::default().fg(Color::Red),
-            no_selected: Style::default().fg(Color::Black).bg(Color::Red),
+            no_selected: Style::default().fg(Color::White).bg(Color::Red),
             menu_text: Style::default().fg(Color::Black),
             menu_text_selected: Style::default().fg(Color::White).bg(Color::Black),
 
             insert_text_status: Style::default().fg(Color::Black).bg(status_bar_bg),
 
-            command_name: Style::default().fg(Color::LightGreen),
-            command_description: Style::default().fg(Color::Gray),
+            command_name: Style::default().fg(Color::Green),
+            command_description: Style::default().fg(Color::DarkGray),
             command_selected: Style::default().fg(Color::White).bg(Color::Black),
 
             path_dir: Style::default().fg(Color::Blue),
             path_file: Style::default().fg(dark_yellow),
             path_selected: Style::default().fg(Color::White).bg(Color::Black),
 
-            log_info: Style::default().fg(Color::LightBlue),
-            log_debug: Style::default().fg(Color::LightGreen),
+            log_info: Style::default().fg(Color::Blue),
+            log_debug: Style::default().fg(Color::Green),
             log_warning: Style::default().fg(dark_yellow),
             log_error: Style::default().fg(Color::Red),
             log_message: Style::default().fg(Color::Black),
