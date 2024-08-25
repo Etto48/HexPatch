@@ -1,7 +1,6 @@
-/// The majority of the code in this file is from the `termbg` crate, it was copied 
+/// The majority of the code in this file is from the `termbg` crate, it was copied
 /// and modified to avoid a strange bug that was breaking the app on Windows.
 /// Refer to dalance/termbg#25 for more information.
-
 use crossterm::terminal;
 use is_terminal::IsTerminal;
 use std::env;
@@ -19,7 +18,7 @@ pub enum Terminal {
     XtermCompatible,
     Windows,
     Emacs,
-    Unsupported
+    Unsupported,
 }
 
 /// 16bit RGB color
@@ -202,7 +201,7 @@ fn from_xterm(term: Terminal, timeout: Duration) -> Result<Rgb, Error> {
         let mut buf = [0; 1];
         let mut start = false;
         loop {
-            let _ = stdin.read_exact(&mut buf).await?;
+            stdin.read_exact(&mut buf).await?;
             // response terminated by BEL(0x7)
             if start && (buf[0] == 0x7) {
                 break;
@@ -210,7 +209,7 @@ fn from_xterm(term: Terminal, timeout: Duration) -> Result<Rgb, Error> {
             // response terminated by ST(0x1b 0x5c)
             if start && (buf[0] == 0x1b) {
                 // consume last 0x5c
-                let _ = stdin.read_exact(&mut buf).await?;
+                stdin.read_exact(&mut buf).await?;
                 debug_assert_eq!(buf[0], 0x5c);
                 break;
             }
@@ -230,7 +229,7 @@ fn from_xterm(term: Terminal, timeout: Duration) -> Result<Rgb, Error> {
     let buffer = buffer?;
 
     let s = String::from_utf8_lossy(&buffer);
-    let (r, g, b) = decode_x11_color(&*s)?;
+    let (r, g, b) = decode_x11_color(&s)?;
     Ok(Rgb { r, g, b })
 }
 
@@ -238,7 +237,7 @@ fn from_env_colorfgbg() -> Result<Rgb, Error> {
     let var = env::var("COLORFGBG").map_err(|_| Error::Unsupported)?;
     let fgbg: Vec<_> = var.split(";").collect();
     let bg = fgbg.get(1).ok_or(Error::Unsupported)?;
-    let bg = u8::from_str_radix(bg, 10).map_err(|_| Error::Parse(String::from(var)))?;
+    let bg = bg.parse().map_err(|_| Error::Parse(var))?;
 
     // rxvt default color table
     let (r, g, b) = match bg {
@@ -302,7 +301,7 @@ fn xterm_latency(timeout: Duration) -> Result<Duration, Error> {
         let mut stdin = async_std::io::stdin();
         let mut buf = [0; 1];
         loop {
-            let _ = stdin.read_exact(&mut buf).await?;
+            stdin.read_exact(&mut buf).await?;
             // response terminated by 'n'
             if buf[0] == b'n' {
                 break;
@@ -315,7 +314,7 @@ fn xterm_latency(timeout: Duration) -> Result<Duration, Error> {
 
     terminal::disable_raw_mode()?;
 
-    let _ = ret?;
+    ret?;
 
     Ok(end)
 }
@@ -324,12 +323,13 @@ fn decode_x11_color(s: &str) -> Result<(u16, u16, u16), Error> {
     fn decode_hex(s: &str) -> Result<u16, Error> {
         let len = s.len() as u32;
         let mut ret = u16::from_str_radix(s, 16).map_err(|_| Error::Parse(String::from(s)))?;
-        ret = ret << ((4 - len) * 4);
+        ret <<= (4 - len) * 4;
         Ok(ret)
     }
 
     let rgb: Vec<_> = s.split("/").collect();
 
+    #[allow(clippy::get_first)]
     let r = rgb.get(0).ok_or_else(|| Error::Parse(String::from(s)))?;
     let g = rgb.get(1).ok_or_else(|| Error::Parse(String::from(s)))?;
     let b = rgb.get(2).ok_or_else(|| Error::Parse(String::from(s)))?;

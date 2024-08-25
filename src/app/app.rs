@@ -1,6 +1,7 @@
 #![allow(clippy::module_inception)]
 use std::time::Duration;
 
+use crate::detect_theme::Theme;
 use crossterm::event;
 use ratatui::{
     backend::Backend,
@@ -8,7 +9,6 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Borders, Clear, ScrollbarOrientation, ScrollbarState},
 };
-use crate::detect_theme::Theme;
 
 use super::{
     asm::assembly_line::AssemblyLine,

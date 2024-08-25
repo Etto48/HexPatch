@@ -5,9 +5,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use crate::detect_theme::Theme;
 use ratatui::style::Style;
 use serde::de::Visitor;
-use crate::detect_theme::Theme;
 
 use super::{
     app_settings::AppSettings, color_settings::ColorSettings, key_settings::KeySettings,
@@ -46,15 +46,17 @@ impl Settings {
 
         let mut deserializer = serde_json::Deserializer::from_str(&settings);
 
-        Ok(match Settings::custom_deserialize(&mut deserializer, terminal_theme) {
-            Ok(settings) => settings,
-            Err(e) => {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    format!("Could not parse settings file: {}", e),
-                ))
-            }
-        })
+        Ok(
+            match Settings::custom_deserialize(&mut deserializer, terminal_theme) {
+                Ok(settings) => settings,
+                Err(e) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("Could not parse settings file: {}", e),
+                    ))
+                }
+            },
+        )
     }
 
     fn get_default_settings_path() -> Option<PathBuf> {
@@ -72,8 +74,8 @@ impl Settings {
                     let settings = Settings::default();
                     if path.is_some() {
                         settings
-                        .save(path)
-                        .ok_or(format!("Could not save default settings: {}", e))?;
+                            .save(path)
+                            .ok_or(format!("Could not save default settings: {}", e))?;
                     }
                     Ok(settings)
                 }
@@ -106,8 +108,9 @@ impl<'de> Visitor<'de> for SettingsVisitor {
     }
 
     fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-        where
-            A: serde::de::MapAccess<'de>, {
+    where
+        A: serde::de::MapAccess<'de>,
+    {
         let mut color_settings: Option<HashMap<String, Style>> = None;
         let mut key_settings: Option<KeySettings> = None;
         let mut app_settings: Option<AppSettings> = None;
@@ -120,36 +123,42 @@ impl<'de> Visitor<'de> for SettingsVisitor {
                         return Err(serde::de::Error::duplicate_field("color"));
                     }
                     color_settings = Some(map.next_value()?);
-                },
+                }
                 "key" => {
                     if key_settings.is_some() {
                         return Err(serde::de::Error::duplicate_field("key"));
                     }
                     key_settings = Some(map.next_value()?);
-                },
+                }
                 "app" => {
                     if app_settings.is_some() {
                         return Err(serde::de::Error::duplicate_field("app"));
                     }
                     app_settings = Some(map.next_value()?);
-                },
+                }
                 "custom" => {
                     if custom_settings.is_some() {
                         return Err(serde::de::Error::duplicate_field("custom"));
                     }
                     custom_settings = Some(map.next_value()?);
-                },
+                }
                 _ => {
-                    return Err(serde::de::Error::unknown_field(key, &["color", "key", "app", "custom"]));
-                },
+                    return Err(serde::de::Error::unknown_field(
+                        key,
+                        &["color", "key", "app", "custom"],
+                    ));
+                }
             }
         }
         let key_settings = key_settings.unwrap_or_default();
         let app_settings = app_settings.unwrap_or_default();
         let custom_settings = custom_settings.unwrap_or_default();
-        let color_settings = ColorSettings::from_map(&color_settings.unwrap_or_default(), &app_settings, self.theme).map_err(
-            |e| serde::de::Error::custom(e),
-        )?;
+        let color_settings = ColorSettings::from_map(
+            &color_settings.unwrap_or_default(),
+            &app_settings,
+            self.theme,
+        )
+        .map_err(serde::de::Error::custom)?;
 
         Ok(Self::Value {
             color: color_settings,
@@ -158,15 +167,14 @@ impl<'de> Visitor<'de> for SettingsVisitor {
             custom: custom_settings,
         })
     }
-
-    
 }
 
 impl Settings {
     fn custom_deserialize<'de, D>(deserializer: D, theme: Theme) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de> {
-        deserializer.deserialize_map(SettingsVisitor{theme})
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_map(SettingsVisitor { theme })
     }
 }
 
@@ -199,7 +207,10 @@ mod test {
 
     #[test]
     fn test_settings_partial_load() {
-        let settings = Settings::load(Some(Path::new("test/partial_default_settings.json")), Theme::Dark);
+        let settings = Settings::load(
+            Some(Path::new("test/partial_default_settings.json")),
+            Theme::Dark,
+        );
         if let Err(e) = settings {
             panic!("Could not load settings: {}", e);
         }

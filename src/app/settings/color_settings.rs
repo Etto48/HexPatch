@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
+use crate::detect_theme::Theme;
 use ratatui::style::{Color, Modifier, Style};
 use serde::Serialize;
-use crate::detect_theme::Theme;
 
 use crate::app::App;
 use crate::{EditColorSettings, RegisterColorSettings};
@@ -101,17 +101,11 @@ impl ColorSettings {
             hex_selected: Style::default().fg(Color::White).bg(Color::Black),
             hex_null: Style::default().fg(Color::Gray),
             hex_alphanumeric: Style::default().fg(light_brown),
-            hex_symbol: Style::default()
-                .fg(light_brown)
-                .add_modifier(Modifier::DIM),
+            hex_symbol: Style::default().fg(light_brown).add_modifier(Modifier::DIM),
             hex_end_of_line: Style::default().fg(Color::Red),
             hex_whitespace: Style::default().fg(desaturated_dark_brown),
-            hex_current_instruction: Style::default()
-                .fg(Color::White)
-                .bg(dark_brown),
-            hex_current_section: Style::default()
-                .fg(Color::White)
-                .bg(dark_brown),
+            hex_current_instruction: Style::default().fg(Color::White).bg(dark_brown),
+            hex_current_section: Style::default().fg(Color::White).bg(dark_brown),
             hex_default: Style::default(),
 
             text_selected: Style::default().fg(Color::White).bg(Color::Black),
@@ -119,9 +113,7 @@ impl ColorSettings {
             assembly_symbol: Style::default().fg(Color::Green),
             assembly_selected: Style::default().fg(Color::White).bg(Color::Black),
             assembly_address: Style::default().fg(Color::Gray),
-            assembly_virtual_address: Style::default()
-                .fg(Color::Gray)
-                .add_modifier(Modifier::DIM),
+            assembly_virtual_address: Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
             assembly_nop: Style::default().fg(Color::Gray),
             assembly_bad: Style::default().fg(Color::Red),
             assembly_section: Style::default().fg(Color::Blue),
@@ -250,9 +242,12 @@ impl ColorSettings {
         }
     }
 
-    pub fn from_map(map: &HashMap<String, Style>, app_settings: &AppSettings, terminal_theme: Theme) -> Result<Self, String> {
-        let theme = match &app_settings.theme
-        {
+    pub fn from_map(
+        map: &HashMap<String, Style>,
+        app_settings: &AppSettings,
+        terminal_theme: Theme,
+    ) -> Result<Self, String> {
+        let theme = match &app_settings.theme {
             Some(theme) if theme.to_lowercase() == "light" => Theme::Light,
             Some(theme) if theme.to_lowercase() == "dark" => Theme::Dark,
             any => {
@@ -265,9 +260,9 @@ impl ColorSettings {
             }
         };
         let mut color_settings = Self::get_default_theme(theme);
-        color_settings.edit_color_settings(&map).map_err(
-            |e| format!("Failed to load color settings: {}", e)
-        )?;
+        color_settings
+            .edit_color_settings(map)
+            .map_err(|e| format!("Failed to load color settings: {}", e))?;
         Ok(color_settings)
     }
 }

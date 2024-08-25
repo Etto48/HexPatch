@@ -11,8 +11,7 @@ use ratatui::backend::CrosstermBackend;
 
 fn main() {
     let args = args::Args::parse();
-    let theme = detect_theme::theme(Duration::from_secs(1))
-        .unwrap_or(detect_theme::Theme::Dark);
+    let theme = detect_theme::theme(Duration::from_secs(1)).unwrap_or(detect_theme::Theme::Dark);
 
     enable_raw_mode().expect("Failed to enable raw mode");
     let mut stdout = std::io::stdout();

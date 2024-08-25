@@ -11,7 +11,7 @@ macro_rules! EditColorSettings {(
         {
             pub fn edit_color_settings(&mut self, data: &std::collections::HashMap<String, ratatui::style::Style>) -> Result<(), String>
             {
-                for (key, value) in data.iter() 
+                for (key, value) in data.iter()
                 {
                     match key.as_str() {
                         $(

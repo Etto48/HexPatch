@@ -287,7 +287,7 @@ The following app settings can be customized in the app settings:
 |------|------|-------------|
 |history_limit|usize|Maximum number of modifications that are stored in the undo/redo history.|
 |log_limit|usize|Maximum number of log messages that are stored in the log.|
-|theme|Option<String>|The name of the theme to use. The available themes are: `"auto"`, `"dark"`, `"light"`. `"auto"` choses automatically between `"dark"` and `"light"` based on the background color of the terminal. By default, the theme is `"auto"`.|
+|theme|Option<String>|The name of the theme to use. The available themes are: `"auto"`, `"dark"`, `"light"`. `"auto"` chooses automatically between `"dark"` and `"light"` based on the background color of the terminal. By default, the theme is `"auto"`.|
 
 ## Custom
 
