@@ -11,6 +11,8 @@ You can specify a different configuration file to use with the `--config` flag.
 
 If the file or directory doesn't exist, it will be created with the default settings.
 
+To improve forward compatibility, the app will not create a file with the default settings if the `--config` flag is not used. This is to avoid creating a config file that will override new default settings in future versions of the app.
+
 Settings are stored in JSON format and have the following structure:
 
 ```json
