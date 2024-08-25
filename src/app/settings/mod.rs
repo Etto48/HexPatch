@@ -8,4 +8,6 @@ pub mod key_settings;
 pub mod register_key_settings_macro;
 #[macro_use]
 pub mod register_color_settings_macro;
+#[macro_use]
+pub mod edit_color_settings;
 pub mod settings_value;

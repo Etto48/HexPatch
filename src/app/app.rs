@@ -8,6 +8,7 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Borders, Clear, ScrollbarOrientation, ScrollbarState},
 };
+use crate::detect_theme::Theme;
 
 use super::{
     asm::assembly_line::AssemblyLine,
@@ -101,9 +102,10 @@ impl App {
     pub fn new<B: Backend>(
         args: Args,
         terminal: &mut ratatui::Terminal<B>,
+        terminal_theme: Theme,
     ) -> Result<Self, String> {
         let mut logger = Logger::default();
-        let settings = match Settings::load_or_create(args.config.as_deref()) {
+        let settings = match Settings::load_or_create(args.config.as_deref(), terminal_theme) {
             Ok(settings) => settings,
             Err(e) => {
                 logger.log(

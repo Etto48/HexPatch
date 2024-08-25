@@ -450,7 +450,7 @@ mod test {
             },
             file_address,
         });
-        let line = al.to_line(&ColorSettings::default(), 0, &Header::None, 0);
+        let line = al.to_line(&ColorSettings::get_default_dark_theme(), 0, &Header::None, 0);
 
         let contains_mnemonic = line.spans.iter().any(|span| span.content.contains("mov"));
         assert!(contains_mnemonic);
@@ -485,7 +485,7 @@ mod test {
             size: section_size,
         });
 
-        let line = al.to_line(&ColorSettings::default(), 0, &Header::None, 0);
+        let line = al.to_line(&ColorSettings::get_default_dark_theme(), 0, &Header::None, 0);
 
         let contains_section_name = line.spans.iter().any(|span| span.content.contains(".text"));
         assert!(contains_section_name);

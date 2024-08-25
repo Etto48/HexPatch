@@ -135,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_bytes_to_styled_text() {
-        let color_settings = ColorSettings::default();
+        let color_settings = ColorSettings::get_default_dark_theme();
         let bytes = b"CAFEBABE";
         let block_size = 8;
         let blocks_per_row = 2;

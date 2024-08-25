@@ -22,11 +22,13 @@ build = "build.rs"
 winres = "0.1"
 
 [dependencies]
+async-std = "1.12.0"
 bitflags = { version = "2.6", features = ["std"] }
 capstone = "0.12"
 clap = { version = "4.5", features = ["derive"] }
 crossterm = { version = "0.28", features = ["serde"] }
 dirs = "5.0"
+is-terminal = "0.4.13"
 keystone-engine = "0.1"
 macro_rules_attribute = "0.2"
 mlua = { version = "0.9", features = ["lua54", "vendored", "serialize"] }
@@ -41,4 +43,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 symbolic-demangle = "12.10"
 tempfile = "3.12"
+thiserror = "1.0.63"
 tokio = "1.39"
+winapi = "0.3.9"
