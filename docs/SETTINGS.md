@@ -31,6 +31,7 @@ Settings are stored in JSON format and have the following structure:
 ```
 
 If a setting is not present in the file, the default value will be used.
+For `color` settings, the default value changes based on the theme specified in the `app` settings, if the theme is not specified, the default theme is `"auto"` and if the detection fails, the `"dark"` theme is used.
 
 You can find the default settings [here](https://github.com/Etto48/hexpatch/blob/master/test/default_settings.json).
 You can also generate the same file by running `hexpatch --config <CONFIG_PATH>` passing in a path that doesn't exist yet, the file will be created there.
