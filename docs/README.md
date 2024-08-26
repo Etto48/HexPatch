@@ -12,6 +12,8 @@ Also, it can edit remote files via SSH.
 
 ## Installation
 
+### Using cargo
+
 If you already have the requirements installed, you only need to run the following command:
 
 ```bash
@@ -26,6 +28,22 @@ cargo install hex-patch
 - [GCC](https://gcc.gnu.org/) on Linux
 - [Xcode Command Line Tools](https://developer.apple.com/) on macOS
 - [Rust](https://www.rust-lang.org/tools/install)
+
+### Using your package manager
+
+On NetBSD, a package is available from the [official repositories](https://pkgsrc.se/devel/hexpatch/).
+To install it, simply run:
+
+```bash
+pkgin install hexpatch
+```
+
+or, if you prefer to build from source:
+
+```bash
+cd /usr/pkgsrc/devel/hexpatch
+make install
+```
 
 ## SSH connection
 
