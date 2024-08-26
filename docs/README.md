@@ -31,7 +31,7 @@ cargo install hex-patch
 
 ### Using your package manager
 
-On NetBSD, a package is avalibale from the [official repositories](https://pkgsrc.se/devel/hexpatch/).
+On NetBSD, a package is available from the [official repositories](https://pkgsrc.se/devel/hexpatch/).
 To install it, simply run:
 
 ```bash
