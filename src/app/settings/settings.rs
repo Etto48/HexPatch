@@ -71,7 +71,7 @@ impl Settings {
                 if e.kind() != io::ErrorKind::NotFound {
                     Err(format!("Could not load settings: {}", e))
                 } else {
-                    let settings = Settings::default();
+                    let settings = Settings::empty(terminal_theme);
                     if path.is_some() {
                         settings
                             .save(path)
@@ -93,6 +93,15 @@ impl Settings {
         std::fs::create_dir_all(path.parent()?).ok()?;
         std::fs::write(&path, settings).ok()?;
         Some(())
+    }
+
+    pub fn empty(terminal_theme: Theme) -> Self {
+        Self {
+            color: ColorSettings::get_default_theme(terminal_theme),
+            key: KeySettings::default(),
+            app: AppSettings::default(),
+            custom: HashMap::new(),
+        }
     }
 }
 
