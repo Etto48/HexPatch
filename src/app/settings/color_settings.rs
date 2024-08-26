@@ -90,7 +90,7 @@ impl ColorSettings {
 
     pub fn get_default_light_theme() -> Self {
         let status_bar_bg = Color::Rgb(246, 184, 76);
-        let dark_yellow = Color::Rgb(246, 184, 76);
+        let dark_yellow = Color::Rgb(243, 164, 27);
         let light_brown = Color::Rgb(202, 123, 63);
         let dark_orange = Color::Rgb(218, 152, 37);
         let desaturated_dark_brown = Color::Rgb(98, 83, 75);
