@@ -1,11 +1,16 @@
+use std::collections::HashMap;
+
+use crate::detect_theme::Theme;
 use ratatui::style::{Color, Modifier, Style};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 
 use crate::app::App;
-use crate::RegisterColorSettings;
+use crate::{EditColorSettings, RegisterColorSettings};
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(default)]
+use super::app_settings::AppSettings;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(EditColorSettings!)]
 #[derive(RegisterColorSettings!)]
 pub struct ColorSettings {
     pub address_selected: Style,
@@ -40,7 +45,7 @@ pub struct ColorSettings {
     pub patch_line_number: Style,
 
     pub help_command: Style,
-    pub hep_description: Style,
+    pub help_description: Style,
 
     pub yes: Style,
     pub yes_selected: Style,
@@ -75,8 +80,90 @@ pub struct ColorSettings {
     pub placeholder: Style,
 }
 
-impl Default for ColorSettings {
-    fn default() -> Self {
+impl ColorSettings {
+    pub fn get_default_theme(theme: Theme) -> Self {
+        match theme {
+            Theme::Light => Self::get_default_light_theme(),
+            Theme::Dark => Self::get_default_dark_theme(),
+        }
+    }
+
+    pub fn get_default_light_theme() -> Self {
+        let status_bar_bg = Color::Rgb(246, 184, 76);
+        let dark_yellow = Color::Rgb(243, 164, 27);
+        let light_brown = Color::Rgb(202, 123, 63);
+        let dark_orange = Color::Rgb(218, 152, 37);
+        let desaturated_dark_brown = Color::Rgb(98, 83, 75);
+        Self {
+            address_selected: Style::default().fg(Color::White).bg(Color::Black),
+            address_default: Style::default().fg(Color::Gray),
+
+            hex_selected: Style::default().fg(Color::White).bg(Color::Black),
+            hex_null: Style::default().fg(Color::Gray),
+            hex_alphanumeric: Style::default().fg(light_brown),
+            hex_symbol: Style::default().fg(light_brown).add_modifier(Modifier::DIM),
+            hex_end_of_line: Style::default().fg(Color::Red),
+            hex_whitespace: Style::default().fg(desaturated_dark_brown),
+            hex_current_instruction: Style::default().fg(Color::White).bg(dark_orange),
+            hex_current_section: Style::default().fg(Color::White).bg(dark_orange),
+            hex_default: Style::default(),
+
+            text_selected: Style::default().fg(Color::White).bg(Color::Black),
+
+            assembly_symbol: Style::default().fg(Color::Green),
+            assembly_selected: Style::default().fg(Color::White).bg(Color::Black),
+            assembly_address: Style::default().fg(Color::Gray),
+            assembly_virtual_address: Style::default().fg(Color::Gray).add_modifier(Modifier::DIM),
+            assembly_nop: Style::default().fg(Color::Gray),
+            assembly_bad: Style::default().fg(Color::Red),
+            assembly_section: Style::default().fg(Color::Blue),
+            assembly_entry_point: Style::default().fg(dark_yellow),
+            assembly_default: Style::default().fg(light_brown),
+
+            patch_patched_less_or_equal: Style::default().fg(Color::Green),
+            patch_patched_greater: Style::default().fg(dark_yellow),
+            patch_old_instruction: Style::default().fg(Color::Red),
+            patch_old_rest: Style::default().fg(Color::Gray),
+            patch_line_number: Style::default().fg(Color::Gray),
+
+            help_command: Style::default().fg(Color::Green),
+            help_description: Style::default().fg(Color::DarkGray),
+
+            yes: Style::default().fg(Color::Green),
+            yes_selected: Style::default().fg(Color::White).bg(Color::Green),
+            no: Style::default().fg(Color::Red),
+            no_selected: Style::default().fg(Color::White).bg(Color::Red),
+            menu_text: Style::default().fg(Color::Black),
+            menu_text_selected: Style::default().fg(Color::White).bg(Color::Black),
+
+            insert_text_status: Style::default().fg(Color::Black).bg(status_bar_bg),
+
+            command_name: Style::default().fg(Color::Green),
+            command_description: Style::default().fg(Color::DarkGray),
+            command_selected: Style::default().fg(Color::White).bg(Color::Black),
+
+            path_dir: Style::default().fg(Color::Blue),
+            path_file: Style::default().fg(dark_yellow),
+            path_selected: Style::default().fg(Color::White).bg(Color::Black),
+
+            log_info: Style::default().fg(Color::Blue),
+            log_debug: Style::default().fg(Color::Green),
+            log_warning: Style::default().fg(dark_yellow),
+            log_error: Style::default().fg(Color::Red),
+            log_message: Style::default().fg(Color::Black),
+
+            status_bar: Style::default().fg(Color::Black).bg(status_bar_bg),
+            status_info: Style::default().fg(Color::Blue).bg(status_bar_bg),
+            status_debug: Style::default().fg(Color::Green).bg(status_bar_bg),
+            status_warning: Style::default().fg(Color::Yellow).bg(status_bar_bg),
+            status_error: Style::default().fg(Color::Red).bg(status_bar_bg),
+
+            scrollbar: Style::default().fg(status_bar_bg).bg(Color::Gray),
+            placeholder: Style::default().fg(Color::Gray),
+        }
+    }
+
+    pub fn get_default_dark_theme() -> Self {
         let status_bar_bg = Color::Rgb(255, 223, 168);
         Self {
             address_selected: Style::default().fg(Color::Black).bg(Color::White),
@@ -119,7 +206,7 @@ impl Default for ColorSettings {
             patch_line_number: Style::default().fg(Color::DarkGray),
 
             help_command: Style::default().fg(Color::LightGreen),
-            hep_description: Style::default().fg(Color::Gray),
+            help_description: Style::default().fg(Color::Gray),
 
             yes: Style::default().fg(Color::Green),
             yes_selected: Style::default().fg(Color::Black).bg(Color::Green),
@@ -153,6 +240,30 @@ impl Default for ColorSettings {
             scrollbar: Style::default().fg(status_bar_bg).bg(Color::DarkGray),
             placeholder: Style::default().fg(Color::DarkGray),
         }
+    }
+
+    pub fn from_map(
+        map: &HashMap<String, Style>,
+        app_settings: &AppSettings,
+        terminal_theme: Theme,
+    ) -> Result<Self, String> {
+        let theme = match &app_settings.theme {
+            Some(theme) if theme.to_lowercase() == "light" => Theme::Light,
+            Some(theme) if theme.to_lowercase() == "dark" => Theme::Dark,
+            any => {
+                if let Some(theme) = any {
+                    if theme.to_lowercase() != "auto" {
+                        return Err(format!("Invalid theme: {}", theme));
+                    }
+                }
+                terminal_theme
+            }
+        };
+        let mut color_settings = Self::get_default_theme(theme);
+        color_settings
+            .edit_color_settings(map)
+            .map_err(|e| format!("Failed to load color settings: {}", e))?;
+        Ok(color_settings)
     }
 }
 

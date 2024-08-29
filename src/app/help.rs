@@ -29,7 +29,7 @@ impl HelpLine {
             .push(Span::styled(": ", color_settings.menu_text));
         line.spans.push(Span::styled(
             self.description.clone(),
-            color_settings.menu_text,
+            color_settings.help_description,
         ));
         line.left_aligned()
     }

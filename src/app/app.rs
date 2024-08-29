@@ -1,6 +1,7 @@
 #![allow(clippy::module_inception)]
 use std::time::Duration;
 
+use crate::detect_theme::{self, Theme};
 use crossterm::event;
 use ratatui::{
     backend::Backend,
@@ -101,9 +102,20 @@ impl App {
     pub fn new<B: Backend>(
         args: Args,
         terminal: &mut ratatui::Terminal<B>,
+        terminal_theme: Result<Theme, detect_theme::Error>,
     ) -> Result<Self, String> {
         let mut logger = Logger::default();
-        let settings = match Settings::load_or_create(args.config.as_deref()) {
+        let terminal_theme = match terminal_theme {
+            Ok(theme) => theme,
+            Err(e) => {
+                logger.log(
+                    NotificationLevel::Error,
+                    &format!("Error detecting terminal theme: {e}"),
+                );
+                Theme::Dark
+            }
+        };
+        let settings = match Settings::load_or_create(args.config.as_deref(), terminal_theme) {
             Ok(settings) => settings,
             Err(e) => {
                 logger.log(

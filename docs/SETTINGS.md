@@ -11,6 +11,8 @@ You can specify a different configuration file to use with the `--config` flag.
 
 If the file or directory doesn't exist, it will be created with the default settings.
 
+To improve forward compatibility, the app will not create a file with the default settings if the `--config` flag is not used. This is to avoid creating a config file that will override new default settings in future versions of the app.
+
 Settings are stored in JSON format and have the following structure:
 
 ```json
@@ -31,6 +33,7 @@ Settings are stored in JSON format and have the following structure:
 ```
 
 If a setting is not present in the file, the default value will be used.
+For `color` settings, the default value changes based on the theme specified in the `app` settings, if the theme is not specified, the default theme is `"auto"` and if the detection fails, the `"dark"` theme is used.
 
 You can find the default settings [here](https://github.com/Etto48/hexpatch/blob/master/test/default_settings.json).
 You can also generate the same file by running `hexpatch --config <CONFIG_PATH>` passing in a path that doesn't exist yet, the file will be created there.
@@ -94,7 +97,7 @@ The following styles can be customized in the color settings:
 |patch_old_rest|Remaining bytes that are neither patched nor belonging to the old instruction in the patch popup.|
 |patch_line_number|Line number in the patch popup.|
 |help_command|Key combination in the help popup.|
-|hep_description|Command description in the help popup.|
+|help_description|Command description in the help popup.|
 |yes|"Yes" in popups with choiches when not selected.|
 |yes_selected|"Yes" in popups with choiches when selected.|
 |no|"No" in popups with choiches when not selected.|
@@ -287,6 +290,7 @@ The following app settings can be customized in the app settings:
 |------|------|-------------|
 |history_limit|usize|Maximum number of modifications that are stored in the undo/redo history.|
 |log_limit|usize|Maximum number of log messages that are stored in the log.|
+|theme|Option<String>|The name of the theme to use. The available themes are: `"auto"`, `"dark"`, `"light"`. `"auto"` chooses automatically between `"dark"` and `"light"` based on the background color of the terminal. By default, the theme is `"auto"`.|
 
 ## Custom
 

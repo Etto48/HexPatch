@@ -8,6 +8,7 @@ use super::Settings;
 pub struct AppSettings {
     pub history_limit: usize,
     pub log_limit: usize,
+    pub theme: Option<String>,
 }
 
 impl AppSettings {
@@ -42,6 +43,7 @@ impl Default for AppSettings {
         Self {
             history_limit: 1024,
             log_limit: 1024,
+            theme: None,
         }
     }
 }

@@ -851,7 +851,7 @@ mod tests {
 
     #[test]
     fn test_get_line_from_string_and_cursor() {
-        let color_settings = ColorSettings::default();
+        let color_settings = ColorSettings::get_default_dark_theme();
         let s = "Hello, World!";
         let line =
             App::get_line_from_string_and_cursor(&color_settings, s, 0, "Placeholder", 8, true);
@@ -874,7 +874,7 @@ mod tests {
 
     #[test]
     fn test_get_multiline_from_string_and_cursor() {
-        let color_settings = ColorSettings::default();
+        let color_settings = ColorSettings::get_default_dark_theme();
         let s = "Hello, World!\nThis is a test\n";
         let (lines, _) =
             App::get_multiline_from_string_and_cursor(&color_settings, s, 0, "Placeholder", 40);

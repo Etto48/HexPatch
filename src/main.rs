@@ -1,14 +1,17 @@
+use std::time::Duration;
+
 use clap::Parser;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use hex_patch::{app::App, args};
+use hex_patch::{app::App, args, detect_theme};
 use ratatui::backend::CrosstermBackend;
 
 fn main() {
     let args = args::Args::parse();
+    let theme = detect_theme::theme(Duration::from_secs(1));
 
     enable_raw_mode().expect("Failed to enable raw mode");
     let mut stdout = std::io::stdout();
@@ -18,7 +21,7 @@ fn main() {
     let mut terminal = ratatui::Terminal::new(backend).expect("Failed to create terminal");
 
     terminal.clear().expect("Failed to clear terminal");
-    let mut app = App::new(args, &mut terminal).expect("Failed to create app");
+    let mut app = App::new(args, &mut terminal, theme).expect("Failed to create app");
     let res = app.run(&mut terminal);
     terminal.clear().expect("Failed to clear terminal");
 
