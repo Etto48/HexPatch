@@ -31,6 +31,8 @@ cargo install hex-patch
 
 ### Using your package manager
 
+#### NetBSD
+
 On NetBSD, a package is available from the [official repositories](https://pkgsrc.se/devel/hexpatch/).
 To install it, simply run:
 
@@ -38,7 +40,17 @@ To install it, simply run:
 pkgin install hexpatch
 ```
 
-or, if you prefer to build from source:
+#### Arch Linux
+
+On Arch Linux, a package is available from the [official repositories](https://archlinux.org/packages/extra/x86_64/hexpatch/):
+
+```bash
+pacman -S hexpatch
+```
+
+#### Build from source
+
+If you prefer to build from source:
 
 ```bash
 cd /usr/pkgsrc/devel/hexpatch
