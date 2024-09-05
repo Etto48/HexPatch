@@ -109,8 +109,8 @@ impl App {
             Ok(theme) => theme,
             Err(e) => {
                 logger.log(
-                    NotificationLevel::Error,
-                    &format!("Error detecting terminal theme: {e}"),
+                    NotificationLevel::Debug,
+                    &format!("Could not detect terminal theme: {e}"),
                 );
                 Theme::Dark
             }
