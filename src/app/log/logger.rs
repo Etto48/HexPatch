@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, ops::Index};
 
-use crate::app::App;
+use crate::app::{settings::verbosity::Verbosity, App};
 
 use super::{log_line::LogLine, notification::NotificationLevel};
 
@@ -8,24 +8,28 @@ use super::{log_line::LogLine, notification::NotificationLevel};
 pub struct Logger {
     pub(super) limit: usize,
     pub(super) log: VecDeque<LogLine>,
+    pub(super) verbosity: Verbosity,
     pub(super) notification: NotificationLevel,
 }
 
 impl Logger {
-    pub fn with_limit(limit: usize) -> Self {
+    pub fn new(limit: usize, verbosity: Verbosity) -> Self {
         Self {
             limit,
             log: VecDeque::with_capacity(limit),
+            verbosity,
             notification: NotificationLevel::None,
         }
     }
 
     pub fn log(&mut self, level: NotificationLevel, message: &str) {
-        self.notification.bump_notification_level(level);
-        if self.log.len() >= self.limit && self.limit > 0 {
-            self.log.pop_front();
+        if level >= self.verbosity.as_notification_level() {
+            self.notification.bump_notification_level(level);
+            if self.log.len() >= self.limit && self.limit > 0 {
+                self.log.pop_front();
+            }
+            self.log.push_back(LogLine::new(level, message.to_string()));
         }
-        self.log.push_back(LogLine::new(level, message.to_string()));
     }
 
     pub fn clear(&mut self) {
@@ -65,15 +69,25 @@ impl Logger {
         }
     }
 
+    pub fn change_verbosity(&mut self, verbosity: Verbosity) {
+        self.verbosity = verbosity;
+        for log_line in &self.log {
+            if log_line.level < verbosity.as_notification_level() {
+                self.notification.bump_notification_level(log_line.level);
+            }
+        }
+        if self.notification < verbosity.as_notification_level() {
+            self.notification = NotificationLevel::None;
+        }
+    }
+
     pub fn merge(&mut self, other: &Self) {
         for log_line in &other.log {
             if self.log.len() >= self.limit && self.limit > 0 {
                 self.log.pop_front();
             }
-            self.log.push_back(log_line.clone());
+            self.log(log_line.level, &log_line.message);
         }
-        self.notification
-            .bump_notification_level(other.notification);
     }
 }
 
@@ -127,7 +141,7 @@ mod test {
 
     #[test]
     fn test_logger_with_limit() {
-        let mut logger = Logger::with_limit(5);
+        let mut logger = Logger::new(5, Verbosity::Debug);
         for i in 0..10 {
             logger.log(
                 NotificationLevel::Error,
@@ -141,7 +155,7 @@ mod test {
 
     #[test]
     fn test_logger_change_limit() {
-        let mut logger = Logger::with_limit(2);
+        let mut logger = Logger::new(2, Verbosity::Debug);
         logger.log(NotificationLevel::Error, "Test error message 1");
         logger.log(NotificationLevel::Error, "Test error message 2");
         logger.log(NotificationLevel::Error, "Test error message 3");

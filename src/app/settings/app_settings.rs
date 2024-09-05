@@ -1,14 +1,15 @@
 use mlua::UserDataRegistry;
 use serde::{Deserialize, Serialize};
 
-use super::Settings;
+use super::{theme_preference::ThemePreference, verbosity::Verbosity, Settings};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct AppSettings {
     pub history_limit: usize,
     pub log_limit: usize,
-    pub theme: Option<String>,
+    pub log_level: Verbosity,
+    pub theme: ThemePreference,
 }
 
 impl AppSettings {
@@ -43,7 +44,8 @@ impl Default for AppSettings {
         Self {
             history_limit: 1024,
             log_limit: 1024,
-            theme: None,
+            log_level: Verbosity::default(),
+            theme: ThemePreference::default(),
         }
     }
 }

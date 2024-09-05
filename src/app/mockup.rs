@@ -4,9 +4,11 @@ pub mod test {
 
     use ratatui::{backend::TestBackend, Terminal};
 
-    use crate::app::App;
+    use crate::app::{settings::verbosity::Verbosity, App};
 
     impl App {
+        /// Create a mockup of the app with the given data.
+        /// Sets the logger verbosity to debug.
         pub fn mockup(data: Vec<u8>) -> Self {
             let mut app = App::default();
             let mut input_file =
@@ -17,6 +19,7 @@ pub mod test {
             let mut terminal = Terminal::new(TestBackend::new(80, 25)).unwrap();
             app.open_file(&input_file.path().to_string_lossy(), &mut terminal)
                 .expect("Failed to open file for mockup.");
+            app.logger.change_verbosity(Verbosity::Debug);
             app
         }
     }

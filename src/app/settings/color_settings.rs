@@ -8,6 +8,7 @@ use crate::app::App;
 use crate::{EditColorSettings, RegisterColorSettings};
 
 use super::app_settings::AppSettings;
+use super::theme_preference::ThemePreference;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[derive(EditColorSettings!)]
@@ -248,16 +249,9 @@ impl ColorSettings {
         terminal_theme: Theme,
     ) -> Result<Self, String> {
         let theme = match &app_settings.theme {
-            Some(theme) if theme.to_lowercase() == "light" => Theme::Light,
-            Some(theme) if theme.to_lowercase() == "dark" => Theme::Dark,
-            any => {
-                if let Some(theme) = any {
-                    if theme.to_lowercase() != "auto" {
-                        return Err(format!("Invalid theme: {}", theme));
-                    }
-                }
-                terminal_theme
-            }
+            ThemePreference::Light => Theme::Light,
+            ThemePreference::Dark => Theme::Dark,
+            ThemePreference::Auto => terminal_theme,
         };
         let mut color_settings = Self::get_default_theme(theme);
         color_settings

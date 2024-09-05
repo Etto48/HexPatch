@@ -126,6 +126,7 @@ impl App {
             }
         };
         logger.change_limit(settings.app.log_limit);
+        logger.change_verbosity(settings.app.log_level);
         Self::print_loading_status(
             &settings.color,
             &format!("Opening \"{}\"...", args.path),
