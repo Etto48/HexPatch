@@ -1,13 +1,13 @@
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, PartialOrd, Ord)]
 pub enum NotificationLevel {
     #[default]
-    None,
-    Debug,
-    Info,
-    Warning,
-    Error,
+    None = 0,
+    Debug = 1,
+    Info = 2,
+    Warning = 3,
+    Error = 4,
 }
 
 impl NotificationLevel {
@@ -22,13 +22,7 @@ impl NotificationLevel {
     }
 
     pub fn notification_level_as_u8(&self) -> u8 {
-        match self {
-            NotificationLevel::None => 0,
-            NotificationLevel::Debug => 1,
-            NotificationLevel::Info => 2,
-            NotificationLevel::Warning => 3,
-            NotificationLevel::Error => 4,
-        }
+        *self as u8
     }
 }
 
