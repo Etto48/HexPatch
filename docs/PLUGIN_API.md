@@ -605,4 +605,6 @@ In the case of a `Style` or `KeyEvent`, the value is effectively a table with th
 This type represents a point in time.
 
 This type has the following functions:
+| Function | Arguments | Description |
+|----------|-----------|-------------|
 |`elapsed`|`() -> f64`|Gets the time elapsed in seconds since the instant was created. This is a float so the precision should go up to nanoseconds.|
