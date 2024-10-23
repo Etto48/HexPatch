@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::detect_theme::Theme;
 use ratatui::style::{Color, Modifier, Style};
 use serde::Serialize;
+use termbg::Theme;
 
 use crate::app::App;
 use crate::{EditColorSettings, RegisterColorSettings};

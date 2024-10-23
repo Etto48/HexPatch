@@ -26,7 +26,6 @@ its documentation is not complete.
 pub mod app;
 pub mod args;
 pub mod asm;
-pub mod detect_theme;
 pub mod fuzzer;
 pub mod headers;
 
