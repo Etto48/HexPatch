@@ -8,7 +8,6 @@ use crossterm::{
 };
 use hex_patch::{app::App, args};
 use ratatui::backend::CrosstermBackend;
-use termbg;
 
 fn main() {
     let args = args::Args::parse();
