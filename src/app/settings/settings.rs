@@ -5,9 +5,9 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::detect_theme::Theme;
 use ratatui::style::Style;
 use serde::de::Visitor;
+use termbg::Theme;
 
 use super::{
     app_settings::AppSettings, color_settings::ColorSettings, key_settings::KeySettings,

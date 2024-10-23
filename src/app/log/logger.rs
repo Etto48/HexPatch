@@ -4,7 +4,7 @@ use crate::app::{settings::verbosity::Verbosity, App};
 
 use super::{log_line::LogLine, notification::NotificationLevel};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Logger {
     pub(super) limit: usize,
     pub(super) log: VecDeque<LogLine>,
@@ -87,6 +87,17 @@ impl Logger {
                 self.log.pop_front();
             }
             self.log(log_line.level, &log_line.message);
+        }
+    }
+}
+
+impl Default for Logger {
+    fn default() -> Self {
+        Self {
+            limit: Default::default(),
+            log: Default::default(),
+            verbosity: Verbosity::Debug,
+            notification: Default::default(),
         }
     }
 }

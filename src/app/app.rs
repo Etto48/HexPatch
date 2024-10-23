@@ -1,7 +1,6 @@
 #![allow(clippy::module_inception)]
 use std::time::Duration;
 
-use crate::detect_theme::{self, Theme};
 use crossterm::event;
 use ratatui::{
     backend::Backend,
@@ -9,6 +8,7 @@ use ratatui::{
     text::{Line, Text},
     widgets::{Block, Borders, Clear, ScrollbarOrientation, ScrollbarState},
 };
+use termbg::Theme;
 
 use super::{
     asm::assembly_line::AssemblyLine,
@@ -102,7 +102,7 @@ impl App {
     pub fn new<B: Backend>(
         args: Args,
         terminal: &mut ratatui::Terminal<B>,
-        terminal_theme: Result<Theme, detect_theme::Error>,
+        terminal_theme: Result<Theme, termbg::Error>,
     ) -> Result<Self, String> {
         let mut logger = Logger::default();
         let terminal_theme = match terminal_theme {
