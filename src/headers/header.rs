@@ -241,7 +241,7 @@ impl Header {
 }
 
 impl UserData for Header {
-    fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: mlua::UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("bitness", |_, this| Ok(this.bitness()));
         fields.add_field_method_get("entry_point", |_, this| Ok(this.entry_point()));
         fields.add_field_method_get("architecture", |_, this| {
@@ -256,7 +256,7 @@ impl UserData for Header {
         });
     }
 
-    fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("symbol_to_address", |_, this, symbol: String| {
             Ok(this.symbol_to_address(&symbol))
         });

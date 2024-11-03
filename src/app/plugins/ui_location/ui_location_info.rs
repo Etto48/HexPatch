@@ -30,8 +30,8 @@ pub enum UiLocationInfo {
     },
 }
 
-impl<'lua> IntoLua<'lua> for UiLocationInfo {
-    fn into_lua(self, lua: &'lua mlua::Lua) -> mlua::Result<mlua::Value<'lua>> {
+impl IntoLua for UiLocationInfo {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
         let ret = lua.create_table()?;
         match self {
             UiLocationInfo::AddressView { file_address } => {

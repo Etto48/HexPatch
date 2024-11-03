@@ -37,7 +37,7 @@ impl HeaderContext {
 }
 
 impl UserData for HeaderContext {
-    fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method_mut("set_bitness", |_, this, bitness: u8| {
             if this.bitness.is_some() {
                 Err(mlua::Error::external("bitness already set"))

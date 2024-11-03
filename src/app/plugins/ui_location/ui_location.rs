@@ -13,8 +13,8 @@ pub struct UiLocation {
     pub relative_location: Point,
 }
 
-impl<'lua> IntoLua<'lua> for UiLocation {
-    fn into_lua(self, lua: &'lua mlua::Lua) -> mlua::Result<mlua::Value<'lua>> {
+impl IntoLua for UiLocation {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
         let ret = lua.create_table()?;
         ret.set("info", self.info)?;
         ret.set("relative_location", self.relative_location)?;

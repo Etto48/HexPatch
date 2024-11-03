@@ -52,11 +52,11 @@ fn key_state_to_table(lua: &Lua, state: KeyEventState) -> mlua::Result<Table> {
     Ok(ret)
 }
 
-pub fn mouse_event_to_lua<'lua>(
-    lua: &'lua Lua,
+pub fn mouse_event_to_lua(
+    lua: &Lua,
     mouse: &MouseEvent,
     location: Option<UiLocation>,
-) -> mlua::Result<Table<'lua>> {
+) -> mlua::Result<Table> {
     let ret = lua.create_table()?;
     ret.set("kind", format!("{:?}", mouse.kind))?;
     ret.set("column", mouse.column)?;
@@ -68,7 +68,7 @@ pub fn mouse_event_to_lua<'lua>(
     Ok(ret)
 }
 
-pub fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Table<'lua>> {
+pub fn key_event_to_lua(lua: &Lua, key: &KeyEvent) -> mlua::Result<Table> {
     let ret = lua.create_table()?;
     ret.set("code", KeySettings::key_code_to_string(key.code))?;
 
@@ -84,63 +84,63 @@ pub fn key_event_to_lua<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<Ta
 }
 
 pub fn lua_to_key_event(_lua: &Lua, table: &mlua::Table) -> mlua::Result<KeyEvent> {
-    let code = match table.get::<_, String>("code") {
+    let code = match table.get::<String>("code") {
         Ok(value) => KeySettings::string_to_key_code(&value).map_err(mlua::Error::RuntimeError)?,
         Err(e) => match e {
             mlua::Error::FromLuaConversionError {
                 from: "nil",
-                to: "String",
+                to,
                 message: _,
-            } => KeyCode::Null,
+            } if to == "String" => KeyCode::Null,
             _ => return Err(e),
         },
     };
 
     let mut modifiers = KeyModifiers::NONE;
-    if let Ok(modifiers_table) = table.get::<_, Table>("modifiers") {
-        if modifiers_table.get::<_, bool>("alt").unwrap_or(false) {
+    if let Ok(modifiers_table) = table.get::<Table>("modifiers") {
+        if modifiers_table.get::<bool>("alt").unwrap_or(false) {
             modifiers |= KeyModifiers::ALT;
         }
-        if modifiers_table.get::<_, bool>("control").unwrap_or(false) {
+        if modifiers_table.get::<bool>("control").unwrap_or(false) {
             modifiers |= KeyModifiers::CONTROL;
         }
-        if modifiers_table.get::<_, bool>("hyper").unwrap_or(false) {
+        if modifiers_table.get::<bool>("hyper").unwrap_or(false) {
             modifiers |= KeyModifiers::HYPER;
         }
-        if modifiers_table.get::<_, bool>("meta").unwrap_or(false) {
+        if modifiers_table.get::<bool>("meta").unwrap_or(false) {
             modifiers |= KeyModifiers::META;
         }
-        if modifiers_table.get::<_, bool>("shift").unwrap_or(false) {
+        if modifiers_table.get::<bool>("shift").unwrap_or(false) {
             modifiers |= KeyModifiers::SHIFT;
         }
-        if modifiers_table.get::<_, bool>("super").unwrap_or(false) {
+        if modifiers_table.get::<bool>("super").unwrap_or(false) {
             modifiers |= KeyModifiers::SUPER;
         }
     }
 
-    let kind = match table.get::<_, String>("kind") {
+    let kind = match table.get::<String>("kind") {
         Ok(value) => {
             KeySettings::string_to_key_event_kind(&value).map_err(mlua::Error::RuntimeError)?
         }
         Err(e) => match e {
             mlua::Error::FromLuaConversionError {
                 from: "nil",
-                to: "String",
+                to,
                 message: _,
-            } => KeyEventKind::Press,
+            } if to == "String" => KeyEventKind::Press,
             _ => return Err(e),
         },
     };
 
     let mut state = KeyEventState::NONE;
-    if let Ok(state_table) = table.get::<_, Table>("state") {
-        if state_table.get::<_, bool>("caps_lock").unwrap_or(false) {
+    if let Ok(state_table) = table.get::<Table>("state") {
+        if state_table.get::<bool>("caps_lock").unwrap_or(false) {
             state |= KeyEventState::CAPS_LOCK;
         }
-        if state_table.get::<_, bool>("keypad").unwrap_or(false) {
+        if state_table.get::<bool>("keypad").unwrap_or(false) {
             state |= KeyEventState::KEYPAD;
         }
-        if state_table.get::<_, bool>("num_lock").unwrap_or(false) {
+        if state_table.get::<bool>("num_lock").unwrap_or(false) {
             state |= KeyEventState::NUM_LOCK;
         }
     }
@@ -153,15 +153,11 @@ pub fn lua_to_key_event(_lua: &Lua, table: &mlua::Table) -> mlua::Result<KeyEven
     })
 }
 
-pub(super) fn get_key<'lua>(lua: &'lua Lua, key: &KeyEvent) -> mlua::Result<mlua::Value<'lua>> {
+pub(super) fn get_key(lua: &Lua, key: &KeyEvent) -> mlua::Result<mlua::Value> {
     key_event_to_lua(lua, key).map(mlua::Value::Table)
 }
 
-pub(super) fn set_key<'lua>(
-    lua: &'lua Lua,
-    color: &mut KeyEvent,
-    value: mlua::Value<'lua>,
-) -> mlua::Result<()> {
+pub(super) fn set_key(lua: &Lua, color: &mut KeyEvent, value: mlua::Value) -> mlua::Result<()> {
     if let Some(table) = value.as_table() {
         *color = lua_to_key_event(lua, table)?;
         Ok(())

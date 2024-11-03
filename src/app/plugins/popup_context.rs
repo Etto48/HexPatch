@@ -23,7 +23,11 @@ impl<'app> PopupContext<'app> {
         }
     }
 
-    pub fn to_lua<'lua>(&'lua mut self, lua: &'lua Lua, scope: &Scope<'lua, '_>) -> Table<'lua> {
+    pub fn to_lua<'scope, 'env>(
+        &'env mut self,
+        lua: &Lua,
+        scope: &'scope Scope<'scope, 'env>,
+    ) -> Table {
         let table = lua.create_table().unwrap();
         table
             .set(

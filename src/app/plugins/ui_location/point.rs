@@ -36,7 +36,7 @@ impl Point {
     }
 }
 
-impl<'lua> IntoLua<'lua> for Point {
+impl IntoLua for Point {
     fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
         let ret = lua.create_table()?;
         ret.set("x", self.x)?;

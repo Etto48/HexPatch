@@ -16,7 +16,7 @@ impl PluginInstant {
 }
 
 impl UserData for PluginInstant {
-    fn add_methods<'lua, M: mlua::UserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<'lua, M: mlua::UserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("elapsed", |_, this, ()| {
             Ok(this.inner.elapsed().as_secs_f64())
         });
