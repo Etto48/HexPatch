@@ -373,8 +373,8 @@ impl<'de> Deserialize<'de> for SettingsValue {
     }
 }
 
-impl<'lua> IntoLua<'lua> for SettingsValue {
-    fn into_lua(self, lua: &'lua mlua::Lua) -> mlua::Result<mlua::Value<'lua>> {
+impl IntoLua for SettingsValue {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
         match self {
             SettingsValue::Bool(value) => value.into_lua(lua),
             SettingsValue::Int(value) => value.into_lua(lua),
@@ -386,8 +386,8 @@ impl<'lua> IntoLua<'lua> for SettingsValue {
     }
 }
 
-impl<'lua> FromLua<'lua> for SettingsValue {
-    fn from_lua(value: mlua::Value<'lua>, _lua: &'lua mlua::Lua) -> mlua::Result<Self> {
+impl FromLua for SettingsValue {
+    fn from_lua(value: mlua::Value, _lua: &mlua::Lua) -> mlua::Result<Self> {
         match value {
             mlua::Value::Boolean(value) => Ok(SettingsValue::Bool(value)),
             mlua::Value::Integer(value) => Ok(SettingsValue::Int(value)),

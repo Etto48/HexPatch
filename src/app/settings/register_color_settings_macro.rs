@@ -29,7 +29,7 @@ macro_rules! RegisterColorSettings {(
     };
 }
 
-pub(super) fn get_style<'lua>(lua: &'lua mlua::Lua, style: &Style) -> mlua::Result<Table<'lua>> {
+pub(super) fn get_style(lua: &mlua::Lua, style: &Style) -> mlua::Result<Table> {
     let table = lua.create_table()?;
     table.set("fg", get_color(lua, &style.fg)?)?;
     table.set("bg", get_color(lua, &style.bg)?)?;
@@ -39,19 +39,19 @@ pub(super) fn get_style<'lua>(lua: &'lua mlua::Lua, style: &Style) -> mlua::Resu
     Ok(table)
 }
 
-pub(in crate::app) fn set_style<'lua>(
-    _lua: &'lua mlua::Lua,
+pub(in crate::app) fn set_style(
+    _lua: &mlua::Lua,
     style: &mut Style,
-    value: Table<'lua>,
+    value: Table,
 ) -> mlua::Result<()> {
     match value.get("fg") {
         Ok(value) => set_color(_lua, &mut style.fg, value)?,
         Err(e) => match e {
             mlua::Error::FromLuaConversionError {
                 from: "nil",
-                to: "Table",
+                to,
                 message: _,
-            } => style.fg = None,
+            } if to == "Table" => style.fg = None,
             _ => return Err(e),
         },
     }
@@ -60,9 +60,9 @@ pub(in crate::app) fn set_style<'lua>(
         Err(e) => match e {
             mlua::Error::FromLuaConversionError {
                 from: "nil",
-                to: "Table",
+                to,
                 message: _,
-            } => style.bg = None,
+            } if to == "Table" => style.bg = None,
             _ => return Err(e),
         },
     }
@@ -71,57 +71,58 @@ pub(in crate::app) fn set_style<'lua>(
         Err(e) => match e {
             mlua::Error::FromLuaConversionError {
                 from: "nil",
-                to: "Table",
+                to,
                 message: _,
-            } => style.underline_color = None,
+            } if to == "Table" => style.underline_color = None,
             _ => return Err(e),
         },
     }
     style.add_modifier =
-        ratatui::style::Modifier::from_bits_truncate(match value.get::<_, u16>("add_modifier") {
+        ratatui::style::Modifier::from_bits_truncate(match value.get::<u16>("add_modifier") {
             Ok(value) => value,
             Err(e) => match e {
                 mlua::Error::FromLuaConversionError {
                     from: "nil",
-                    to: "u16",
+                    to,
                     message: _,
-                } => 0,
+                } if to == "u16" => 0,
                 _ => return Err(e),
             },
         });
     style.sub_modifier =
-        ratatui::style::Modifier::from_bits_truncate(match value.get::<_, u16>("sub_modifier") {
+        ratatui::style::Modifier::from_bits_truncate(match value.get::<u16>("sub_modifier") {
             Ok(value) => value,
             Err(e) => match e {
                 mlua::Error::FromLuaConversionError {
                     from: "nil",
-                    to: "u16",
+                    to,
                     message: _,
-                } => 0,
+                } if to == "u16" => 0,
                 _ => return Err(e),
             },
         });
     Ok(())
 }
 
-pub(super) fn get_color<'lua>(
-    lua: &'lua mlua::Lua,
+pub(super) fn get_color(
+    lua: &mlua::Lua,
     color: &Option<ratatui::style::Color>,
-) -> mlua::Result<mlua::Value<'lua>> {
+) -> mlua::Result<mlua::Value> {
     Ok(match color {
         Some(color) => mlua::Value::String(lua.create_string(color.to_string())?),
         None => mlua::Value::Nil,
     })
 }
 
-pub(super) fn set_color<'lua>(
-    _lua: &'lua mlua::Lua,
+pub(super) fn set_color(
+    _lua: &mlua::Lua,
     color: &mut Option<ratatui::style::Color>,
-    value: mlua::Value<'lua>,
+    value: mlua::Value,
 ) -> mlua::Result<()> {
     match value {
         mlua::Value::String(value) => {
-            let new_color = <ratatui::style::Color as std::str::FromStr>::from_str(value.to_str()?);
+            let new_color =
+                <ratatui::style::Color as std::str::FromStr>::from_str(&value.to_str()?);
             if let Ok(new_color) = new_color {
                 *color = Some(new_color);
                 Ok(())

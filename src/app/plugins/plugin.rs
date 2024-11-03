@@ -45,10 +45,10 @@ impl Plugin {
         register_usize(&lua)?;
 
         app_context.reset_exported_commands();
-        if let Ok(init) = lua.globals().get::<_, Function>("init") {
+        if let Ok(init) = lua.globals().get::<Function>("init") {
             lua.scope(|scope| {
                 let context = app_context.to_lua(&lua, scope);
-                init.call::<_, ()>(context)
+                init.call::<()>(context)
             })?;
         }
 
@@ -66,31 +66,31 @@ impl Plugin {
 
     pub fn get_event_handlers(&self) -> Events {
         let mut handlers = Events::NONE;
-        if self.lua.globals().get::<_, Function>("on_open").is_ok() {
+        if self.lua.globals().get::<Function>("on_open").is_ok() {
             handlers |= Events::ON_OPEN;
         }
-        if self.lua.globals().get::<_, Function>("on_edit").is_ok() {
+        if self.lua.globals().get::<Function>("on_edit").is_ok() {
             handlers |= Events::ON_EDIT;
         }
-        if self.lua.globals().get::<_, Function>("on_save").is_ok() {
+        if self.lua.globals().get::<Function>("on_save").is_ok() {
             handlers |= Events::ON_SAVE;
         }
-        if self.lua.globals().get::<_, Function>("on_key").is_ok() {
+        if self.lua.globals().get::<Function>("on_key").is_ok() {
             handlers |= Events::ON_KEY;
         }
-        if self.lua.globals().get::<_, Function>("on_mouse").is_ok() {
+        if self.lua.globals().get::<Function>("on_mouse").is_ok() {
             handlers |= Events::ON_MOUSE;
         }
-        if self.lua.globals().get::<_, Function>("on_focus").is_ok() {
+        if self.lua.globals().get::<Function>("on_focus").is_ok() {
             handlers |= Events::ON_FOCUS;
         }
-        if self.lua.globals().get::<_, Function>("on_blur").is_ok() {
+        if self.lua.globals().get::<Function>("on_blur").is_ok() {
             handlers |= Events::ON_BLUR;
         }
-        if self.lua.globals().get::<_, Function>("on_paste").is_ok() {
+        if self.lua.globals().get::<Function>("on_paste").is_ok() {
             handlers |= Events::ON_PASTE;
         }
-        if self.lua.globals().get::<_, Function>("on_resize").is_ok() {
+        if self.lua.globals().get::<Function>("on_resize").is_ok() {
             handlers |= Events::ON_RESIZE;
         }
         handlers
@@ -107,74 +107,74 @@ impl Plugin {
         let ret = match event {
             Event::Open => {
                 // Call the on_open function
-                let on_open = self.lua.globals().get::<_, Function>("on_open").unwrap();
+                let on_open = self.lua.globals().get::<Function>("on_open").unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_open.call::<_, ()>(context)
+                    on_open.call::<()>(context)
                 })
             }
             Event::Edit { new_bytes } => {
                 // Call the on_edit function
-                let on_edit = self.lua.globals().get::<_, Function>("on_edit").unwrap();
+                let on_edit = self.lua.globals().get::<Function>("on_edit").unwrap();
                 self.lua.scope(|scope| {
                     let new_bytes = scope.create_any_userdata_ref_mut(new_bytes)?;
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_edit.call::<_, ()>((new_bytes, context))
+                    on_edit.call::<()>((new_bytes, context))
                 })
             }
             Event::Save => {
                 // Call the on_save function
-                let on_save = self.lua.globals().get::<_, Function>("on_save").unwrap();
+                let on_save = self.lua.globals().get::<Function>("on_save").unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_save.call::<_, ()>(context)
+                    on_save.call::<()>(context)
                 })
             }
             Event::Key { event } => {
                 // Call the on_key function
-                let on_key = self.lua.globals().get::<_, Function>("on_key").unwrap();
+                let on_key = self.lua.globals().get::<Function>("on_key").unwrap();
                 let event = key_event_to_lua(&self.lua, &event).unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_key.call::<_, ()>((event, context))
+                    on_key.call::<()>((event, context))
                 })
             }
             Event::Mouse { event, location } => {
                 // Call the on_mouse function
-                let on_mouse = self.lua.globals().get::<_, Function>("on_mouse").unwrap();
+                let on_mouse = self.lua.globals().get::<Function>("on_mouse").unwrap();
                 let event = mouse_event_to_lua(&self.lua, &event, location).unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_mouse.call::<_, ()>((event, context))
+                    on_mouse.call::<()>((event, context))
                 })
             }
             Event::Focus => {
-                let on_focus = self.lua.globals().get::<_, Function>("on_focus").unwrap();
+                let on_focus = self.lua.globals().get::<Function>("on_focus").unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_focus.call::<_, ()>(context)
+                    on_focus.call::<()>(context)
                 })
             }
             Event::Blur => {
-                let on_blur = self.lua.globals().get::<_, Function>("on_blur").unwrap();
+                let on_blur = self.lua.globals().get::<Function>("on_blur").unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_blur.call::<_, ()>(context)
+                    on_blur.call::<()>(context)
                 })
             }
             Event::Paste { text } => {
-                let on_paste = self.lua.globals().get::<_, Function>("on_paste").unwrap();
+                let on_paste = self.lua.globals().get::<Function>("on_paste").unwrap();
                 self.lua.scope(|scope| {
                     let text = self.lua.create_string(text).unwrap();
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_paste.call::<_, ()>((text, context))
+                    on_paste.call::<()>((text, context))
                 })
             }
             Event::Resize { width, height } => {
-                let on_resize = self.lua.globals().get::<_, Function>("on_resize").unwrap();
+                let on_resize = self.lua.globals().get::<Function>("on_resize").unwrap();
                 self.lua.scope(|scope| {
                     let context = app_context.to_lua(&self.lua, scope);
-                    on_resize.call::<_, ()>((width, height, context))
+                    on_resize.call::<()>((width, height, context))
                 })
             }
         };
@@ -191,12 +191,12 @@ impl Plugin {
     }
 
     pub fn run_command(&mut self, command: &str, app_context: &mut AppContext) -> mlua::Result<()> {
-        let command_fn = self.lua.globals().get::<_, Function>(command)?;
+        let command_fn = self.lua.globals().get::<Function>(command)?;
         app_context.set_exported_commands(self.commands.take());
         app_context.set_exported_header_parsers(self.header_parsers.take());
         let ret = self.lua.scope(|scope| {
             let context = app_context.to_lua(&self.lua, scope);
-            command_fn.call::<_, ()>(context)
+            command_fn.call::<()>(context)
         });
         self.commands = app_context.take_exported_commands();
         self.header_parsers = app_context.take_exported_header_parsers();
@@ -216,12 +216,12 @@ impl Plugin {
         let callback = self
             .lua
             .globals()
-            .get::<_, Function>(callback.as_ref())
+            .get::<Function>(callback.as_ref())
             .unwrap();
         self.lua.scope(|scope| {
             let popup_context = popup_context.to_lua(&self.lua, scope);
             let context = app_context.to_lua(&self.lua, scope);
-            callback.call::<_, ()>((popup_context, context))
+            callback.call::<()>((popup_context, context))
         })
     }
 
@@ -232,12 +232,12 @@ impl Plugin {
             let parser_fn = self
                 .lua
                 .globals()
-                .get::<&str, Function>(parser.parser.as_ref())
+                .get::<Function>(parser.parser.clone())
                 .unwrap();
             let result = self.lua.scope(|scope| {
                 let context = app_context.to_lua(&self.lua, scope);
                 let header_context = scope.create_userdata_ref_mut(&mut header_context)?;
-                parser_fn.call::<_, ()>((header_context, context))
+                parser_fn.call::<()>((header_context, context))
             });
             self.commands = app_context.take_exported_commands();
             match result {
@@ -286,7 +286,7 @@ mod test {
         let mut app_context = get_app_context!(app);
         let plugin = Plugin::new_from_source(&source, &mut app_context).unwrap();
         assert_eq!(
-            plugin.lua.globals().get::<_, i32>("test_value").unwrap(),
+            plugin.lua.globals().get::<i32>("test_value").unwrap(),
             test_value
         );
     }

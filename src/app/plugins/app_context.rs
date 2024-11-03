@@ -127,11 +127,11 @@ impl<'app> AppContext<'app> {
         self.exported_header_parsers.lock().unwrap().take()
     }
 
-    pub fn to_lua<'lua>(
-        &'lua mut self,
-        lua: &'lua Lua,
-        scope: &Scope<'lua, '_>,
-    ) -> mlua::Table<'lua> {
+    pub fn to_lua<'scope, 'env>(
+        &'env mut self,
+        lua: &'scope Lua,
+        scope: &'scope Scope<'scope, 'env>,
+    ) -> mlua::Table {
         let context = lua.create_table().unwrap();
         context
             .set(
@@ -151,7 +151,7 @@ impl<'app> AppContext<'app> {
                 "add_command",
                 scope
                     .create_function_mut(move |lua, (command, description): (String, String)| {
-                        if let Ok(_command_fn) = lua.globals().get::<_, Function>(command.clone()) {
+                        if let Ok(_command_fn) = lua.globals().get::<Function>(command.clone()) {
                             exported_commands
                                 .lock()
                                 .unwrap()
@@ -194,7 +194,7 @@ impl<'app> AppContext<'app> {
                 scope
                     .create_function_mut(move |lua, callback: String| {
                         if let Ok(_header_parser_fn) =
-                            lua.globals().get::<_, Function>(callback.clone())
+                            lua.globals().get::<Function>(callback.clone())
                         {
                             exported_header_parsers
                                 .lock()
@@ -243,7 +243,7 @@ impl<'app> AppContext<'app> {
                         let mut popup = self.popup.lock().unwrap();
                         if popup.is_some() {
                             Err(mlua::Error::external("Popup already open"))
-                        } else if lua.globals().get::<_, Function>(callback.clone()).is_err() {
+                        } else if lua.globals().get::<Function>(callback.clone()).is_err() {
                             Err(mlua::Error::external(format!(
                                 "Function '{}' not found but needed to open the popup",
                                 callback

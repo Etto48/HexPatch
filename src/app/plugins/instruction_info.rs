@@ -46,7 +46,7 @@ impl From<&AssemblyLine> for InstructionInfo {
 }
 
 impl UserData for InstructionInfo {
-    fn add_fields<'lua, F: mlua::UserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<'lua, F: mlua::UserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("instruction", |_lua, this| Ok(this.instruction.clone()));
         fields.add_field_method_get("physical_address", |_lua, this| Ok(this.physical_address));
         fields.add_field_method_get("virtual_address", |_lua, this| Ok(this.virtual_address));

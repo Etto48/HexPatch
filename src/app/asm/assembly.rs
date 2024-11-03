@@ -288,13 +288,13 @@ impl App {
         if global_byte_index >= self.assembly_offsets.len() {
             return None;
         }
-        let current_istruction_index = self.assembly_offsets[global_byte_index];
-        Some(&self.assembly_instructions[current_istruction_index])
+        let current_instruction_index = self.assembly_offsets[global_byte_index];
+        Some(&self.assembly_instructions[current_instruction_index])
     }
 
     pub(in crate::app) fn get_instruction_at(&self, index: usize) -> &AssemblyLine {
-        let current_istruction_index = self.assembly_offsets[index];
-        &self.assembly_instructions[current_istruction_index]
+        let current_instruction_index = self.assembly_offsets[index];
+        &self.assembly_instructions[current_instruction_index]
     }
 
     pub(in crate::app) fn edit_assembly(&mut self, modifyied_bytes: usize) {
