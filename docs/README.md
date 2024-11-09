@@ -40,6 +40,15 @@ To install it, simply run:
 pkgin install hexpatch
 ```
 
+##### Build from source on NetBSD
+
+If you prefer to build from source:
+
+```bash
+cd /usr/pkgsrc/devel/hexpatch
+make install
+```
+
 #### Arch Linux
 
 On Arch Linux, a package is available from the [official repositories](https://archlinux.org/packages/extra/x86_64/hexpatch/):
@@ -48,13 +57,19 @@ On Arch Linux, a package is available from the [official repositories](https://a
 pacman -S hexpatch
 ```
 
-#### Build from source
+### Building from source with cargo
 
-If you prefer to build from source:
+Clone the repository
 
 ```bash
-cd /usr/pkgsrc/devel/hexpatch
-make install
+git clone https://github.com/Etto48/HexPatch.git
+cd HexPatch
+```
+
+Build and install
+
+```bash
+cargo install --path .
 ```
 
 ## SSH connection
