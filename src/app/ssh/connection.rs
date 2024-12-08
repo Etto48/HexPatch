@@ -11,7 +11,7 @@ impl Handler for SSHClient {
 
     fn check_server_key<'life0, 'life1, 'async_trait>(
         &'life0 mut self,
-        _server_public_key: &'life1 russh_keys::key::PublicKey,
+        _server_public_key: &'life1 russh_keys::PublicKey,
     ) -> core::pin::Pin<
         Box<dyn core::future::Future<Output = Result<bool, Self::Error>> + Send + 'async_trait>,
     >
