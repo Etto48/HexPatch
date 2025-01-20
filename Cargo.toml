@@ -5,7 +5,7 @@ HexPatch is a binary patcher and editor with terminal user interface (TUI),
 it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
 Also, it can edit remote files via SSH."""
-version = "1.9.4"
+version = "1.9.5"
 authors = ["Ettore Ricci"]
 edition = "2021"
 readme = "docs/README.md"
@@ -22,11 +22,11 @@ build = "build.rs"
 winres = "0.1"
 
 [dependencies]
-bitflags = { version = "2.6", features = ["std"] }
+bitflags = { version = "2.8", features = ["std"] }
 capstone = "0.12"
 clap = { version = "4.5", features = ["derive"] }
 crossterm = { version = "0.28", features = ["serde"] }
-dirs = "5.0"
+dirs = "6.0"
 keystone-engine = "0.1"
 macro_rules_attribute = "0.2"
 mlua = { version = "0.10", features = ["lua54", "vendored", "serialize"] }
@@ -34,14 +34,14 @@ object = "0.36"
 pdb = "0.8"
 ratatui = { version = "0.29", features = ["serde"] }
 regex = "1.11"
-russh = "0.48"
-russh-keys = "0.48"
+russh = "0.49"
+russh-keys = "0.49"
 russh-sftp = "2.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-symbolic-demangle = "12.12"
-tempfile = "3.13"
-tokio = "1.41"
+symbolic-demangle = "12.13"
+tempfile = "3.15"
+tokio = "1.43"
 termbg = "0.6"
 
 [target.'cfg(windows)'.dependencies]

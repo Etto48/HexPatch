@@ -1,6 +1,7 @@
-use std::{error::Error, fmt::Display, path::PathBuf};
+use std::{error::Error, fmt::Display, path::PathBuf, sync::Arc};
 
 use russh::client::{self, Handler};
+use russh_keys::key::PrivateKeyWithHashAlg;
 use russh_sftp::client::SftpSession;
 
 use crate::app::files::path;
@@ -81,7 +82,9 @@ impl Connection {
         } else {
             let (private_key, _public_key) = Self::get_key_files()?;
             let keypair = russh_keys::load_secret_key(private_key, None)?;
-            if !runtime.block_on(session.authenticate_publickey(username, keypair.into()))? {
+            let keypair = PrivateKeyWithHashAlg::new(Arc::new(keypair), None)
+                .expect("No hash algorithm specified");
+            if !runtime.block_on(session.authenticate_publickey(username, keypair))? {
                 return Err("Authentication failed".into());
             }
         }
@@ -154,13 +157,13 @@ impl Connection {
     pub fn is_file(&self, path: &str) -> bool {
         self.runtime
             .block_on(self.sftp.metadata(path))
-            .map_or(false, |metadata| !metadata.is_dir())
+            .is_ok_and(|metadata| !metadata.is_dir())
     }
 
     pub fn is_dir(&self, path: &str) -> bool {
         self.runtime
             .block_on(self.sftp.metadata(path))
-            .map_or(false, |metadata| metadata.is_dir())
+            .is_ok_and(|metadata| metadata.is_dir())
     }
 }
 

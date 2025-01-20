@@ -39,10 +39,7 @@ impl Settings {
             ));
         }
 
-        let settings = match std::fs::read_to_string(&path) {
-            Ok(settings) => settings,
-            Err(e) => return Err(e),
-        };
+        let settings = std::fs::read_to_string(&path)?;
 
         let mut deserializer = serde_json::Deserializer::from_str(&settings);
 

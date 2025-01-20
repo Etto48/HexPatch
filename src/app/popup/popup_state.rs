@@ -676,7 +676,7 @@ impl App {
                 } else {
                     popup_text.lines.push(Line::raw(""));
                 }
-                let status = format!("{}B", text.as_bytes().len());
+                let status = format!("{}B", text.len());
                 let padding = width.saturating_sub(status.len());
                 popup_text.lines.push(
                     Line::styled(
