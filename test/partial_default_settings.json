@@ -84,6 +84,20 @@
       "add_modifier": "",
       "sub_modifier": ""
     },
+    "pane_selected": {
+      "fg": "LightGreen",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
+    "pane": {
+      "fg": "White",
+      "bg": null,
+      "underline_color": null,
+      "add_modifier": "",
+      "sub_modifier": ""
+    },
     "assembly_symbol": {
       "fg": "LightGreen",
       "bg": null,
@@ -447,7 +461,23 @@
       "code": {
         "Char": "v"
       },
+      "modifiers": "CONTROL",
+      "kind": "Press",
+      "state": ""
+    },
+    "change_selected_pane": {
+      "code": {
+        "Char": "v"
+      },
       "modifiers": "",
+      "kind": "Press",
+      "state": ""
+    },
+    "fullscreen": {
+      "code": {
+        "Char": "f"
+      },
+      "modifiers": "CONTROL",
       "kind": "Press",
       "state": ""
     },

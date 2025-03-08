@@ -38,6 +38,8 @@ pub struct KeySettings {
     pub patch_assembly: KeyEvent,
     pub jump: KeyEvent,
     pub change_view: KeyEvent,
+    pub change_selected_pane: KeyEvent,
+    pub fullscreen: KeyEvent,
 
     pub confirm: KeyEvent,
     pub close_popup: KeyEvent,
@@ -231,7 +233,9 @@ impl Default for KeySettings {
             patch_text: KeyEvent::new(KeyCode::Char('t'), KeyModifiers::empty()),
             patch_assembly: KeyEvent::new(KeyCode::Char('p'), KeyModifiers::empty()),
             jump: KeyEvent::new(KeyCode::Char('j'), KeyModifiers::empty()),
-            change_view: KeyEvent::new(KeyCode::Char('v'), KeyModifiers::empty()),
+            change_view: KeyEvent::new(KeyCode::Char('v'), KeyModifiers::CONTROL),
+            change_selected_pane: KeyEvent::new(KeyCode::Char('v'), KeyModifiers::empty()),
+            fullscreen: KeyEvent::new(KeyCode::Char('f'), KeyModifiers::CONTROL),
 
             confirm: KeyEvent::new(KeyCode::Enter, KeyModifiers::empty()),
             close_popup: KeyEvent::new(KeyCode::Esc, KeyModifiers::empty()),

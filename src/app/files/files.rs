@@ -173,7 +173,12 @@ impl App {
         self.screen_size = Self::get_size(terminal)?;
         self.block_size = 8;
         self.vertical_margin = 2;
-        self.blocks_per_row = Self::calc_blocks_per_row(self.block_size, self.screen_size.0);
+        self.blocks_per_row = Self::calc_blocks_per_row(
+            self.block_size,
+            self.screen_size.0,
+            self.fullscreen,
+            self.selected_pane,
+        );
 
         Self::print_loading_status(
             &self.settings.color,
