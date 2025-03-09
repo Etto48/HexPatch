@@ -146,6 +146,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "argon2"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c3610892ee6e0cbce8ae2700349fcf8f98adb0dbfbee85aec3c9179d29cc072"
+dependencies = [
+ "base64ct",
+ "blake2",
+ "cpufeatures",
+ "password-hash",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -216,6 +228,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "blake2"
+version = "0.10.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46502ad458c9a52b69d4d4d32775c788b7a1b85e8bc9d482d92250fc0e3f8efe"
+dependencies = [
+ "digest",
+]
+
+[[package]]
 name = "block-buffer"
 version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -273,9 +294,9 @@ checksum = "325918d6fe32f23b19878fe4b34794ae41fc19ddbe53b10571a4874d44ffd39b"
 
 [[package]]
 name = "capstone"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b08ca438d9585a2b216b0c2e88ea51e096286c5f197f7be2526bb515ef775b6c"
+checksum = "015ef5d5ca1743e3f94af9509ba6bd2886523cfee46e48d15c2ef5216fd4ac9a"
 dependencies = [
  "capstone-sys",
  "libc",
@@ -283,9 +304,9 @@ dependencies = [
 
 [[package]]
 name = "capstone-sys"
-version = "0.16.0"
+version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fe7183271711ffb7c63a6480e4baf480e0140da59eeba9b18fcc8bf3478950e3"
+checksum = "2267cb8d16a1e4197863ec4284ffd1aec26fe7e57c58af46b02590a0235809a0"
 dependencies = [
  "cc",
  "libc",
@@ -667,15 +688,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "des"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffdd80ce8ce993de27e9f063a444a4d53ce8e8db4c1f00cc03af5ad5a9867a1e"
-dependencies = [
- "cipher",
-]
-
-[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -778,6 +790,18 @@ dependencies = [
  "sec1",
  "subtle",
  "zeroize",
+]
+
+[[package]]
+name = "enum_dispatch"
+version = "0.3.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aa18ce2bc66555b3218614519ac839ddb759a7d6720732f979ef8d13be147ecd"
+dependencies = [
+ "once_cell",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1056,6 +1080,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d231dfb89cfffdbc30e7fc41579ed6066ad03abda9e567ccafae602b97ec5024"
 
 [[package]]
+name = "hex"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
+
+[[package]]
 name = "hex-literal"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1078,7 +1108,6 @@ dependencies = [
  "ratatui",
  "regex",
  "russh",
- "russh-keys",
  "russh-sftp",
  "serde",
  "serde_json",
@@ -1173,6 +1202,34 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "internal-russh-forked-ssh-key"
+version = "0.6.9+upstream-0.6.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb5af01d366561582e9ea5f841837cc1d8e37e7142a32f33a43801e81863cba5"
+dependencies = [
+ "argon2",
+ "bcrypt-pbkdf",
+ "ecdsa",
+ "ed25519-dalek",
+ "hex",
+ "hmac",
+ "num-bigint-dig",
+ "p256",
+ "p384",
+ "p521",
+ "rand_core",
+ "rsa",
+ "sec1",
+ "sha1",
+ "sha2",
+ "signature",
+ "ssh-cipher",
+ "ssh-encoding",
+ "subtle",
+ "zeroize",
 ]
 
 [[package]]
@@ -1588,13 +1645,14 @@ dependencies = [
 
 [[package]]
 name = "pageant"
-version = "0.0.1"
+version = "0.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "032d6201d2fb765158455ae0d5a510c016bb6da7232e5040e39e9c8db12b0afc"
+checksum = "2c6f0e349ea8dea1b50aa17c082777d30df133d89898c7568a615354772d3731"
 dependencies = [
  "bytes",
  "delegate",
  "futures",
+ "log",
  "rand",
  "thiserror 1.0.69",
  "tokio",
@@ -1622,6 +1680,17 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "windows-targets",
+]
+
+[[package]]
+name = "password-hash"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "346f04948ba92c43e8469c1ee6736c7563d71012b17d40745260fe106aac2166"
+dependencies = [
+ "base64ct",
+ "rand_core",
+ "subtle",
 ]
 
 [[package]]
@@ -1941,92 +2010,41 @@ dependencies = [
 
 [[package]]
 name = "russh"
-version = "0.49.2"
+version = "0.50.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b206640a622d63529540fc48036aa39f211b2b71432a451156004f40655cdb4"
+checksum = "02d8075561703e70dab7b095b2c13597cde37f5be94af0849fa4e51c315020d0"
 dependencies = [
  "aes",
  "aes-gcm",
- "async-trait",
  "bitflags 2.9.0",
+ "block-padding",
  "byteorder",
  "bytes",
  "cbc",
  "chacha20",
  "ctr",
  "curve25519-dalek",
- "delegate",
- "des",
- "digest",
- "elliptic-curve",
- "flate2",
- "futures",
- "generic-array",
- "hex-literal",
- "hmac",
- "log",
- "num-bigint",
- "once_cell",
- "p256",
- "p384",
- "p521",
- "poly1305",
- "rand",
- "rand_core",
- "rsa",
- "russh-cryptovec",
- "russh-keys",
- "russh-sftp",
- "russh-util",
- "sha1",
- "sha2",
- "signature",
- "ssh-encoding",
- "ssh-key",
- "subtle",
- "thiserror 1.0.69",
- "tokio",
-]
-
-[[package]]
-name = "russh-cryptovec"
-version = "0.48.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d8e7e854e1a87e4be00fa287c98cad23faa064d0464434beaa9f014ec3baa98"
-dependencies = [
- "libc",
- "ssh-encoding",
- "winapi",
-]
-
-[[package]]
-name = "russh-keys"
-version = "0.49.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "788a2439ce385856585346beb37c48e7c9eb5de5f4f00736720a19ffdb3f5bb5"
-dependencies = [
- "aes",
- "async-trait",
- "bcrypt-pbkdf",
- "block-padding",
- "byteorder",
- "bytes",
- "cbc",
- "ctr",
  "data-encoding",
+ "delegate",
  "der",
  "digest",
  "ecdsa",
  "ed25519-dalek",
  "elliptic-curve",
+ "enum_dispatch",
+ "flate2",
  "futures",
+ "generic-array",
  "getrandom 0.2.15",
+ "hex-literal",
  "hmac",
  "home",
  "inout",
+ "internal-russh-forked-ssh-key",
  "log",
  "md5",
- "num-integer",
+ "num-bigint",
+ "once_cell",
  "p256",
  "p384",
  "p521",
@@ -2035,24 +2053,36 @@ dependencies = [
  "pkcs1",
  "pkcs5",
  "pkcs8",
+ "poly1305",
  "rand",
  "rand_core",
  "rsa",
  "russh-cryptovec",
  "russh-util",
  "sec1",
- "serde",
  "sha1",
  "sha2",
  "signature",
  "spki",
  "ssh-encoding",
- "ssh-key",
+ "subtle",
  "thiserror 1.0.69",
  "tokio",
  "tokio-stream",
  "typenum",
  "zeroize",
+]
+
+[[package]]
+name = "russh-cryptovec"
+version = "0.50.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fcb7c127135848b47715b5bcb13d8a27ccd86ce1de1c15eab5982df91fe279a"
+dependencies = [
+ "libc",
+ "log",
+ "ssh-encoding",
+ "winapi",
 ]
 
 [[package]]
@@ -2075,9 +2105,9 @@ dependencies = [
 
 [[package]]
 name = "russh-util"
-version = "0.48.0"
+version = "0.50.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "92c7dd577958c0cefbc8f8a2c05c48c88c42e2fdb760dbe9b96ae31d4de97a1f"
+checksum = "c698d702527b51a82e64de98d506e9c1e83a063035d41df4f2354499ec090b79"
 dependencies = [
  "chrono",
  "tokio",
@@ -2400,29 +2430,6 @@ dependencies = [
  "bytes",
  "pem-rfc7468",
  "sha2",
-]
-
-[[package]]
-name = "ssh-key"
-version = "0.6.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b86f5297f0f04d08cabaa0f6bff7cb6aec4d9c3b49d87990d63da9d9156a8c3"
-dependencies = [
- "bcrypt-pbkdf",
- "ed25519-dalek",
- "num-bigint-dig",
- "p256",
- "p384",
- "p521",
- "rand_core",
- "rsa",
- "sec1",
- "sha2",
- "signature",
- "ssh-cipher",
- "ssh-encoding",
- "subtle",
- "zeroize",
 ]
 
 [[package]]

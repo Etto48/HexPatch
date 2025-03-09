@@ -1,7 +1,7 @@
 use std::{error::Error, fmt::Display, path::PathBuf, sync::Arc};
 
-use russh::client::{self, Handler};
-use russh_keys::key::PrivateKeyWithHashAlg;
+use russh::client::{self, AuthResult, Handler};
+use russh::keys::key::PrivateKeyWithHashAlg;
 use russh_sftp::client::SftpSession;
 
 use crate::app::files::path;
@@ -10,18 +10,11 @@ pub struct SSHClient;
 impl Handler for SSHClient {
     type Error = russh::Error;
 
-    fn check_server_key<'life0, 'life1, 'async_trait>(
-        &'life0 mut self,
-        _server_public_key: &'life1 russh_keys::PublicKey,
-    ) -> core::pin::Pin<
-        Box<dyn core::future::Future<Output = Result<bool, Self::Error>> + Send + 'async_trait>,
-    >
-    where
-        'life0: 'async_trait,
-        'life1: 'async_trait,
-        Self: 'async_trait,
-    {
-        Box::pin(async move { Ok(true) })
+    async fn check_server_key(
+        &mut self,
+        _server_public_key: &russh::keys::ssh_key::PublicKey,
+    ) -> Result<bool, Self::Error> {
+        Ok(true)
     }
 }
 
@@ -76,15 +69,20 @@ impl Connection {
             SSHClient {},
         ))?;
         if let Some(password) = password {
-            if !runtime.block_on(session.authenticate_password(username, password))? {
+            if let AuthResult::Failure {
+                remaining_methods: _,
+            } = runtime.block_on(session.authenticate_password(username, password))?
+            {
                 return Err("Authentication failed".into());
             }
         } else {
             let (private_key, _public_key) = Self::get_key_files()?;
-            let keypair = russh_keys::load_secret_key(private_key, None)?;
-            let keypair = PrivateKeyWithHashAlg::new(Arc::new(keypair), None)
-                .expect("No hash algorithm specified");
-            if !runtime.block_on(session.authenticate_publickey(username, keypair))? {
+            let keypair = russh::keys::load_secret_key(private_key, None)?;
+            let keypair = PrivateKeyWithHashAlg::new(Arc::new(keypair), None);
+            if let AuthResult::Failure {
+                remaining_methods: _,
+            } = runtime.block_on(session.authenticate_publickey(username, keypair))?
+            {
                 return Err("Authentication failed".into());
             }
         }
