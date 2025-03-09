@@ -9,6 +9,7 @@ use crate::{
     app::{
         data::Data,
         log::{logger::Logger, NotificationLevel},
+        pane::Pane,
         popup::popup_state::PopupState,
         settings::Settings,
         App,
@@ -39,6 +40,8 @@ macro_rules! get_app_context {
             &mut $app.settings,
             &mut $app.logger,
             &mut $app.popup,
+            &mut $app.fullscreen,
+            &mut $app.selected_pane,
         )
     };
 }
@@ -62,6 +65,8 @@ pub struct AppContext<'app> {
     pub settings: &'app mut Settings,
     pub logger: &'app mut Logger,
     pub popup: Arc<Mutex<&'app mut Option<PopupState>>>,
+    pub fullscreen: Arc<Mutex<&'app mut bool>>,
+    pub selected_pane: Arc<Mutex<&'app mut Pane>>,
 }
 
 impl<'app> AppContext<'app> {
@@ -81,6 +86,8 @@ impl<'app> AppContext<'app> {
         settings: &'app mut Settings,
         logger: &'app mut Logger,
         popup: &'app mut Option<PopupState>,
+        fullscreen: &'app mut bool,
+        selected_pane: &'app mut Pane,
     ) -> Self {
         Self {
             exported_commands: Arc::new(Mutex::new(ExportedCommands::default())),
@@ -100,6 +107,8 @@ impl<'app> AppContext<'app> {
             settings,
             logger,
             popup: Arc::new(Mutex::new(popup)),
+            fullscreen: Arc::new(Mutex::new(fullscreen)),
+            selected_pane: Arc::new(Mutex::new(selected_pane)),
         }
     }
 
@@ -388,6 +397,51 @@ impl<'app> AppContext<'app> {
                     .unwrap(),
             )
             .unwrap();
+        context
+            .set(
+                "get_fullscreen",
+                scope
+                    .create_function(|_, ()| {
+                        let fullscreen = self.fullscreen.lock().unwrap();
+                        Ok(fullscreen.clone())
+                    })
+                    .unwrap(),
+            )
+            .unwrap();
+        context
+            .set(
+                "set_fullscreen",
+                scope
+                    .create_function_mut(|_, fullscreen: bool| {
+                        **self.fullscreen.lock().unwrap() = fullscreen;
+                        Ok(())
+                    })
+                    .unwrap(),
+            )
+            .unwrap();
+        context
+            .set(
+                "get_selected_pane",
+                scope
+                    .create_function(|_, ()| {
+                        let selected_pane = self.selected_pane.lock().unwrap();
+                        Ok(selected_pane.clone())
+                    })
+                    .unwrap(),
+            )
+            .unwrap();
+        context
+            .set(
+                "set_selected_pane",
+                scope
+                    .create_function_mut(|_, selected_pane: Pane| {
+                        **self.selected_pane.lock().unwrap() = selected_pane;
+                        Ok(())
+                    })
+                    .unwrap(),
+            )
+            .unwrap();
+
         context
     }
 }

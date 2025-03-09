@@ -144,7 +144,7 @@ impl App {
             ),
             HelpLine::new(
                 &Self::key_event_to_string(key_settings.fullscreen),
-                "Toggle the selected view fullscreen",
+                "Toggle the fullscreen for the selected view",
             ),
             HelpLine::new(
                 &Self::key_event_to_string(key_settings.jump),

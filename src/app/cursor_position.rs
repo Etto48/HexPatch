@@ -1,10 +1,5 @@
-use super::{data::Data, info_mode::InfoMode, log::NotificationLevel, App};
+use super::{data::Data, info_mode::InfoMode, log::NotificationLevel, pane::Pane, App};
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum Pane {
-    Hex,
-    View,
-}
 pub struct CursorPosition {
     pub cursor: Option<(u16, u16)>,
     pub local_x: usize,
@@ -405,9 +400,6 @@ impl App {
             Pane::Hex => self.selected_pane = Pane::View,
             Pane::View => self.selected_pane = Pane::Hex,
         }
-        if self.fullscreen {
-            self.trigger_resize()
-        };
     }
 }
 

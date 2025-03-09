@@ -5,7 +5,7 @@ use ratatui::text::{Line, Span, Text};
 use crate::get_app_context;
 
 use super::{
-    asm::assembly_line::AssemblyLine, cursor_position::Pane, info_mode::InfoMode,
+    asm::assembly_line::AssemblyLine, info_mode::InfoMode, pane::Pane,
     settings::color_settings::ColorSettings, App,
 };
 
@@ -109,20 +109,10 @@ impl App {
     pub(super) fn resize_to_size(&mut self, width: u16, height: u16) {
         let blocks_per_row: usize =
             Self::calc_blocks_per_row(self.block_size, width, self.fullscreen, self.selected_pane);
-        if (width, height) != self.screen_size {
+        if (width, height) != self.screen_size || blocks_per_row != self.blocks_per_row {
             self.screen_size = (width, height);
             self.resize(blocks_per_row);
         }
-    }
-
-    pub(super) fn trigger_resize(&mut self) {
-        let blocks_per_row: usize = Self::calc_blocks_per_row(
-            self.block_size,
-            self.screen_size.0,
-            self.fullscreen,
-            self.selected_pane,
-        );
-        self.resize(blocks_per_row);
     }
 
     pub(super) fn resize(&mut self, blocks_per_row: usize) {

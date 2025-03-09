@@ -51,10 +51,20 @@ function on_mouse(mouse_event, context)
     if mouse_event.location ~= nil then
         location = mouse_event.location.info.type
         if mouse_ctl
-            and mouse_event.kind == "Down(Left)" 
-            and mouse_event.location.info.file_address ~= nil 
+            and mouse_event.kind == "Down(Left)"
         then
-            context.jump_to(mouse_event.location.info.file_address)
+            if mouse_event.location.info.type == "HexView" 
+            then
+                context.set_selected_pane("hex")
+            elseif mouse_event.location.info.type == "TextView"
+                or mouse_event.location.info.type == "AssemblyView" 
+            then
+                context.set_selected_pane("view")
+            end
+            if mouse_event.location.info.file_address ~= nil 
+            then
+                context.jump_to(mouse_event.location.info.file_address)
+            end
         end
     end
     context.log(1, "Mouse event: " .. mouse_event.kind .. " on " .. location .. " @ " .. mouse_event.row .. "," .. mouse_event.column)
