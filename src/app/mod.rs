@@ -16,6 +16,7 @@ pub mod info_mode;
 pub mod instruction;
 pub mod log;
 pub mod mockup;
+pub mod pane;
 pub mod plugins;
 pub mod popup;
 pub mod settings;

@@ -13,13 +13,13 @@ use termbg::Theme;
 
 use super::{
     asm::assembly_line::AssemblyLine,
-    cursor_position::Pane,
     data::Data,
     files::filesystem::FileSystem,
     frame_info::{FrameInfo, InfoViewFrameInfo},
     help::HelpLine,
     info_mode::InfoMode,
     log::{logger::Logger, NotificationLevel},
+    pane::Pane,
     plugins::plugin_manager::PluginManager,
     popup::popup_state::PopupState,
     settings::{color_settings::ColorSettings, Settings},
@@ -105,7 +105,6 @@ impl App {
 
     pub(super) fn switch_fullscreen(&mut self) {
         self.fullscreen = !self.fullscreen;
-        self.trigger_resize();
     }
 
     pub fn new<B: Backend>(
@@ -187,6 +186,9 @@ impl App {
         terminal: &mut ratatui::Terminal<B>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         terminal.draw(|f| {
+            let screen_size = (f.area().width, f.area().height);
+            self.resize_to_size(screen_size.0, screen_size.1);
+
             let min_width = self.block_size as u16 * 3 + 17 + 3;
             if f.area().width < min_width {
                 return;
@@ -348,8 +350,22 @@ impl App {
                 status_bar: status_rect,
                 scroll_bar: scrollbar_rect,
                 address_view: address_rect,
-                hex_view: hex_editor_rect,
-                info_view: info_view_rect,
+                hex_view: if (self.fullscreen && self.selected_pane == Pane::Hex)
+                    || !self.fullscreen
+                {
+                    Some(hex_editor_rect)
+                } else {
+                    None
+                }, // only save the hex view rect if it's visible, we need to know if it's visible to
+                // determine the cursor position
+                info_view: if (self.fullscreen && self.selected_pane == Pane::View)
+                    || !self.fullscreen
+                {
+                    Some(info_view_rect)
+                } else {
+                    None
+                }, // only save the info view rect if it's visible, we need to know if it's visible to
+                // determine the cursor position
                 info_view_frame_info,
                 blocks_per_row: self.blocks_per_row,
                 scroll: self.scroll,
@@ -460,8 +476,8 @@ impl Default for App {
                 status_bar: Rect::default(),
                 scroll_bar: Rect::default(),
                 address_view: Rect::default(),
-                hex_view: Rect::default(),
-                info_view: Rect::default(),
+                hex_view: Some(Rect::default()),
+                info_view: Some(Rect::default()),
                 info_view_frame_info: InfoViewFrameInfo::TextView,
                 blocks_per_row: 1,
                 scroll: 0,

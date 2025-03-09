@@ -69,7 +69,7 @@ impl App {
     pub(in crate::app) fn get_ui_location(&self, global_location: Point) -> Option<UiLocation> {
         if let (Some(popup_rect), Some(popup_info)) = (&self.last_frame_info.popup, &self.popup) {
             if let Some((relative_location, _borders)) =
-                global_location.get_relative_location(popup_rect)
+                global_location.get_relative_location(Some(popup_rect))
             {
                 let name = match popup_info {
                     PopupState::Open { .. } => "Open",
@@ -95,21 +95,21 @@ impl App {
             }
         }
         if let Some((relative_location, _borders)) =
-            global_location.get_relative_location(&self.last_frame_info.scroll_bar)
+            global_location.get_relative_location(Some(&self.last_frame_info.scroll_bar))
         {
             Some(UiLocation {
                 info: UiLocationInfo::ScrollBar,
                 relative_location,
             })
         } else if let Some((relative_location, _borders)) =
-            global_location.get_relative_location(&self.last_frame_info.status_bar)
+            global_location.get_relative_location(Some(&self.last_frame_info.status_bar))
         {
             Some(UiLocation {
                 info: UiLocationInfo::StatusBar,
                 relative_location,
             })
         } else if let Some((relative_location, borders)) =
-            global_location.get_relative_location(&self.last_frame_info.address_view)
+            global_location.get_relative_location(Some(&self.last_frame_info.address_view))
         {
             let file_address = if borders.left || borders.top {
                 None
@@ -129,7 +129,7 @@ impl App {
                 relative_location,
             })
         } else if let Some((relative_location, borders)) =
-            global_location.get_relative_location(&self.last_frame_info.hex_view)
+            global_location.get_relative_location(self.last_frame_info.hex_view.as_ref())
         {
             let (file_address, virtual_address, byte, high) =
                 self.get_hex_and_text_view_byte_info(relative_location, false, borders);
@@ -144,7 +144,7 @@ impl App {
                 relative_location,
             })
         } else if let Some((relative_location, borders)) =
-            global_location.get_relative_location(&self.last_frame_info.info_view)
+            global_location.get_relative_location(self.last_frame_info.info_view.as_ref())
         {
             match &self.last_frame_info.info_view_frame_info {
                 InfoViewFrameInfo::TextView => {

@@ -205,6 +205,10 @@ And the following functions:
 |`close_popup`|`(popup_handler: Option<String>)`|Closes a popup opened by this plugin. If `popup_handler` is not `nil` it will also check if that is the currently open popup. If no popup is open, this plugin does not own the currently open popup, or the provided handler does not match the function will raise an error.|
 |`get_instant_now`|`() -> Instant`|Gets an instant relative to the time this function was called. The Instant type is explained at [Instant](#instant).|
 |`jump_to`|`(file_address: usize)`|Makes the UI jump to the specified file address.|
+|`get_fullscreen`|`() -> bool`|Gets whether the UI is in fullscreen mode.|
+|`set_fullscreen`|`(fullscreen: bool)`|Sets whether the UI is in fullscreen mode.|
+|`get_selected_pane`|`() -> String`|Gets the selected pane. The possible values are `"hex"` if the HexView is selected and `"view"` if TextView or AssemblyView are selected.|
+|`set_selected_pane`|`(pane: String)`|Sets the selected pane. The possible values are `"hex"` to select the HexView and `"view"` to select TextView or AssemblyView.|
 
 For more information on the types, see the following sections.
 
