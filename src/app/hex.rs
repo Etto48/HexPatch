@@ -5,8 +5,8 @@ use ratatui::text::{Line, Span, Text};
 use crate::get_app_context;
 
 use super::{
-    asm::assembly_line::AssemblyLine, info_mode::InfoMode, settings::color_settings::ColorSettings,
-    App,
+    asm::assembly_line::AssemblyLine, cursor_position::Pane, info_mode::InfoMode,
+    settings::color_settings::ColorSettings, App,
 };
 
 pub(super) struct InstructionInfo {
@@ -107,11 +107,22 @@ impl App {
     }
 
     pub(super) fn resize_to_size(&mut self, width: u16, height: u16) {
-        let blocks_per_row = Self::calc_blocks_per_row(self.block_size, width);
+        let blocks_per_row: usize =
+            Self::calc_blocks_per_row(self.block_size, width, self.fullscreen, self.selected_pane);
         if (width, height) != self.screen_size {
             self.screen_size = (width, height);
             self.resize(blocks_per_row);
         }
+    }
+
+    pub(super) fn trigger_resize(&mut self) {
+        let blocks_per_row: usize = Self::calc_blocks_per_row(
+            self.block_size,
+            self.screen_size.0,
+            self.fullscreen,
+            self.selected_pane,
+        );
+        self.resize(blocks_per_row);
     }
 
     pub(super) fn resize(&mut self, blocks_per_row: usize) {
@@ -121,11 +132,23 @@ impl App {
         self.jump_to(old_cursor.global_byte_index, false);
     }
 
-    pub(super) fn calc_blocks_per_row(block_size: usize, width: u16) -> usize {
+    pub(super) fn calc_blocks_per_row(
+        block_size: usize,
+        width: u16,
+        fullscreen: bool,
+        selected_pane: Pane,
+    ) -> usize {
         let block_characters_hex = block_size * 3 + 1;
         let block_characters_text = block_size * 2 + 1;
         let available_width = width.saturating_sub(18 + 2 + 2);
-        let complessive_chars_per_block = block_characters_hex + block_characters_text;
+        let complessive_chars_per_block = if fullscreen {
+            match selected_pane {
+                Pane::Hex => block_characters_hex,
+                Pane::View => block_characters_text,
+            }
+        } else {
+            block_characters_hex + block_characters_text
+        };
         let blocks_per_row = (available_width + 2) / complessive_chars_per_block as u16;
         (blocks_per_row as usize).max(1)
     }

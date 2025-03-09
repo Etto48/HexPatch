@@ -1,5 +1,10 @@
-use super::{data::Data, log::NotificationLevel, App};
+use super::{data::Data, info_mode::InfoMode, log::NotificationLevel, App};
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Pane {
+    Hex,
+    View,
+}
 pub struct CursorPosition {
     pub cursor: Option<(u16, u16)>,
     pub local_x: usize,
@@ -292,6 +297,16 @@ impl App {
         )
     }
 
+    pub(super) fn move_cursor_in_selected_panel(&mut self, dx: isize, dy: isize) {
+        match self.selected_pane {
+            Pane::Hex => self.move_cursor(dx, dy, false),
+            Pane::View => match self.info_mode {
+                InfoMode::Text => self.move_cursor(dx * 2, dy, false),
+                InfoMode::Assembly => self.move_cursor_to_near_instruction(dy),
+            },
+        }
+    }
+
     pub(super) fn move_cursor(&mut self, dx: isize, dy: isize, best_effort: bool) {
         if self.screen_size.1 <= self.vertical_margin {
             return;
@@ -383,6 +398,16 @@ impl App {
 
         let target_address = self.assembly_instructions[next_instruction_index].file_address();
         self.jump_to(target_address as usize, false);
+    }
+
+    pub(super) fn switch_selected_pane(&mut self) {
+        match self.selected_pane {
+            Pane::Hex => self.selected_pane = Pane::View,
+            Pane::View => self.selected_pane = Pane::Hex,
+        }
+        if self.fullscreen {
+            self.trigger_resize()
+        };
     }
 }
 

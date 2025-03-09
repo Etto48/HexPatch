@@ -18,13 +18,17 @@ impl App {
         match event {
             event::Event::Key(event) if event.kind == event::KeyEventKind::Press => {
                 if event == self.settings.key.up {
-                    self.move_cursor(0, -1, false);
+                    self.move_cursor_in_selected_panel(0, -1);
+                    // self.move_cursor(0, -1, false);
                 } else if event == self.settings.key.down {
-                    self.move_cursor(0, 1, false);
+                    self.move_cursor_in_selected_panel(0, 1);
+                    // self.move_cursor(0, 1, false);
                 } else if event == self.settings.key.left {
-                    self.move_cursor(-1, 0, false);
+                    self.move_cursor_in_selected_panel(-1, 0);
+                    // self.move_cursor(-1, 0, false);
                 } else if event == self.settings.key.right {
-                    self.move_cursor(1, 0, false);
+                    self.move_cursor_in_selected_panel(1, 0);
+                    // self.move_cursor(1, 0, false);
                 } else if event == self.settings.key.next {
                     match self.info_mode {
                         super::info_mode::InfoMode::Text => {
@@ -83,6 +87,10 @@ impl App {
                     self.undo();
                 } else if event == self.settings.key.redo {
                     self.redo();
+                } else if event == self.settings.key.change_selected_pane {
+                    self.switch_selected_pane();
+                } else if event == self.settings.key.fullscreen {
+                    self.switch_fullscreen();
                 } else if let KeyCode::Char(c) = event.code {
                     match c {
                         '0'..='9' | 'A'..='F' | 'a'..='f' => {

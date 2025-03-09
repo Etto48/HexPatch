@@ -136,7 +136,15 @@ impl App {
             HelpLine::new(&Self::key_event_to_string(key_settings.open), "Open file"),
             HelpLine::new(
                 &Self::key_event_to_string(key_settings.change_view),
-                "Change view",
+                "Switch view from assembly to text or viceversa",
+            ),
+            HelpLine::new(
+                &Self::key_event_to_string(key_settings.change_selected_pane),
+                "Switch from the hex pane to assembly/text or viceversa",
+            ),
+            HelpLine::new(
+                &Self::key_event_to_string(key_settings.fullscreen),
+                "Toggle the selected view fullscreen",
             ),
             HelpLine::new(
                 &Self::key_event_to_string(key_settings.jump),

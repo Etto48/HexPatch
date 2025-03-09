@@ -5,6 +5,7 @@ use crossterm::event;
 use ratatui::{
     backend::Backend,
     layout::Rect,
+    style::Style,
     text::{Line, Text},
     widgets::{Block, Borders, Clear, ScrollbarOrientation, ScrollbarState},
 };
@@ -12,6 +13,7 @@ use termbg::Theme;
 
 use super::{
     asm::assembly_line::AssemblyLine,
+    cursor_position::Pane,
     data::Data,
     files::filesystem::FileSystem,
     frame_info::{FrameInfo, InfoViewFrameInfo},
@@ -39,6 +41,8 @@ pub struct App {
     pub(super) info_mode: InfoMode,
     pub(super) scroll: usize,
     pub(super) cursor: (u16, u16),
+    pub(super) selected_pane: Pane,
+    pub(super) fullscreen: bool,
     pub(super) poll_time: Duration,
     pub(super) needs_to_exit: bool,
     pub(super) screen_size: (u16, u16),
@@ -97,6 +101,11 @@ impl App {
             .size()
             .map_err(|e| e.to_string())
             .map(|s| (s.width, s.height))
+    }
+
+    pub(super) fn switch_fullscreen(&mut self) {
+        self.fullscreen = !self.fullscreen;
+        self.trigger_resize();
     }
 
     pub fn new<B: Backend>(
@@ -184,18 +193,36 @@ impl App {
             }
             let status_rect = Rect::new(0, f.area().height - 1, f.area().width, 1);
             let address_rect = Rect::new(0, 0, 17, f.area().height - status_rect.height);
-            let hex_editor_rect = Rect::new(
-                address_rect.width,
-                0,
-                (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16,
-                f.area().height - status_rect.height,
-            );
-            let info_view_rect = Rect::new(
-                address_rect.width + hex_editor_rect.width,
-                0,
-                f.area().width - hex_editor_rect.width - address_rect.width - 2,
-                f.area().height - status_rect.height,
-            );
+            let hex_editor_rect: Rect;
+            let info_view_rect: Rect;
+            if self.fullscreen {
+                hex_editor_rect = Rect::new(
+                    address_rect.width,
+                    0,
+                    f.area().width - address_rect.width - 2,
+                    f.area().height - status_rect.height,
+                );
+                info_view_rect = Rect::new(
+                    address_rect.width,
+                    0,
+                    f.area().width - address_rect.width - 2,
+                    f.area().height - status_rect.height,
+                );
+            } else {
+                hex_editor_rect = Rect::new(
+                    address_rect.width,
+                    0,
+                    (self.block_size * 3 * self.blocks_per_row + self.blocks_per_row) as u16,
+                    f.area().height - status_rect.height,
+                );
+                info_view_rect = Rect::new(
+                    address_rect.width + hex_editor_rect.width,
+                    0,
+                    f.area().width - hex_editor_rect.width - address_rect.width - 2,
+                    f.area().height - status_rect.height,
+                );
+            }
+
             let scrollbar_rect = Rect::new(f.area().width - 1, 0, 1, f.area().height);
 
             let status_block = ratatui::widgets::Paragraph::new(self.build_status_bar())
@@ -228,11 +255,28 @@ impl App {
                 let editor_title =
                     format!("Hex Editor{}", if self.data.dirty() { " *" } else { "" });
 
+                let hex_border_style: Style;
+                let pretty_border_style: Style;
+                if self.selected_pane == Pane::Hex {
+                    hex_border_style = self.settings.color.pane_selected;
+                    pretty_border_style = self.settings.color.pane;
+                } else {
+                    hex_border_style = self.settings.color.pane;
+                    pretty_border_style = self.settings.color.pane_selected;
+                }
+
                 let hex_editor_block = ratatui::widgets::Paragraph::new(hex_view).block(
                     Block::default()
                         .title(editor_title)
-                        .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT),
+                        .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT)
+                        .border_style(hex_border_style),
                 );
+
+                let info_view_block_flags = if self.fullscreen {
+                    Borders::TOP | Borders::RIGHT | Borders::LEFT
+                } else {
+                    Borders::TOP | Borders::RIGHT
+                };
 
                 let info_view_block = match &self.info_mode {
                     InfoMode::Text => {
@@ -246,7 +290,8 @@ impl App {
                         ratatui::widgets::Paragraph::new(text_subview).block(
                             Block::default()
                                 .title("Text View")
-                                .borders(Borders::TOP | Borders::RIGHT),
+                                .borders(info_view_block_flags)
+                                .border_style(pretty_border_style),
                         )
                     }
                     InfoMode::Assembly => {
@@ -278,14 +323,22 @@ impl App {
                         ratatui::widgets::Paragraph::new(assembly_subview).block(
                             Block::default()
                                 .title("Assembly View")
-                                .borders(Borders::TOP | Borders::RIGHT),
+                                .borders(info_view_block_flags)
+                                .border_style(pretty_border_style),
                         )
                     }
                 };
 
                 f.render_widget(address_block, address_rect);
-                f.render_widget(hex_editor_block, hex_editor_rect);
-                f.render_widget(info_view_block, info_view_rect);
+                if self.fullscreen {
+                    match self.selected_pane {
+                        Pane::Hex => f.render_widget(hex_editor_block, hex_editor_rect),
+                        Pane::View => f.render_widget(info_view_block, info_view_rect),
+                    }
+                } else {
+                    f.render_widget(hex_editor_block, hex_editor_rect);
+                    f.render_widget(info_view_block, info_view_rect);
+                }
             }
             f.render_widget(status_block, status_rect);
             f.render_stateful_widget(scrollbar, scrollbar_rect, &mut scrollbar_state);
@@ -388,6 +441,8 @@ impl Default for App {
             info_mode: InfoMode::Text,
             scroll: 0,
             cursor: (0, 0),
+            selected_pane: Pane::Hex,
+            fullscreen: false,
             poll_time: Duration::from_millis(1000),
             needs_to_exit: false,
             screen_size: (0, 0),
