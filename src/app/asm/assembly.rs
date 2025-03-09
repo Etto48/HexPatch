@@ -39,6 +39,7 @@ impl App {
         selected: bool,
         header: &Header,
         address_min_width: usize,
+        comment: Option<&str>,
     ) -> Line<'static> {
         let symbol_table = header.get_symbols();
         let mut line = Line::default();
@@ -84,6 +85,13 @@ impl App {
             format!(" @{:X}", instruction.instruction.ip()),
             color_settings.assembly_virtual_address,
         ));
+        if let Some(comment) = comment {
+            line.spans.push(Span::raw(" "));
+            line.spans.push(Span::styled(
+                format!("; {}", comment),
+                color_settings.assembly_comment,
+            ));
+        }
 
         line
     }
@@ -433,7 +441,7 @@ impl App {
 
 #[cfg(test)]
 mod test {
-    use std::vec;
+    use std::{collections::HashMap, vec};
 
     use super::*;
     #[test]
@@ -450,11 +458,14 @@ mod test {
             },
             file_address,
         });
+        let mut comments = HashMap::new();
+        comments.insert(0, "This is a comment".into());
         let line = al.to_line(
             &ColorSettings::get_default_dark_theme(),
             0,
             &Header::None,
             0,
+            &comments,
         );
 
         let contains_mnemonic = line.spans.iter().any(|span| span.content.contains("mov"));
@@ -480,6 +491,11 @@ mod test {
             .iter()
             .any(|span| span.content.contains(&format!("{:X}", file_address)));
         assert!(contains_file_address);
+        let contains_comment = line
+            .spans
+            .iter()
+            .any(|span| span.content.contains(comments.get(&0).unwrap()));
+        assert!(contains_comment);
 
         let section_size = 0x1000;
 
@@ -495,6 +511,7 @@ mod test {
             0,
             &Header::None,
             0,
+            &comments,
         );
 
         let contains_section_name = line.spans.iter().any(|span| span.content.contains(".text"));
@@ -514,6 +531,11 @@ mod test {
             .iter()
             .any(|span| span.content.contains(&format!("{}B", section_size)));
         assert!(contains_size);
+        let contains_comment = line
+            .spans
+            .iter()
+            .any(|span| span.content.contains(comments.get(&0).unwrap()));
+        assert!(contains_comment);
     }
 
     #[test]

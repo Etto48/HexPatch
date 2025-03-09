@@ -41,6 +41,7 @@ pub struct ColorSettings {
     pub assembly_bad: Style,
     pub assembly_section: Style,
     pub assembly_entry_point: Style,
+    pub assembly_comment: Style,
     pub assembly_default: Style,
 
     pub patch_patched_less_or_equal: Style,
@@ -126,6 +127,7 @@ impl ColorSettings {
             assembly_bad: Style::default().fg(Color::Red),
             assembly_section: Style::default().fg(Color::Blue),
             assembly_entry_point: Style::default().fg(dark_yellow),
+            assembly_comment: Style::default().fg(Color::LightGreen),
             assembly_default: Style::default().fg(light_brown),
 
             patch_patched_less_or_equal: Style::default().fg(Color::Green),
@@ -208,6 +210,7 @@ impl ColorSettings {
             assembly_bad: Style::default().fg(Color::LightRed),
             assembly_section: Style::default().fg(Color::LightBlue),
             assembly_entry_point: Style::default().fg(Color::Yellow),
+            assembly_comment: Style::default().fg(Color::Green),
             assembly_default: Style::default().fg(Color::Rgb(204, 152, 113)),
 
             patch_patched_less_or_equal: Style::default().fg(Color::Green),

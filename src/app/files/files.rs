@@ -1,5 +1,5 @@
 #![allow(clippy::module_inception)]
-use std::error::Error;
+use std::{collections::HashMap, error::Error};
 
 use ratatui::{backend::Backend, Terminal};
 
@@ -189,6 +189,8 @@ impl App {
             self.filesystem.read(self.filesystem.pwd())?,
             self.settings.app.history_limit,
         );
+        // TODO: You might want to load the comments from file here
+        self.comments = HashMap::new();
 
         Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
 

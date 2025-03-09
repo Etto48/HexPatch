@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ratatui::text::{Line, Span};
 
 use crate::{
@@ -48,6 +50,7 @@ impl AssemblyLine {
         current_byte_index: usize,
         header: &Header,
         address_min_width: usize,
+        comments: &HashMap<u64, String>,
     ) -> Line {
         match self {
             AssemblyLine::Instruction(instruction) => {
@@ -60,6 +63,7 @@ impl AssemblyLine {
                     selected,
                     header,
                     address_min_width,
+                    comments.get(&instruction.file_address).map(|s| s.as_str()),
                 )
             }
             AssemblyLine::SectionTag(section) => {
