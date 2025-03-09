@@ -403,7 +403,7 @@ impl<'app> AppContext<'app> {
                 scope
                     .create_function(|_, ()| {
                         let fullscreen = self.fullscreen.lock().unwrap();
-                        Ok(fullscreen.clone())
+                        Ok(**fullscreen)
                     })
                     .unwrap(),
             )
@@ -425,7 +425,7 @@ impl<'app> AppContext<'app> {
                 scope
                     .create_function(|_, ()| {
                         let selected_pane = self.selected_pane.lock().unwrap();
-                        Ok(selected_pane.clone())
+                        Ok(**selected_pane)
                     })
                     .unwrap(),
             )

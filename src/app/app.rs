@@ -350,17 +350,13 @@ impl App {
                 status_bar: status_rect,
                 scroll_bar: scrollbar_rect,
                 address_view: address_rect,
-                hex_view: if (self.fullscreen && self.selected_pane == Pane::Hex)
-                    || !self.fullscreen
-                {
+                hex_view: if !self.fullscreen || self.selected_pane == Pane::Hex {
                     Some(hex_editor_rect)
                 } else {
                     None
                 }, // only save the hex view rect if it's visible, we need to know if it's visible to
                 // determine the cursor position
-                info_view: if (self.fullscreen && self.selected_pane == Pane::View)
-                    || !self.fullscreen
-                {
+                info_view: if !self.fullscreen || self.selected_pane == Pane::View {
                     Some(info_view_rect)
                 } else {
                     None
