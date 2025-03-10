@@ -66,9 +66,9 @@ impl GenericHeader {
 
             let endianness = header.endianness();
 
-            let entry = header.entry();
+            let mut entry = header.entry();
 
-            let sections = header
+            let sections: Vec<Section> = header
                 .sections()
                 .map(|section| Section {
                     name: section.name().unwrap_or_default().to_string(),
@@ -78,6 +78,16 @@ impl GenericHeader {
                 })
                 .filter(|section| section.size > 0)
                 .collect();
+
+            match header {
+                object::File::MachO32(_) | object::File::MachO64(_) => {
+                    if let Some(text) = sections.iter().find(|section| section.name == "__text") {
+                        let text_offset = text.virtual_address.saturating_sub(text.file_offset);
+                        entry += text_offset;
+                    }
+                }
+                _ => {}
+            }
 
             let mut symbols: Vec<(u64, String)> = header
                 .symbols()
