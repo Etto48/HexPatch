@@ -27,6 +27,8 @@ nav:
       url: /SETTINGS.html
     - title: Plugin API
       url: /PLUGIN_API.html
+  - title: Screenshots
+    url: /SCREENSHOTS.html
   - title: Community
     items:
     - title: Contributing

@@ -2,13 +2,15 @@
 
 <div align=center>
 
-[![Crate Badge]][Crate] [![CI Badge]][CI] [![Deps.rs Badge]][Deps.rs] [![License Badge]][License]
+[![Crate Badge]][Crate] [![CI Badge]][CI] [![Deps.rs Badge]][Deps.rs] [![License Badge]][License] [![GitHub IO Badge]][GitHub IO]
 
 </div>
 
 HexPatch is a binary patcher and editor with terminal user interface (TUI), it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
 Also, it can edit remote files via SSH.
+
+Take a look at [GitHub Pages][GitHub IO] for more information and some screenshots.
 
 ## Installation
 
@@ -137,10 +139,6 @@ A different plugins directory can be specified with the `--plugins` flag.
 
 You can find more information about the Plugin Lua API [here](./PLUGIN_API.md).
 
-## Screenshots
-
-Go to the [screenshots](./SCREENSHOTS.md) page to see some screenshots.
-
 ## Known issues
 
 - Some key combinations may not work as expected, notably `SHIFT + ENTER` on VSCode terminal. Please refer to [this issue](https://github.com/crossterm-rs/crossterm/issues/685) for more information. Unfortunately, this behavior is out of my control.
@@ -158,3 +156,5 @@ Thanks to [Lorenzo Colombini](https://github.com/Lorenzinco) for the instruction
 [Deps.rs Badge]: https://deps.rs/repo/github/Etto48/HexPatch/status.svg?style=flat-square
 [License]: https://github.com/Etto48/HexPatch/blob/master/LICENSE
 [License Badge]: https://img.shields.io/github/license/Etto48/HexPatch?style=flat-square&color=blue
+[GitHub IO Badge]: https://img.shields.io/badge/GitHub-IO-black?style=flat-square&logo=github
+[GitHub IO]: https://etto48.github.io/HexPatch/
