@@ -75,6 +75,10 @@ impl App {
                     self.request_popup_find_text();
                 } else if event == self.settings.key.find_symbol {
                     self.request_popup_find_symbol();
+                } else if event == self.settings.key.edit_comment {
+                    self.request_popup_edit_comment();
+                } else if event == self.settings.key.find_comment {
+                    self.request_popup_find_comment();
                 } else if event == self.settings.key.patch_text {
                     self.request_popup_text();
                 } else if event == self.settings.key.patch_assembly {
@@ -283,6 +287,37 @@ impl App {
                     *symbols = self.find_symbols(filter);
                 }
             }
+            Some(PopupState::EditComment { comment, cursor }) => {
+                Self::handle_string_edit(
+                    comment,
+                    cursor,
+                    &event,
+                    None,
+                    None,
+                    true,
+                    &self.settings.key,
+                )?;
+            }
+            Some(PopupState::FindComment {
+                filter,
+                comments,
+                cursor,
+                scroll: _scroll,
+            }) => {
+                let old_filter = filter.clone();
+                Self::handle_string_edit(
+                    filter,
+                    cursor,
+                    &event,
+                    None,
+                    None,
+                    false,
+                    &self.settings.key,
+                )?;
+                if old_filter != *filter || comments.is_empty() {
+                    *comments = self.find_comments(filter);
+                }
+            }
             Some(PopupState::InsertText { text, cursor }) => {
                 Self::handle_string_edit(
                     text,
@@ -433,6 +468,22 @@ impl App {
                             self.jump_to_symbol(location);
                             popup = None;
                         }
+                        Some(PopupState::EditComment { 
+                            comment, 
+                            cursor: _cursor
+                        }) => {
+                            self.edit_comment(comment);
+                            popup = None;
+                        }
+                        Some(PopupState::FindComment { 
+                            filter, 
+                            cursor: _cursor, 
+                            comments, 
+                            scroll 
+                        }) => {
+                            self.jump_to_fuzzy_comment(filter, comments, *scroll);
+                            popup = None;
+                        }
                         Some(PopupState::SaveAs { path, cursor: _ }) => {
                             self.save_file_as(path)?;
                             popup = None;
@@ -507,6 +558,18 @@ impl App {
                                 Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
                             }
                         }
+                        Some(PopupState::FindComment { 
+                            filter: _filter, 
+                            comments, 
+                            cursor: _cursor, 
+                            scroll 
+                        }) => {
+                            if comments.is_empty() {
+                                Self::handle_popup_scroll(scroll, self.comments.len(), None, 1);
+                            } else {
+                                Self::handle_popup_scroll(scroll, comments.len(), None, 1);
+                            }
+                        }
                         Some(PopupState::Log(scroll)) => {
                             Self::handle_popup_scroll(
                                 scroll,
@@ -551,6 +614,14 @@ impl App {
                             scroll,
                         }) => {
                             Self::handle_popup_scroll(scroll, symbols.len(), None, -1);
+                        }
+                        Some(PopupState::FindComment { 
+                            filter: _filter, 
+                            comments, 
+                            cursor: _cursor, 
+                            scroll 
+                        }) => {
+                            Self::handle_popup_scroll(scroll, comments.len(), None, -1);
                         }
                         Some(PopupState::Log(scroll)) => {
                             Self::handle_popup_scroll(
@@ -608,6 +679,14 @@ impl App {
                                 symbols: _,
                                 cursor: _,
                                 scroll,
+                            }) => {
+                                *scroll = 0;
+                            }
+                            Some(PopupState::FindComment { 
+                                filter: _, 
+                                comments: _, 
+                                cursor: _, 
+                                scroll 
                             }) => {
                                 *scroll = 0;
                             }

@@ -55,6 +55,16 @@ pub enum PopupState {
         location: String,
         cursor: usize,
     },
+    EditComment {
+        comment: String,
+        cursor: usize,
+    },
+    FindComment {
+        filter: String,
+        cursor: usize,
+        comments: Vec<(u64, String)>,
+        scroll: usize,
+    },
     QuitDirtySave(SimpleChoice),
     SaveAndQuit(BinaryChoice),
     SaveAs {
@@ -80,6 +90,7 @@ impl App {
             Some(PopupState::Help(_)) => screen_height - 4 - 2,
             Some(PopupState::Patch { .. }) => screen_height - 6 - 2,
             Some(PopupState::InsertText { .. }) => screen_height - 5 - 2,
+            Some(PopupState::FindComment { .. }) => screen_height - 6 - 2,
             _ => unimplemented!("Popup is not supposed to have scrollable lines"),
         };
 
@@ -759,6 +770,151 @@ impl App {
                 popup_text
                     .lines
                     .extend(vec![editable_string.left_aligned()]);
+            }
+            Some(PopupState::EditComment { 
+                comment, 
+                cursor 
+            }) => {
+                *popup_title = "Edit Comment".into();
+                let available_width = width.saturating_sub(2);
+                *height = 3;
+                let editable_string = Self::get_line_from_string_and_cursor(
+                    &self.settings.color,
+                    comment,
+                    *cursor,
+                    "Comment",
+                    available_width,
+                    true,
+                );
+                popup_text
+                    .lines
+                    .extend(vec![editable_string.left_aligned()]);
+            }
+            Some(PopupState::FindComment { 
+                filter,
+                comments,
+                cursor,
+                scroll,
+            }) => {
+                *popup_title = "Find Comment".into();
+                let available_width = width.saturating_sub(2);
+                let max_comments = self.get_scrollable_popup_line_count();
+                *height = max_comments + 2 + 4;
+                let mut selection = *scroll;
+                let comments_len = if !comments.is_empty() {
+                    comments.len()
+                } else {
+                    self.comments.len()
+                };
+                let scroll = if *scroll as isize > comments_len as isize - (max_comments as isize) / 2
+                {
+                    comments_len.saturating_sub(max_comments)
+                } else if *scroll < max_comments / 2 {
+                    0
+                } else {
+                    scroll.saturating_sub(max_comments / 2)
+                };
+                selection = selection.saturating_sub(scroll);
+                let editable_string = Self::get_line_from_string_and_cursor(
+                    &self.settings.color,
+                    filter,
+                    *cursor,
+                    "Filter",
+                    available_width,
+                    true,
+                );
+
+                let comments_as_lines = if !comments.is_empty() || filter.is_empty() {
+                    let additional_vector = if filter.is_empty() {
+                        self.comments
+                            .iter()
+                            .skip(scroll)
+                            .take(max_comments + 1)
+                            .map(|(k, v)| (*k, v.clone()))
+                            .collect()
+                    } else {
+                        Vec::new()
+                    };
+
+                    let comment_to_line_lambda =
+                        |(i, (address, comment)): (usize, &(u64, String))| {
+                            let short_comment = comment
+                                .chars()
+                                .take(width.saturating_sub(19))
+                                .collect::<String>();
+                            let space_count = (width.saturating_sub(short_comment.len() + 19) + 1)
+                                .clamp(0, *width);
+                            let (style_comment, style_empty, style_addr) = if i == selection {
+                                (
+                                    self.settings.color.assembly_selected,
+                                    self.settings.color.assembly_selected,
+                                    self.settings.color.assembly_selected,
+                                )
+                            } else {
+                                (
+                                    self.settings.color.assembly_comment,
+                                    self.settings.color.assembly_comment,
+                                    self.settings.color.assembly_address,
+                                )
+                            };
+                            Line::from(vec![
+                                Span::styled(short_comment, style_comment),
+                                Span::styled(" ".repeat(space_count), style_empty),
+                                Span::styled(format!("{:16X}", address), style_addr),
+                            ])
+                            .left_aligned()
+                        };
+                    let comment_line_iter = comments
+                        .iter()
+                        .skip(scroll)
+                        .take(max_comments)
+                        .enumerate()
+                        .map(comment_to_line_lambda);
+                    let mut comments_as_lines = if scroll > 0 {
+                        vec![Line::from(vec![Span::styled(
+                            "▲",
+                            self.settings.color.menu_text,
+                        )])]
+                    } else {
+                        vec![Line::raw("")]
+                    };
+
+                    comments_as_lines.extend(comment_line_iter);
+                    comments_as_lines.extend(
+                        additional_vector
+                            .iter()
+                            .take(max_comments)
+                            .enumerate()
+                            .map(comment_to_line_lambda),
+                    );
+                    if comments_as_lines.len() < max_comments {
+                        comments_as_lines
+                            .extend(vec![Line::raw(""); max_comments - comments_as_lines.len()]);
+                    }
+
+                    if comments.len() as isize - scroll as isize > max_comments as isize
+                        || additional_vector.len() > max_comments
+                    {
+                        comments_as_lines
+                            .push(Line::from(vec![Span::styled(
+                                "▼",
+                                self.settings.color.menu_text,
+                            )]));
+                    } else {
+                        comments_as_lines.push(Line::raw(""));
+                    }
+
+                    comments_as_lines
+                } else {
+                    let mut lines = vec![Line::raw("No comments found.").left_aligned()];
+                    lines.extend(vec![Line::raw(""); 7]);
+                    lines
+                };
+                popup_text.lines.extend(vec![
+                    editable_string.left_aligned(),
+                    Line::raw("─".repeat(*width)),
+                ]);
+                popup_text.lines.extend(comments_as_lines);
             }
             Some(PopupState::SaveAndQuit(choice)) => {
                 *popup_title = "Save and Quit".into();

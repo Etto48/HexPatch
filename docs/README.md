@@ -137,38 +137,9 @@ A different plugins directory can be specified with the `--plugins` flag.
 
 You can find more information about the Plugin Lua API [here](./PLUGIN_API.md).
 
-## Features
+## Screenshots
 
-- Help menu
-    ![Help menu](./assets/help.png)
-
-- Log
-    ![Log](./assets/log.png)
-
-- Text view
-    ![Text view](./assets/text_view.png)
-
-- Jump to address
-    ![Jump to address](./assets/jump.png)
-    Jump to a virtual address with `v0x` or to a file offset with `0x`. You can also jump to symbols and sections.
-
-- Open file
-    ![Open file](./assets/open.png)
-
-- Run command
-    ![Run command](./assets/run.png)
-
-- Find text
-    ![Find text](./assets/find_text.png)
-
-- Find symbol
-    ![Find symbol](./assets/find_symbol.png)
-
-- Insert Text
-    ![Insert text](./assets/text.png)
-
-- Patch
-    ![Patch](./assets/patch.png)
+Go to the [screenshots](./SCREENSHOTS.md) page to see some screenshots.
 
 ## Known issues
 

@@ -29,6 +29,8 @@ impl CommandInfo {
             CommandInfo::new("run", "Run a command."),
             CommandInfo::new("ftext", "Find text."),
             CommandInfo::new("fsym", "Find a symbol."),
+            CommandInfo::new("fcom", "Find a comment."),
+            CommandInfo::new("ecom", "Edit a comment."),
             CommandInfo::new("text", "Insert text."),
             CommandInfo::new("patch", "Patch assembly."),
             CommandInfo::new("jump", "Jump to address."),
