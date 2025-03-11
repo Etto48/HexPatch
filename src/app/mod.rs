@@ -4,6 +4,7 @@ pub use app::*;
 pub mod address;
 pub mod asm;
 pub mod commands;
+pub mod comments;
 pub mod cursor_position;
 pub mod data;
 pub mod events;

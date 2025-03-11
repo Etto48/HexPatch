@@ -80,6 +80,8 @@ impl App {
                     PopupState::InsertText { .. } => "InsertText",
                     PopupState::Patch { .. } => "Patch",
                     PopupState::JumpToAddress { .. } => "JumpToAddress",
+                    PopupState::EditComment { .. } => "EditComment",
+                    PopupState::FindComment { .. } => "FindComment",
                     PopupState::QuitDirtySave(_) => "QuitDirtySave",
                     PopupState::SaveAndQuit(_) => "SaveAndQuit",
                     PopupState::SaveAs { .. } => "SaveAs",

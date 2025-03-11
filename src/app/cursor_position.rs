@@ -167,6 +167,43 @@ impl App {
         }
     }
 
+    pub(super) fn jump_to_fuzzy_comment(
+        &mut self,
+        comment: &str,
+        comments: &[(u64, String)],
+        scroll: usize,
+    ) {
+        if comment.is_empty() {
+            if let Some(comment) = self.comments.iter().nth(scroll) {
+                let (address, _comment) = comment;
+                let log_message = format!("Jumping to comment at {:#X}", address);
+                self.jump_to(*address as usize, false);
+                self.log(NotificationLevel::Debug, &log_message);
+            } else {
+                unreachable!("The scroll should not be greater than the number of comments")
+            }
+            return;
+        } else if comments.is_empty() {
+            self.log(
+                NotificationLevel::Error,
+                "No comments matching the search pattern found",
+            );
+            return;
+        }
+
+        let mut find_iter = comments.iter().skip(scroll);
+        if let Some(comment) = find_iter.next() {
+            let (address, _comment) = comment;
+            self.log(
+                NotificationLevel::Debug,
+                &format!("Jumping to comment at {:#X}", address),
+            );
+            self.jump_to(*address as usize, false);
+        } else {
+            unreachable!("The scroll should not be greater than the number of comments");
+        }
+    }
+
     pub(super) fn jump_to_symbol(&mut self, symbol: &str) {
         if let Some(address) = symbol.strip_prefix("0x") {
             if let Ok(address) = usize::from_str_radix(address, 16) {

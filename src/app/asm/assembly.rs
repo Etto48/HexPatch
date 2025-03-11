@@ -39,6 +39,7 @@ impl App {
         selected: bool,
         header: &Header,
         address_min_width: usize,
+        comment: Option<&str>,
     ) -> Line<'static> {
         let symbol_table = header.get_symbols();
         let mut line = Line::default();
@@ -84,7 +85,50 @@ impl App {
             format!(" @{:X}", instruction.instruction.ip()),
             color_settings.assembly_virtual_address,
         ));
+        if let Some(comment) = comment {
+            line.spans.push(Span::raw(" "));
+            line.spans.push(Span::styled(
+                format!("; {}", comment),
+                color_settings.assembly_comment,
+            ));
+        }
 
+        line
+    }
+
+    pub(super) fn section_to_line(
+        color_settings: &ColorSettings,
+        section: &SectionTag,
+        selected: bool,
+        address_min_width: usize,
+        comment: Option<&str>,
+    ) -> Line<'static> {
+        let mut line = Line::default();
+        let address_style = if selected {
+            color_settings.assembly_selected
+        } else {
+            color_settings.assembly_address
+        };
+        line.spans.push(Span::styled(
+            format!("{:>address_min_width$X}", section.file_address),
+            address_style,
+        ));
+        line.spans.push(Span::raw(" "));
+        line.spans.push(Span::styled(
+            format!("[{} ({}B)]", section.name, section.size),
+            color_settings.assembly_section,
+        ));
+        line.spans.push(Span::styled(
+            format!(" @{:X}", section.virtual_address),
+            color_settings.assembly_virtual_address,
+        ));
+        if let Some(comment) = comment {
+            line.spans.push(Span::raw(" "));
+            line.spans.push(Span::styled(
+                format!("; {}", comment),
+                color_settings.assembly_comment,
+            ));
+        }
         line
     }
 
@@ -433,7 +477,7 @@ impl App {
 
 #[cfg(test)]
 mod test {
-    use std::vec;
+    use std::{collections::HashMap, vec};
 
     use super::*;
     #[test]
@@ -450,11 +494,14 @@ mod test {
             },
             file_address,
         });
+        let mut comments = HashMap::new();
+        comments.insert(file_address, "This is a comment".into());
         let line = al.to_line(
             &ColorSettings::get_default_dark_theme(),
             0,
             &Header::None,
             0,
+            &comments,
         );
 
         let contains_mnemonic = line.spans.iter().any(|span| span.content.contains("mov"));
@@ -480,6 +527,16 @@ mod test {
             .iter()
             .any(|span| span.content.contains(&format!("{:X}", file_address)));
         assert!(contains_file_address);
+        let contains_comment = line
+            .spans
+            .iter()
+            .any(|span| span.content.contains(comments.get(&file_address).unwrap()));
+        assert!(
+            contains_comment,
+            "Comment {} not found in line {:?}",
+            comments.get(&0).unwrap(),
+            line
+        );
 
         let section_size = 0x1000;
 
@@ -495,6 +552,7 @@ mod test {
             0,
             &Header::None,
             0,
+            &comments,
         );
 
         let contains_section_name = line.spans.iter().any(|span| span.content.contains(".text"));
@@ -514,6 +572,11 @@ mod test {
             .iter()
             .any(|span| span.content.contains(&format!("{}B", section_size)));
         assert!(contains_size);
+        let contains_comment = line
+            .spans
+            .iter()
+            .any(|span| span.content.contains(comments.get(&file_address).unwrap()));
+        assert!(contains_comment);
     }
 
     #[test]

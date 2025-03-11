@@ -1,4 +1,6 @@
-use ratatui::text::{Line, Span};
+use std::collections::HashMap;
+
+use ratatui::text::Line;
 
 use crate::{
     app::{settings::color_settings::ColorSettings, App},
@@ -48,6 +50,7 @@ impl AssemblyLine {
         current_byte_index: usize,
         header: &Header,
         address_min_width: usize,
+        comments: &HashMap<u64, String>,
     ) -> Line {
         match self {
             AssemblyLine::Instruction(instruction) => {
@@ -60,31 +63,19 @@ impl AssemblyLine {
                     selected,
                     header,
                     address_min_width,
+                    comments.get(&instruction.file_address).map(|s| s.as_str()),
                 )
             }
             AssemblyLine::SectionTag(section) => {
                 let selected = current_byte_index >= section.file_address as usize
                     && current_byte_index < section.file_address as usize + section.size;
-                let mut line = Line::default();
-                let address_style = if selected {
-                    color_settings.assembly_selected
-                } else {
-                    color_settings.assembly_address
-                };
-                line.spans.push(Span::styled(
-                    format!("{:>address_min_width$X}", section.file_address),
-                    address_style,
-                ));
-                line.spans.push(Span::raw(" "));
-                line.spans.push(Span::styled(
-                    format!("[{} ({}B)]", section.name, section.size),
-                    color_settings.assembly_section,
-                ));
-                line.spans.push(Span::styled(
-                    format!(" @{:X}", section.virtual_address),
-                    color_settings.assembly_virtual_address,
-                ));
-                line
+                App::section_to_line(
+                    color_settings,
+                    section,
+                    selected,
+                    address_min_width,
+                    comments.get(&section.file_address).map(|s| s.as_str()),
+                )
             }
         }
     }

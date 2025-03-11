@@ -1,5 +1,5 @@
 #![allow(clippy::module_inception)]
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 
 use crossterm::event;
 use ratatui::{
@@ -35,6 +35,7 @@ pub struct App {
     pub(super) logger: Logger,
     pub(super) help_list: Vec<HelpLine>,
     pub(super) data: Data,
+    pub(super) comments: HashMap<u64, String>,
     pub(super) assembly_offsets: Vec<usize>,
     pub(super) assembly_instructions: Vec<AssemblyLine>,
     pub(super) text_last_searched_string: String,
@@ -320,6 +321,7 @@ impl App {
                                     self.get_cursor_position().global_byte_index,
                                     &self.header,
                                     address_min_width,
+                                    &self.comments,
                                 )
                             }));
                         ratatui::widgets::Paragraph::new(assembly_subview).block(
@@ -447,6 +449,7 @@ impl Default for App {
             logger: Logger::default(),
             help_list: Self::help_list(&Settings::default().key),
             data: Data::default(),
+            comments: HashMap::new(),
             assembly_offsets: Vec::new(),
             assembly_instructions: Vec::new(),
             text_last_searched_string: String::new(),
