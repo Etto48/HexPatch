@@ -2,7 +2,7 @@ use super::App;
 
 impl App {
     pub(super) fn edit_comment(&mut self, comment: &str) {
-        let address= self.get_cursor_position().global_byte_index as u64;
+        let address = self.get_cursor_position().global_byte_index as u64;
         if comment.is_empty() {
             self.comments.remove(&address);
         } else {
@@ -14,7 +14,8 @@ impl App {
         if filter.is_empty() {
             return Vec::new();
         }
-        let mut comments: Vec<(u64, String)> = self.comments
+        let mut comments: Vec<(u64, String)> = self
+            .comments
             .iter()
             .filter(|(_, symbol)| symbol.contains(filter))
             .map(|(address, symbol)| (*address, symbol.clone()))

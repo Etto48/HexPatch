@@ -771,10 +771,7 @@ impl App {
                     .lines
                     .extend(vec![editable_string.left_aligned()]);
             }
-            Some(PopupState::EditComment { 
-                comment, 
-                cursor 
-            }) => {
+            Some(PopupState::EditComment { comment, cursor }) => {
                 *popup_title = "Edit Comment".into();
                 let available_width = width.saturating_sub(2);
                 *height = 3;
@@ -790,7 +787,7 @@ impl App {
                     .lines
                     .extend(vec![editable_string.left_aligned()]);
             }
-            Some(PopupState::FindComment { 
+            Some(PopupState::FindComment {
                 filter,
                 comments,
                 cursor,
@@ -806,14 +803,14 @@ impl App {
                 } else {
                     self.comments.len()
                 };
-                let scroll = if *scroll as isize > comments_len as isize - (max_comments as isize) / 2
-                {
-                    comments_len.saturating_sub(max_comments)
-                } else if *scroll < max_comments / 2 {
-                    0
-                } else {
-                    scroll.saturating_sub(max_comments / 2)
-                };
+                let scroll =
+                    if *scroll as isize > comments_len as isize - (max_comments as isize) / 2 {
+                        comments_len.saturating_sub(max_comments)
+                    } else if *scroll < max_comments / 2 {
+                        0
+                    } else {
+                        scroll.saturating_sub(max_comments / 2)
+                    };
                 selection = selection.saturating_sub(scroll);
                 let editable_string = Self::get_line_from_string_and_cursor(
                     &self.settings.color,
@@ -895,11 +892,10 @@ impl App {
                     if comments.len() as isize - scroll as isize > max_comments as isize
                         || additional_vector.len() > max_comments
                     {
-                        comments_as_lines
-                            .push(Line::from(vec![Span::styled(
-                                "▼",
-                                self.settings.color.menu_text,
-                            )]));
+                        comments_as_lines.push(Line::from(vec![Span::styled(
+                            "▼",
+                            self.settings.color.menu_text,
+                        )]));
                     } else {
                         comments_as_lines.push(Line::raw(""));
                     }

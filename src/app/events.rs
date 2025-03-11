@@ -468,18 +468,18 @@ impl App {
                             self.jump_to_symbol(location);
                             popup = None;
                         }
-                        Some(PopupState::EditComment { 
-                            comment, 
-                            cursor: _cursor
+                        Some(PopupState::EditComment {
+                            comment,
+                            cursor: _cursor,
                         }) => {
                             self.edit_comment(comment);
                             popup = None;
                         }
-                        Some(PopupState::FindComment { 
-                            filter, 
-                            cursor: _cursor, 
-                            comments, 
-                            scroll 
+                        Some(PopupState::FindComment {
+                            filter,
+                            cursor: _cursor,
+                            comments,
+                            scroll,
                         }) => {
                             self.jump_to_fuzzy_comment(filter, comments, *scroll);
                             popup = None;
@@ -558,11 +558,11 @@ impl App {
                                 Self::handle_popup_scroll(scroll, symbols.len(), None, 1);
                             }
                         }
-                        Some(PopupState::FindComment { 
-                            filter: _filter, 
-                            comments, 
-                            cursor: _cursor, 
-                            scroll 
+                        Some(PopupState::FindComment {
+                            filter: _filter,
+                            comments,
+                            cursor: _cursor,
+                            scroll,
                         }) => {
                             if comments.is_empty() {
                                 Self::handle_popup_scroll(scroll, self.comments.len(), None, 1);
@@ -615,11 +615,11 @@ impl App {
                         }) => {
                             Self::handle_popup_scroll(scroll, symbols.len(), None, -1);
                         }
-                        Some(PopupState::FindComment { 
-                            filter: _filter, 
-                            comments, 
-                            cursor: _cursor, 
-                            scroll 
+                        Some(PopupState::FindComment {
+                            filter: _filter,
+                            comments,
+                            cursor: _cursor,
+                            scroll,
                         }) => {
                             Self::handle_popup_scroll(scroll, comments.len(), None, -1);
                         }
@@ -682,11 +682,11 @@ impl App {
                             }) => {
                                 *scroll = 0;
                             }
-                            Some(PopupState::FindComment { 
-                                filter: _, 
-                                comments: _, 
-                                cursor: _, 
-                                scroll 
+                            Some(PopupState::FindComment {
+                                filter: _,
+                                comments: _,
+                                cursor: _,
+                                scroll,
                             }) => {
                                 *scroll = 0;
                             }

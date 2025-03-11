@@ -192,12 +192,13 @@ impl App {
     }
 
     pub(in crate::app) fn request_popup_edit_comment(&mut self) {
-        let comment = self.comments.get(&(self.get_cursor_position().global_byte_index as u64)).cloned().unwrap_or_default();
+        let comment = self
+            .comments
+            .get(&(self.get_cursor_position().global_byte_index as u64))
+            .cloned()
+            .unwrap_or_default();
         let cursor = comment.len();
-        self.popup = Some(PopupState::EditComment {
-            comment,
-            cursor,
-        });
+        self.popup = Some(PopupState::EditComment { comment, cursor });
     }
 
     pub(in crate::app) fn request_popup_find_comment(&mut self) {
