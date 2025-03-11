@@ -35,7 +35,7 @@ pdb = "0.8"
 ratatui = { version = "0.29", features = ["serde"] }
 regex = "1.11"
 russh = "0.50"
-russh-sftp = "2.0"
+russh-sftp = "2.0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 symbolic-demangle = "12.13"
