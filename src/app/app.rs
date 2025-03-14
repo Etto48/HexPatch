@@ -1,5 +1,5 @@
 #![allow(clippy::module_inception)]
-use std::{collections::HashMap, time::Duration};
+use std::time::Duration;
 
 use crossterm::event;
 use ratatui::{
@@ -13,6 +13,7 @@ use termbg::Theme;
 
 use super::{
     asm::assembly_line::AssemblyLine,
+    comments::Comments,
     data::Data,
     files::filesystem::FileSystem,
     frame_info::{FrameInfo, InfoViewFrameInfo},
@@ -35,7 +36,7 @@ pub struct App {
     pub(super) logger: Logger,
     pub(super) help_list: Vec<HelpLine>,
     pub(super) data: Data,
-    pub(super) comments: HashMap<u64, String>,
+    pub(super) comments: Comments,
     pub(super) assembly_offsets: Vec<usize>,
     pub(super) assembly_instructions: Vec<AssemblyLine>,
     pub(super) text_last_searched_string: String,
@@ -449,7 +450,7 @@ impl Default for App {
             logger: Logger::default(),
             help_list: Self::help_list(&Settings::default().key),
             data: Data::default(),
-            comments: HashMap::new(),
+            comments: Comments::default(),
             assembly_offsets: Vec::new(),
             assembly_instructions: Vec::new(),
             text_last_searched_string: String::new(),

@@ -1,12 +1,12 @@
 #![allow(clippy::module_inception)]
-use std::{collections::HashMap, error::Error};
+use std::error::Error;
 
 use ratatui::{backend::Backend, Terminal};
 
 use crate::{
     app::{
-        data::Data, info_mode::InfoMode, log::NotificationLevel, popup::popup_state::PopupState,
-        App,
+        comments::Comments, data::Data, info_mode::InfoMode, log::NotificationLevel,
+        popup::popup_state::PopupState, App,
     },
     get_app_context,
     headers::Header,
@@ -190,7 +190,7 @@ impl App {
             self.settings.app.history_limit,
         );
         // TODO: You might want to load the comments from file here
-        self.comments = HashMap::new();
+        self.comments = Comments::default();
 
         Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
 

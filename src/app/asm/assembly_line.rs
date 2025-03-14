@@ -1,9 +1,7 @@
-use std::collections::HashMap;
-
 use ratatui::text::Line;
 
 use crate::{
-    app::{settings::color_settings::ColorSettings, App},
+    app::{comments::Comments, settings::color_settings::ColorSettings, App},
     headers::Header,
 };
 
@@ -50,7 +48,7 @@ impl AssemblyLine {
         current_byte_index: usize,
         header: &Header,
         address_min_width: usize,
-        comments: &HashMap<u64, String>,
+        comments: &Comments,
     ) -> Line {
         match self {
             AssemblyLine::Instruction(instruction) => {

@@ -477,7 +477,7 @@ impl App {
 
 #[cfg(test)]
 mod test {
-    use std::{collections::HashMap, vec};
+    use crate::app::comments::Comments;
 
     use super::*;
     #[test]
@@ -494,7 +494,7 @@ mod test {
             },
             file_address,
         });
-        let mut comments = HashMap::new();
+        let mut comments = Comments::default();
         comments.insert(file_address, "This is a comment".into());
         let line = al.to_line(
             &ColorSettings::get_default_dark_theme(),

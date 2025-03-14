@@ -71,6 +71,7 @@ impl Connection {
         if let Some(password) = password {
             if let AuthResult::Failure {
                 remaining_methods: _,
+                partial_success: _,
             } = runtime.block_on(session.authenticate_password(username, password))?
             {
                 return Err("Authentication failed".into());
@@ -81,6 +82,7 @@ impl Connection {
             let keypair = PrivateKeyWithHashAlg::new(Arc::new(keypair), None);
             if let AuthResult::Failure {
                 remaining_methods: _,
+                partial_success: _,
             } = runtime.block_on(session.authenticate_publickey(username, keypair))?
             {
                 return Err("Authentication failed".into());
