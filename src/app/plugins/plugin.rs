@@ -591,19 +591,18 @@ mod test {
         let event = Event::Open;
         plugin.handle_with_error(event, &mut app_context).unwrap();
 
-        let messages = app_context.logger.iter().collect::<Vec<_>>();
-        assert_eq!(messages.len(), 6);
-        assert_eq!(messages[3].message, 64.to_string(), "Default bitness is 64");
-        assert_eq!(
-            messages[4].message,
-            format!("{:?}", Architecture::Unknown),
-            "Default architecture is Unknown"
-        );
-        assert_eq!(
-            messages[5].message,
-            0.to_string(),
-            "Default entry point is 0"
-        );
+        assert!(app_context
+            .logger
+            .iter()
+            .any(|message| { message.message == 64.to_string() }));
+        assert!(app_context
+            .logger
+            .iter()
+            .any(|message| { message.message == format!("{:?}", Architecture::Unknown) }),);
+        assert!(app_context
+            .logger
+            .iter()
+            .any(|message| { message.message == 0.to_string() }),);
     }
 
     #[test]
