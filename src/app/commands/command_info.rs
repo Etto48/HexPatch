@@ -23,6 +23,7 @@ impl CommandInfo {
             CommandInfo::new("xquit", "Save and quit the program."),
             CommandInfo::new("save", "Save the current file."),
             CommandInfo::new("saveas", "Save the current file as a new file."),
+            CommandInfo::new("csave", "Save the comments."),
             CommandInfo::new("help", "Display the help page."),
             CommandInfo::new("open", "Open a file."),
             CommandInfo::new("log", "Open the log."),

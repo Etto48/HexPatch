@@ -49,6 +49,9 @@ impl App {
             "saveas" => {
                 self.request_popup_save_as();
             }
+            "csave" => {
+                self.save_comments(None);
+            }
             "help" => {
                 self.request_popup_help();
             }

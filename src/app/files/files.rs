@@ -5,8 +5,8 @@ use ratatui::{backend::Backend, Terminal};
 
 use crate::{
     app::{
-        comments::Comments, data::Data, info_mode::InfoMode, log::NotificationLevel,
-        popup::popup_state::PopupState, App,
+        data::Data, info_mode::InfoMode, log::NotificationLevel, popup::popup_state::PopupState,
+        App,
     },
     get_app_context,
     headers::Header,
@@ -189,8 +189,8 @@ impl App {
             self.filesystem.read(self.filesystem.pwd())?,
             self.settings.app.history_limit,
         );
-        // TODO: You might want to load the comments from file here
-        self.comments = Comments::default();
+
+        self.load_comments(None);
 
         Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
 
