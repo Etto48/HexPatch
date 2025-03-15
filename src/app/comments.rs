@@ -53,6 +53,10 @@ impl Comments {
         self.dirty = false;
     }
 
+    pub fn to_vec(&self) -> Vec<(u64, String)> {
+        self.comments.iter().map(|(a, s)| (*a, s.clone())).collect()
+    }
+
     pub fn check_max_address(&mut self, max_address: u64) {
         let mut comments_removed = false;
         self.comments.retain(|address, _| {
@@ -157,6 +161,8 @@ impl App {
 
 #[cfg(test)]
 mod tests {
+    use crate::{app::plugins::plugin::Plugin, get_app_context};
+
     use super::*;
 
     #[test]
@@ -202,5 +208,35 @@ mod tests {
         assert_eq!(app.comments.get(&0x10), Some(&"comment_1".to_string()));
         assert_eq!(app.comments.get(&0x20), Some(&"comment_2".to_string()));
         assert_eq!(app.comments.get(&0x30), Some(&"comment_3".to_string()));
+    }
+
+    #[test]
+    fn test_plugin() {
+        let source = "
+        function init(context)
+            context.set_comment(0x10, 'comment_1')
+            context.set_comment(0x20, 'comment_2')
+            context.set_comment(0x30, 'comment_3')
+            c1 = context.get_comment(0x10)
+            c2 = context.get_comment(0x20)
+            c3 = context.get_comment(0x30)
+            should_be_nil = context.get_comment(0x40)
+            assert(c1 == 'comment_1', 'c1')
+            assert(c2 == 'comment_2', 'c2')
+            assert(c3 == 'comment_3', 'c3')
+            assert(should_be_nil == nil, 'should_be_nil')
+            comments = context.get_comments()
+            assert(comments[0x10] == 'comment_1', 'table c1')
+            assert(comments[0x20] == 'comment_2', 'table c2')
+            assert(comments[0x30] == 'comment_3', 'table c3')
+            context.set_comment(0x10, '')
+            assert(context.get_comment(0x10) == nil, 'remove c1')
+            context.set_comment(0x20, nil)
+            assert(context.get_comment(0x20) == nil, 'remove c2')
+        end";
+
+        let mut app = App::mockup(vec![0; 0x100]);
+        let mut app_context = get_app_context!(app);
+        Plugin::new_from_source(source, &mut app_context).unwrap();
     }
 }

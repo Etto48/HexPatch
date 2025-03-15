@@ -209,6 +209,9 @@ And the following functions:
 |`set_fullscreen`|`(fullscreen: bool)`|Sets whether the UI is in fullscreen mode.|
 |`get_selected_pane`|`() -> String`|Gets the selected pane. The possible values are `"hex"` if the HexView is selected and `"view"` if TextView or AssemblyView are selected.|
 |`set_selected_pane`|`(pane: String)`|Sets the selected pane. The possible values are `"hex"` to select the HexView and `"view"` to select TextView or AssemblyView.|
+|`get_comments`|`() -> Table`|Gets the comments as a table, the keys are the file addresses and the values are the comments.|
+|`get_comment`|`(file_address: usize) -> Option<String>`|Gets the comment at the specified file address. `nil` if there is no comment.|
+|`set_comment`|`(file_address: usize, comment: Option<String>)`|Sets the comment at the specified file address. If `comment` is `nil` or an empty string, the comment will be removed.|
 
 For more information on the types, see the following sections.
 
