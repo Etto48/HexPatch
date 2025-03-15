@@ -7,6 +7,7 @@ use mlua::{Function, Lua, Scope, Table};
 
 use crate::{
     app::{
+        comments::Comments,
         data::Data,
         log::{logger::Logger, NotificationLevel},
         pane::Pane,
@@ -42,6 +43,7 @@ macro_rules! get_app_context {
             &mut $app.popup,
             &mut $app.fullscreen,
             &mut $app.selected_pane,
+            &mut $app.comments,
         )
     };
 }
@@ -67,6 +69,7 @@ pub struct AppContext<'app> {
     pub popup: Arc<Mutex<&'app mut Option<PopupState>>>,
     pub fullscreen: Arc<Mutex<&'app mut bool>>,
     pub selected_pane: Arc<Mutex<&'app mut Pane>>,
+    pub comments: Arc<Mutex<&'app mut Comments>>,
 }
 
 impl<'app> AppContext<'app> {
@@ -88,6 +91,7 @@ impl<'app> AppContext<'app> {
         popup: &'app mut Option<PopupState>,
         fullscreen: &'app mut bool,
         selected_pane: &'app mut Pane,
+        comments: &'app mut Comments,
     ) -> Self {
         Self {
             exported_commands: Arc::new(Mutex::new(ExportedCommands::default())),
@@ -109,6 +113,7 @@ impl<'app> AppContext<'app> {
             popup: Arc::new(Mutex::new(popup)),
             fullscreen: Arc::new(Mutex::new(fullscreen)),
             selected_pane: Arc::new(Mutex::new(selected_pane)),
+            comments: Arc::new(Mutex::new(comments)),
         }
     }
 
@@ -436,6 +441,52 @@ impl<'app> AppContext<'app> {
                 scope
                     .create_function_mut(|_, selected_pane: Pane| {
                         **self.selected_pane.lock().unwrap() = selected_pane;
+                        Ok(())
+                    })
+                    .unwrap(),
+            )
+            .unwrap();
+        context
+            .set(
+                "get_comments",
+                scope
+                    .create_function(|lua, ()| {
+                        let comments = self.comments.lock().unwrap();
+                        let table = lua.create_table().unwrap();
+                        for (address, comment) in comments.iter() {
+                            table.set(*address, comment.clone()).unwrap();
+                        }
+                        Ok(table)
+                    })
+                    .unwrap(),
+            )
+            .unwrap();
+        context
+            .set(
+                "get_comment",
+                scope
+                    .create_function(|_, address: u64| {
+                        let comments = self.comments.lock().unwrap();
+                        Ok(comments.get(&address).cloned())
+                    })
+                    .unwrap(),
+            )
+            .unwrap();
+        context
+            .set(
+                "set_comment",
+                scope
+                    .create_function_mut(|_, (address, comment): (u64, Option<String>)| {
+                        let mut comments = self.comments.lock().unwrap();
+                        if let Some(comment) = comment {
+                            if comment.is_empty() {
+                                comments.remove(&address);
+                            } else {
+                                comments.insert(address, comment);
+                            }
+                        } else {
+                            comments.remove(&address);
+                        }
                         Ok(())
                     })
                     .unwrap(),
