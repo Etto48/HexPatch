@@ -379,7 +379,7 @@ impl App {
                 let decoded = decoder
                     .disasm_count(bytes, virtual_address + ip_offset, 1)
                     .expect("Failed to disassemble");
-                if decoded.len() == 0 {
+                if decoded.is_empty() {
                     break;
                 }
                 let instruction = decoded.iter().next().unwrap();
