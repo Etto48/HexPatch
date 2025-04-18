@@ -59,6 +59,14 @@ On Arch Linux, a package is available from the [official repositories](https://a
 pacman -S hexpatch
 ```
 
+#### X-CMD
+
+If you are a user of [x-cmd](https://x-cmd.com), you can run:
+
+```bash
+x install hexpatch
+```
+
 ### Building from source with cargo
 
 Clone the repository
