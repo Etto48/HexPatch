@@ -4,7 +4,7 @@ use capstone::{
     arch::{self, BuildsCapstone},
     Capstone, CsResult,
 };
-use keystone_engine::{Arch, Keystone, KeystoneError, Mode};
+use hexpatch_keystone::{Arch, Error, Keystone, Mode};
 use mlua::UserData;
 use object::{Architecture, Endianness};
 
@@ -195,9 +195,7 @@ impl Header {
         }
     }
 
-    pub(super) fn get_encoder_for_arch(
-        architecture: &Architecture,
-    ) -> Result<Keystone, KeystoneError> {
+    pub(super) fn get_encoder_for_arch(architecture: &Architecture) -> Result<Keystone, Error> {
         match architecture {
             Architecture::Aarch64 => Keystone::new(Arch::ARM64, Mode::LITTLE_ENDIAN),
             Architecture::Aarch64_Ilp32 => Keystone::new(Arch::ARM64, Mode::LITTLE_ENDIAN),
@@ -231,7 +229,7 @@ impl Header {
         })
     }
 
-    pub fn get_encoder(&self) -> Result<Keystone, KeystoneError> {
+    pub fn get_encoder(&self) -> Result<Keystone, Error> {
         match self {
             Header::GenericHeader(header) => Self::get_encoder_for_arch(&header.architecture),
             Header::CustomHeader(header) => Self::get_encoder_for_arch(&header.architecture),
