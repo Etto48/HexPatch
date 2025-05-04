@@ -81,6 +81,8 @@ The following styles can be customized in the color settings:
 |hex_current_instruction|Bytes composing the selected instruction.|
 |hex_current_section|Bytes composing the selected section.|
 |hex_default|Default style for bytes in hex and text view.|
+|pane_selected|Border of the selected pane.|
+|pane|Default border of the panes.|
 |text_selected|Selected byte in the text view.|
 |assembly_symbol|Symbol in the assembly view and other related popups.|
 |assembly_selected|Selected instruction in the assembly view.|
@@ -90,6 +92,7 @@ The following styles can be customized in the color settings:
 |assembly_bad|Bad instructions in the assembly view.|
 |assembly_section|Section in the assembly view.|
 |assembly_entry_point|Entry point tag in the assembly view.|
+|assembly_comment|Comment in the assembly view.|
 |assembly_default|Default style for mnemonic in the assembly view.|
 |patch_patched_less_or_equal|Bytes patched that are less or equal to the size of the original instruction in the patch popup.|
 |patch_patched_greater|Bytes patched that are overflowing the size of the original instruction in the patch popup.|
@@ -274,6 +277,8 @@ The following key bindings can be customized in the key settings:
 |patch_assembly|Open the patch assembly popup.|
 |jump|Open the jump popup.|
 |change_view|Change the view mode.|
+|change_selected_pane|Switch selection between hex and the other active pane.|
+|fullscreen|Toggle fullscreen mode with the selected pane.|
 |confirm|Confirm the current action.|
 |close_popup|Close the current popup.|
 |new_line|Insert a new line in multiline text input.|

@@ -150,7 +150,6 @@ You can find more information about the Plugin Lua API [here](./PLUGIN_API.md).
 ## Known issues
 
 - Some key combinations may not work as expected, notably `SHIFT + ENTER` on VSCode terminal. Please refer to [this issue](https://github.com/crossterm-rs/crossterm/issues/685) for more information. Unfortunately, this behavior is out of my control.
-- If you try to write an invalid relative jump instruction with more than one register (e.g. `jmp [rip+rax]`) in X86 architectures the program will crash. This problem depends on the `keystone-engine` crate, and it's out of my control.
 
 ## Special thanks
 

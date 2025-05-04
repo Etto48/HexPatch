@@ -27,7 +27,6 @@ pub struct ColorSettings {
     pub hex_current_section: Style,
     pub hex_default: Style,
 
-    pub oneline_comment: Style,
     pub pane_selected: Style,
     pub pane: Style,
 
@@ -117,7 +116,6 @@ impl ColorSettings {
             text_selected: Style::default().fg(Color::White).bg(Color::Black),
             pane_selected: Style::default().fg(Color::LightGreen),
             pane: Style::default().fg(Color::White),
-            oneline_comment: Style::default().fg(Color::Green),
 
             assembly_symbol: Style::default().fg(Color::Green),
             assembly_selected: Style::default().fg(Color::White).bg(Color::Black),
@@ -198,7 +196,6 @@ impl ColorSettings {
             text_selected: Style::default().fg(Color::Black).bg(Color::White),
             pane_selected: Style::default().fg(Color::LightGreen),
             pane: Style::default().fg(Color::White),
-            oneline_comment: Style::default().fg(Color::LightGreen),
 
             assembly_symbol: Style::default().fg(Color::LightGreen),
             assembly_selected: Style::default().fg(Color::Black).bg(Color::White),
