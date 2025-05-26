@@ -69,10 +69,8 @@ impl PluginManager {
         let mut plugins = Vec::new();
         let path = match path {
             Some(path) => path.to_path_buf(),
-            None => Self::get_default_plugin_path().ok_or(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Could not get default plugin path",
-            ))?,
+            None => Self::get_default_plugin_path()
+                .ok_or(std::io::Error::other("Could not get default plugin path"))?,
         };
         std::fs::create_dir_all(&path)?;
         for entry in std::fs::read_dir(path)? {

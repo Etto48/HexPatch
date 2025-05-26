@@ -26,10 +26,8 @@ impl Settings {
     pub fn load(path: Option<&Path>, terminal_theme: Theme) -> Result<Settings, io::Error> {
         let path = match path {
             Some(path) => path.to_path_buf(),
-            None => Self::get_default_settings_path().ok_or(io::Error::new(
-                io::ErrorKind::Other,
-                "Could not get default settings path",
-            ))?,
+            None => Self::get_default_settings_path()
+                .ok_or(io::Error::other("Could not get default settings path"))?,
         };
 
         if !path.exists() {
