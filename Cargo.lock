@@ -1168,8 +1168,7 @@ dependencies = [
 [[package]]
 name = "hexpatch-keystone"
 version = "0.9.4-1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f45bff2afbc058b27e6ae81fdc975c04a2b19925e377aac8931595df1e44fcac"
+source = "git+https://github.com/Etto48/hexpatch-keystone.git?branch=fix%2Fcompilation#fb3d11a27aeef8475a25f1231192dde146eefb89"
 dependencies = [
  "hexpatch-keystone-sys",
  "libc",
@@ -1178,8 +1177,7 @@ dependencies = [
 [[package]]
 name = "hexpatch-keystone-sys"
 version = "0.9.4-1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "631c46bf448d1c288d2266acef4ab164a7f5dc0feb4b95c3a55ec08646d2a1f9"
+source = "git+https://github.com/Etto48/hexpatch-keystone.git?branch=fix%2Fcompilation#fb3d11a27aeef8475a25f1231192dde146eefb89"
 dependencies = [
  "bitflags",
  "cmake",
