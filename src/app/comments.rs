@@ -110,7 +110,7 @@ impl App {
             if let Err(e) = self.filesystem.create(&comments_path) {
                 self.log(
                     NotificationLevel::Error,
-                    &format!("Failed to create comments: {}", e),
+                    t!("errors.create_comments", e = e),
                 );
                 return;
             }
@@ -118,13 +118,10 @@ impl App {
                 .filesystem
                 .write(&comments_path, comments_str.as_bytes())
             {
-                self.log(
-                    NotificationLevel::Error,
-                    &format!("Failed to write comments: {}", e),
-                );
+                self.log(NotificationLevel::Error, t!("errors.write_comments", e = e));
                 return;
             }
-            self.log(NotificationLevel::Info, "Comments saved.");
+            self.log(NotificationLevel::Info, t!("app.messages.comments_saved"));
             self.comments.reset_dirty();
         }
     }
@@ -138,21 +135,15 @@ impl App {
                     self.comments = comments;
                     self.comments
                         .check_max_address(self.data.bytes().len() as u64);
-                    self.log(NotificationLevel::Info, "Comments loaded.");
+                    self.log(NotificationLevel::Info, t!("app.messages.comments_loaded"));
                 }
                 Err(e) => {
-                    self.log(
-                        NotificationLevel::Error,
-                        &format!("Failed to parse comments: {}", e),
-                    );
+                    self.log(NotificationLevel::Error, t!("errors.parse_comments", e = e));
                 }
             },
             Err(e) => {
                 // This is in debug because the file may not exist.
-                self.log(
-                    NotificationLevel::Debug,
-                    &format!("Failed to read comments: {}", e),
-                );
+                self.log(NotificationLevel::Debug, t!("errors.read_comments", e = e));
                 self.comments = Comments::new();
             }
         }

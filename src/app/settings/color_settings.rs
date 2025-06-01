@@ -266,7 +266,7 @@ impl ColorSettings {
         let mut color_settings = Self::get_default_theme(theme);
         color_settings
             .edit_color_settings(map)
-            .map_err(|e| format!("Failed to load color settings: {}", e))?;
+            .map_err(|e| t!("errors.load_color_settings", e = e))?;
         Ok(color_settings)
     }
 }

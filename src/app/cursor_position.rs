@@ -136,21 +136,19 @@ impl App {
             if let Some(symbols) = self.header.get_symbols() {
                 if let Some(symbol) = symbols.iter().nth(scroll) {
                     let (address, name) = symbol;
-                    let log_message = format!("Jumping to symbol {} at {:#X}", name, address);
+                    let log_message =
+                        t!("app.messages.jump_to_symbol", symbol = name, address = address : {:#X});
                     self.jump_to(*address as usize, true);
-                    self.log(NotificationLevel::Debug, &log_message);
+                    self.log(NotificationLevel::Debug, log_message);
                 } else {
                     unreachable!("The scroll should not be greater than the number of symbols")
                 }
             } else {
-                self.log(NotificationLevel::Error, "No symbols found");
+                self.log(NotificationLevel::Error, t!("errors.no_symbols_found"));
             }
             return;
         } else if symbols.is_empty() {
-            self.log(
-                NotificationLevel::Error,
-                "No symbols matching the search pattern found",
-            );
+            self.log(NotificationLevel::Error, t!("errors.no_matching_symbols"));
             return;
         }
 
@@ -159,7 +157,7 @@ impl App {
             let (address, name) = symbol;
             self.log(
                 NotificationLevel::Debug,
-                &format!("Jumping to symbol {} at {:#X}", name, address),
+                t!("app.messages.jump_to_symbol", symbol = name, address = address : {:#X}),
             );
             self.jump_to(*address as usize, true);
         } else {
@@ -176,18 +174,15 @@ impl App {
         if comment.is_empty() {
             if let Some(comment) = self.comments.iter().nth(scroll) {
                 let (address, _comment) = comment;
-                let log_message = format!("Jumping to comment at {:#X}", address);
+                let log_message = t!("app.messages.jump_to_comment", address = address : {:#X});
                 self.jump_to(*address as usize, false);
-                self.log(NotificationLevel::Debug, &log_message);
+                self.log(NotificationLevel::Debug, log_message);
             } else {
                 unreachable!("The scroll should not be greater than the number of comments")
             }
             return;
         } else if comments.is_empty() {
-            self.log(
-                NotificationLevel::Error,
-                "No comments matching the search pattern found",
-            );
+            self.log(NotificationLevel::Error, t!("errors.no_matching_comments"));
             return;
         }
 
@@ -196,7 +191,7 @@ impl App {
             let (address, _comment) = comment;
             self.log(
                 NotificationLevel::Debug,
-                &format!("Jumping to comment at {:#X}", address),
+                t!("app.messages.jump_to_comment", address = address : {:#X}),
             );
             self.jump_to(*address as usize, false);
         } else {
@@ -209,32 +204,32 @@ impl App {
             if let Ok(address) = usize::from_str_radix(address, 16) {
                 self.log(
                     NotificationLevel::Debug,
-                    &format!("Jumping to address: {:#X}", address),
+                    t!("app.messages.jump_to_address", address = address : {:#X}),
                 );
                 self.jump_to(address, false);
             } else {
                 self.log(
                     NotificationLevel::Error,
-                    &format!("Invalid address: {}", symbol),
+                    t!("errors.invalid_address", address = symbol),
                 );
             }
         } else if let Some(address) = symbol.strip_prefix("v0x") {
             if let Ok(address) = usize::from_str_radix(address, 16) {
                 self.log(
                     NotificationLevel::Debug,
-                    &format!("Jumping to virtual address: {:#X}", address),
+                    t!("app.messages.jump_to_virtual_address", address = address : {:#X}),
                 );
                 self.jump_to(address, true);
             } else {
                 self.log(
                     NotificationLevel::Error,
-                    &format!("Invalid virtual address: {}", symbol),
+                    t!("errors.invalid_virtual_address", address = symbol),
                 );
             }
         } else if let Some(address) = self.header.symbol_to_address(symbol) {
             self.log(
                 NotificationLevel::Debug,
-                &format!("Jumping to symbol {} at {:#X}", symbol, address),
+                t!("app.messages.jump_to_symbol", symbol = symbol, address = address : {:#X}),
             );
             self.jump_to(address as usize, true);
         } else if let Some(address) = self
@@ -246,13 +241,13 @@ impl App {
         {
             self.log(
                 NotificationLevel::Debug,
-                &format!("Jumping to section {} at {:#X}", symbol, address),
+                t!("app.messages.jump_to_section", section = symbol, address = address : {:#X}),
             );
             self.jump_to(address as usize, false);
         } else {
             self.log(
                 NotificationLevel::Error,
-                &format!("Symbol not found: {}", symbol),
+                t!("errors.symbol_not_found", symbol = symbol),
             );
         }
     }
@@ -312,7 +307,7 @@ impl App {
             } else {
                 self.log(
                     NotificationLevel::Error,
-                    &format!("Virtual address {:#X} not found", address),
+                    t!("errors.virtual_address_not_found", address = address : {:#X}),
                 );
                 return;
             }
@@ -380,7 +375,7 @@ impl App {
         self.cursor = self
             .get_expected_cursor_position(new_global_byte_index, new_high_byte)
             .cursor
-            .expect("The scroll should be adequate for the cursor to be visible");
+            .expect(&t!("errors.cursor_position"));
     }
 
     pub(super) fn move_cursor_page_up(&mut self) {

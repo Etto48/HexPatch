@@ -249,7 +249,7 @@ impl<'de> serde::de::Visitor<'de> for SettingsValueVisitor {
         if let Ok(value) = i64::try_from(v) {
             self.visit_i64(value)
         } else {
-            Err(E::custom("u64 value is too large to fit in an i64"))
+            Err(E::custom(t!("errors.u64_too_large_for_i64")))
         }
     }
 
@@ -312,13 +312,13 @@ impl<'de> serde::de::Visitor<'de> for SettingsValueVisitor {
                     "add_modifier" => {
                         let value = map.next_value()?;
                         style.add_modifier = Modifier::from_bits(value).ok_or_else(|| {
-                            serde::de::Error::custom("Invalid style add modifier")
+                            serde::de::Error::custom(t!("errors.invalid_style_add_modifier"))
                         })?;
                     }
                     "sub_modifier" => {
                         let value = map.next_value()?;
                         style.sub_modifier = Modifier::from_bits(value).ok_or_else(|| {
-                            serde::de::Error::custom("Invalid style sub modifier")
+                            serde::de::Error::custom(t!("errors.invalid_style_sub_modifier"))
                         })?;
                     }
                     _ => {
@@ -334,8 +334,9 @@ impl<'de> serde::de::Visitor<'de> for SettingsValueVisitor {
                     }
                     "modifiers" => {
                         let value = map.next_value()?;
-                        key_event.modifiers = KeyModifiers::from_bits(value)
-                            .ok_or_else(|| serde::de::Error::custom("Invalid key modifiers"))?;
+                        key_event.modifiers = KeyModifiers::from_bits(value).ok_or_else(|| {
+                            serde::de::Error::custom(t!("errors.invalid_key_modifiers"))
+                        })?;
                     }
                     "kind" => {
                         let value = map.next_value::<String>()?;
@@ -344,8 +345,9 @@ impl<'de> serde::de::Visitor<'de> for SettingsValueVisitor {
                     }
                     "state" => {
                         let value = map.next_value()?;
-                        key_event.state = KeyEventState::from_bits(value)
-                            .ok_or_else(|| serde::de::Error::custom("Invalid key event state"))?;
+                        key_event.state = KeyEventState::from_bits(value).ok_or_else(|| {
+                            serde::de::Error::custom(t!("errors.invalid_key_event_state"))
+                        })?;
                     }
                     _ => {
                         map_kind = MapKind::Unknown;
@@ -355,9 +357,9 @@ impl<'de> serde::de::Visitor<'de> for SettingsValueVisitor {
             }
         }
         match map_kind {
-            MapKind::Unknown => Err(serde::de::Error::custom(
-                "Invalid table, expected style or key event",
-            )),
+            MapKind::Unknown => Err(serde::de::Error::custom(t!(
+                "errors.invalid_table_style_or_key_event"
+            ))),
             MapKind::Style => self.visit_style(style),
             MapKind::Key => self.visit_key(key_event),
         }

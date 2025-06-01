@@ -115,7 +115,7 @@ impl GenericHeader {
             };
 
             if let Some(debug_data_directory) = debug_data_directory {
-                let section_table = section_table.expect("PE file should have a section table");
+                let section_table = section_table.expect(&t!("errors.pe_section_table_missing"));
                 let debug_data_dir_content = debug_data_directory.data(bytes, &section_table);
                 if let Ok(debug_data_dir_content) = debug_data_dir_content {
                     let mut pdb_file_path = None;
@@ -160,10 +160,10 @@ impl GenericHeader {
                         if let Ok(file) = file {
                             // TODO: maybe there is a better way to do this without writing to a file
                             let mut tmp_file =
-                                tempfile::tempfile().expect("Failed to create a temporary file");
+                                tempfile::tempfile().expect(&t!("errors.create_temp_file"));
                             tmp_file
                                 .write_all(&file)
-                                .expect("Failed to write to a temporary file");
+                                .expect(&t!("errors.write_temp_file"));
 
                             let pdb = pdb::PDB::open(tmp_file);
                             if let Ok(mut pdb) = pdb {

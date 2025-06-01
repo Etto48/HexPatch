@@ -8,7 +8,7 @@ pub struct Change {
 impl Change {
     pub fn new(offset: usize, old: &[u8], new: &[u8]) -> Self {
         if old.len() != new.len() {
-            panic!("Old and new data must be the same length");
+            panic!("{}", t!("panic.data_length_mismatch"));
         }
         Self {
             offset,

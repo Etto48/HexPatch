@@ -50,9 +50,12 @@ impl Data {
     pub fn push_change(&mut self, offset: usize, mut new: Vec<u8>) -> usize {
         if offset >= self.bytes.len() {
             panic!(
-                "Offset {} out of bounds for data of length {}",
-                offset,
-                self.bytes.len()
+                "{}",
+                t!(
+                    "panic.data_offset_out_of_bounds",
+                    offset = offset,
+                    data_len = self.bytes.len()
+                )
             );
         }
         new.truncate(self.bytes.len().checked_sub(offset).unwrap());

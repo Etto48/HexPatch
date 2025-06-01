@@ -25,12 +25,12 @@ impl App {
     ) -> Result<(), Box<dyn Error>> {
         let contents = Self::find_dir_contents(currently_open_path, path, &self.filesystem)?;
         if contents.is_empty() {
-            return Err(format!("No files found that matches \"{}\"", path).into());
+            return Err(t!("app.messages.no_file_match", path = path).into());
         }
         let selected = contents
             .into_iter()
             .nth(scroll)
-            .expect("Scroll out of bounds for go_to_path.");
+            .expect(&t!("errors.go_to_path_scroll_out_of_bounds"));
 
         if self.filesystem.is_dir(selected.path()) {
             Self::open_dir(popup, selected.path(), &mut self.filesystem)?;
@@ -48,7 +48,7 @@ impl App {
             current_path.to_owned()
         } else {
             path::parent(current_path)
-                .expect("A file should have a parent directory.")
+                .expect(&t!("errors.file_no_parent"))
                 .to_owned()
         }
     }
@@ -121,36 +121,42 @@ impl App {
             match &self.header {
                 Header::GenericHeader(header) => self.log(
                     NotificationLevel::Info,
-                    &format!("File type: {:?}", header.file_type()),
+                    t!("app.messages.file_type", file_type = header.file_type() : {:?}),
                 ),
                 // TODO: maybe add info for a more detailed log
-                Header::CustomHeader(_) => self.log(NotificationLevel::Info, "File type: Custom"),
+                Header::CustomHeader(_) => self.log(
+                    NotificationLevel::Info,
+                    t!("app.messages.file_type_custom",),
+                ),
                 Header::None => unreachable!(),
             }
             self.log(
                 NotificationLevel::Info,
-                &format!("Architecture: {:?}", self.header.architecture()),
+                t!("app.messages.architecture", architecture = self.header.architecture() : {:?}),
             );
             self.log(
                 NotificationLevel::Info,
-                &format!("Bitness: {}", self.header.bitness()),
+                t!("app.messages.bitness", bitness = self.header.bitness()),
             );
             self.log(
                 NotificationLevel::Info,
-                &format!("Entry point: {:#X}", self.header.entry_point()),
+                t!("app.messages.entry_point", address = self.header.entry_point() : {:#X}),
             );
             for section in self.header.get_sections() {
-                self.log(NotificationLevel::Info, &format!("Section: {}", section));
+                self.log(
+                    NotificationLevel::Info,
+                    t!("app.messages.section", section = section),
+                );
             }
         } else {
-            self.log(NotificationLevel::Info, "No header found. Assuming 64-bit.");
+            self.log(NotificationLevel::Info, t!("app.messages.no_header"));
         }
 
         self.log(
             NotificationLevel::Info,
-            &format!(
-                "Press {} for a list of commands.",
-                Self::key_event_to_string(self.settings.key.help)
+            t!(
+                "app.messages.press_for_help",
+                key = Self::key_event_to_string(self.settings.key.help)
             ),
         );
     }
@@ -162,7 +168,7 @@ impl App {
     ) -> Result<(), Box<dyn Error>> {
         self.log(
             NotificationLevel::Info,
-            &format!("Opening file: \"{}\"", path),
+            t!("app.messages.opening_file", path = path),
         );
 
         self.filesystem.cd(path);
@@ -182,7 +188,7 @@ impl App {
 
         Self::print_loading_status(
             &self.settings.color,
-            &format!("Opening \"{}\"...", path),
+            &t!("app.messages.opening_path", path = path),
             terminal,
         )?;
         self.data = Data::new(
@@ -192,20 +198,28 @@ impl App {
 
         self.load_comments(None);
 
-        Self::print_loading_status(&self.settings.color, "Decoding binary data...", terminal)?;
+        Self::print_loading_status(
+            &self.settings.color,
+            &t!("app.messages.decoding_binary"),
+            terminal,
+        )?;
 
         self.header = self.parse_header();
 
         Self::print_loading_status(
             &self.settings.color,
-            "Disassembling executable...",
+            &t!("app.messages.disassembling_executable"),
             terminal,
         )?;
 
         (self.assembly_offsets, self.assembly_instructions) =
             Self::sections_from_bytes(self.data.bytes(), &self.header);
 
-        Self::print_loading_status(&self.settings.color, "Opening ui...", terminal)?;
+        Self::print_loading_status(
+            &self.settings.color,
+            &t!("app.messages.opening_ui"),
+            terminal,
+        )?;
         self.log_header_info();
         let mut app_context = get_app_context!(self);
         self.plugin_manager.on_open(&mut app_context);
@@ -232,12 +246,15 @@ impl App {
         self.data.reset_dirty();
         match &self.filesystem {
             FileSystem::Local { path } => {
-                self.log(NotificationLevel::Info, &format!("Saved to {}", path));
+                self.log(
+                    NotificationLevel::Info,
+                    t!("app.messages.saved_to", path = path),
+                );
             }
             FileSystem::Remote { path, connection } => {
                 self.log(
                     NotificationLevel::Info,
-                    &format!("Saved to {} at {}", path, connection),
+                    t!("app.messages.saved_to_ssh", path = path, ssh = connection),
                 );
             }
         }

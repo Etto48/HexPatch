@@ -27,13 +27,13 @@ impl Settings {
         let path = match path {
             Some(path) => path.to_path_buf(),
             None => Self::get_default_settings_path()
-                .ok_or(io::Error::other("Could not get default settings path"))?,
+                .ok_or(io::Error::other(t!("errors.get_default_settings_path")))?,
         };
 
         if !path.exists() {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                "Settings file not found",
+                t!("app.messages.settings_not_found"),
             ));
         }
 
@@ -47,7 +47,7 @@ impl Settings {
                 Err(e) => {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
-                        format!("Could not parse settings file: {}", e),
+                        t!("app.messages.parse_settings_error", e = e),
                     ))
                 }
             },
@@ -64,13 +64,13 @@ impl Settings {
             Ok(settings) => Ok(settings),
             Err(e) => {
                 if e.kind() != io::ErrorKind::NotFound {
-                    Err(format!("Could not load settings: {}", e))
+                    Err(t!("app.messages.load_settings_error", e = e).to_string())
                 } else {
                     let settings = Settings::empty(terminal_theme);
                     if path.is_some() {
                         settings
                             .save(path)
-                            .ok_or(format!("Could not save default settings: {}", e))?;
+                            .ok_or(t!("app.messages.save_default_settings_error", e = e))?;
                     }
                     Ok(settings)
                 }

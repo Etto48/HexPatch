@@ -41,12 +41,20 @@ impl From<u8> for NotificationLevel {
 
 impl Display for NotificationLevel {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let max_len = t!("app.log_levels.none")
+            .chars()
+            .count()
+            .max(t!("app.log_levels.debug").chars().count())
+            .max(t!("app.log_levels.info").chars().count())
+            .max(t!("app.log_levels.warn").chars().count())
+            .max(t!("app.log_levels.error").chars().count());
+
         match self {
-            NotificationLevel::None => write!(f, "None "),
-            NotificationLevel::Debug => write!(f, "Debug"),
-            NotificationLevel::Info => write!(f, "Info "),
-            NotificationLevel::Warning => write!(f, "Warn "),
-            NotificationLevel::Error => write!(f, "Error"),
+            NotificationLevel::None => write!(f, "{:<max_len$}", t!("app.log_levels.none")),
+            NotificationLevel::Debug => write!(f, "{:<max_len$}", t!("app.log_levels.debug")),
+            NotificationLevel::Info => write!(f, "{:<max_len$}", t!("app.log_levels.info")),
+            NotificationLevel::Warning => write!(f, "{:<max_len$}", t!("app.log_levels.warn")),
+            NotificationLevel::Error => write!(f, "{:<max_len$}", t!("app.log_levels.error")),
         }
     }
 }

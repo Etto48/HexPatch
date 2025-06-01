@@ -31,3 +31,7 @@ pub mod headers;
 
 #[macro_use]
 extern crate macro_rules_attribute;
+#[macro_use]
+extern crate rust_i18n;
+
+i18n!();

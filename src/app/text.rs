@@ -111,7 +111,10 @@ impl App {
             }
             search_here += 1;
         }
-        self.log(NotificationLevel::Warning, "Text not found");
+        self.log(
+            NotificationLevel::Warning,
+            t!("app.messages.text_not_found"),
+        );
     }
 
     pub(super) fn u8_to_char(input: u8) -> char {

@@ -9,10 +9,10 @@ pub fn assemble(
 ) -> Result<Vec<u8>, Box<dyn Error>> {
     let encoder = header
         .get_encoder()
-        .map_err(|e| format!("Failed to get encoder: {}", e))?;
+        .map_err(|e| t!("errors.create_encoder", e = e))?;
 
     let out = encoder
         .asm(asm.to_string(), starting_virtual_address)
-        .map_err(|e| format!("Failed to assemble: {}", e))?;
+        .map_err(|e| t!("errors.assemble", e = e))?;
     Ok(out.bytes)
 }

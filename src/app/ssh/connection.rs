@@ -26,11 +26,11 @@ pub struct Connection {
 
 impl Connection {
     fn get_key_files() -> Result<(PathBuf, PathBuf), String> {
-        let home_dir = dirs::home_dir().ok_or_else(|| "Home directory not found".to_string())?;
+        let home_dir = dirs::home_dir().ok_or_else(|| t!("errors.home_not_found").to_string())?;
 
         let ssh_dir = home_dir.join(".ssh");
         if !ssh_dir.is_dir() {
-            return Err("SSH directory not found".into());
+            return Err(t!("errors.ssh_dir_not_found").into());
         }
         if ssh_dir.join("id_rsa").is_file() {
             Ok((ssh_dir.join("id_rsa"), ssh_dir.join("id_rsa.pub")))
@@ -41,7 +41,7 @@ impl Connection {
         } else if ssh_dir.join("id_dsa").is_file() {
             Ok((ssh_dir.join("id_dsa"), ssh_dir.join("id_dsa.pub")))
         } else {
-            Err("No private key found".into())
+            Err(t!("errors.no_private_key").into())
         }
     }
 
@@ -51,14 +51,14 @@ impl Connection {
             .build()?;
         let (username, host) = connection_str
             .split_once('@')
-            .ok_or_else(|| Box::<dyn Error>::from("Invalid connection string"))?;
+            .ok_or_else(|| Box::<dyn Error>::from(t!("errors.invalid_connection_string")))?;
 
         let (hostname, port) =
             host.split_once(':')
                 .map_or(Ok((host, 22)), |(hostname, port)| {
                     port.parse::<u16>()
                         .map(|port| (hostname, port))
-                        .map_err(|_| Box::<dyn Error>::from("Invalid port"))
+                        .map_err(|_| Box::<dyn Error>::from(t!("errors.invalid_port")))
                 })?;
 
         let config = client::Config::default();
@@ -74,7 +74,7 @@ impl Connection {
                 partial_success: _,
             } = runtime.block_on(session.authenticate_password(username, password))?
             {
-                return Err("Authentication failed".into());
+                return Err(t!("errors.authentication_failed").into());
             }
         } else {
             let (private_key, _public_key) = Self::get_key_files()?;
@@ -85,7 +85,7 @@ impl Connection {
                 partial_success: _,
             } = runtime.block_on(session.authenticate_publickey(username, keypair))?
             {
-                return Err("Authentication failed".into());
+                return Err(t!("errors.authentication_failed").into());
             }
         }
 

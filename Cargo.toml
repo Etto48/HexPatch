@@ -16,6 +16,10 @@ keywords = ["reverse-engineering","tui","hex-editor","binary-patching"]
 categories = ["command-line-utilities","development-tools"]
 build = "build.rs"
 
+[package.metadata.i18n]
+available-locales = ["en", "it"]
+default-locale = "en"
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [target.'cfg(windows)'.build-dependencies]
@@ -42,6 +46,7 @@ symbolic-demangle = "12.15.5"
 tempfile = "3.20.0"
 tokio = "1.45.1"
 termbg = "0.6.2"
+rust-i18n = "3.1.5"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"
