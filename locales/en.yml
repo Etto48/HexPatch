@@ -218,6 +218,22 @@ keys:
     meta: "Meta+"
   space: "Space"
   tab: "Tab"
+  enter: "Enter"
+  esc: "Esc"
+  backspace: "Backspace"
+  delete: "Delete"
+  home: "Home"
+  end: "End"
+  page_up: "Page Up"
+  page_down: "Page Down"
+  insert: "Insert"
+  null: "Null"
+  caps_lock: "Caps Lock"
+  scroll_lock: "Scroll Lock"
+  num_lock: "Num Lock"
+  print_screen: "Print Screen"
+  pause: "Pause"
+
 
 panic:
   data_offset_out_of_bounds: "Offset %{offset} out of bounds for data of length %{data_len}"
