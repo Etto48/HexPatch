@@ -1,7 +1,7 @@
 use mlua::UserDataRegistry;
 use serde::{Deserialize, Serialize};
 
-use super::{theme_preference::ThemePreference, verbosity::Verbosity, Settings};
+use super::{locale::Locale, theme_preference::ThemePreference, verbosity::Verbosity, Settings};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
@@ -10,6 +10,7 @@ pub struct AppSettings {
     pub log_limit: usize,
     pub log_level: Verbosity,
     pub theme: ThemePreference,
+    pub locale: Locale,
 }
 
 impl AppSettings {
@@ -46,6 +47,7 @@ impl Default for AppSettings {
             log_limit: 1024,
             log_level: Verbosity::default(),
             theme: ThemePreference::default(),
+            locale: Locale::default(),
         }
     }
 }
