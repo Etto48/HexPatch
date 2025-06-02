@@ -297,7 +297,7 @@ The following app settings can be customized in the app settings:
 |log_limit|usize|Maximum number of log messages that are stored in the log.|
 |log_level|Verbosity|The minimum level of log messages that are shown. Can be `"info"`, `"debug"`, `"warning"` or `"error"`.|
 |theme|ThemePreference|The theme to use, can be `"auto"`, `"light"` or `"dark"`.|
-|locale|Locale|The locale to use for the app, set this to the locale string that you prefer, see [Locale](./LOCALE.md) for more information. The default locale is `"en"`.|
+|locale|Locale|The locale to use for the app, set this to the locale string that you prefer, see the [internationalization documentation](./I18N.md) for more information. The default locale is `"en"`.|
 
 ## Custom
 

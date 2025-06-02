@@ -139,9 +139,9 @@ The following architectures are supported:
 
 Read the [settings documentation](./SETTINGS.md) for more information.
 
-## Translations
+## Internationalization
 
-HexPatch supports translations, which can be set in the settings file. See the [locale documentation](./LOCALE.md) for a list of available locales and how to add a new one.
+HexPatch supports translations, which can be set in the settings file. See the [internationalization documentation](./I18N.md) for a list of available locales and how to add a new one.
 You can set the locale with the key `app.locale` in the settings file. See the [settings documentation](./SETTINGS.md) for more information.
 
 ## Plugins
