@@ -8,6 +8,7 @@ Available locales are
 | `it-IT` | Italian (Italy) | [@Etto48][Etto48] |
 | `fr-FR` | French (France) | AI |
 | `es-ES` | Spanish (Spain) | AI |
+| `de-DE` | German (Germany) | AI |
 | `ja-JP` | Japanese (Japan) | AI |
 | `zh-CN` | Simplified Chinese (China) | [@Meow0x7E][Meow0x7E] |
 | `zh-TW` | Traditional Chinese (Taiwan) | [@Meow0x7E][Meow0x7E] |
@@ -29,7 +30,7 @@ If you use AI to translate, please communicate clearly in the pull request that 
 1. (mandatory) Create a new file in the `locales` directory with the name `<code>.yml`, where `<code>` is the locale code (e.g., `it-IT.yaml` for Italian). The file should contain all the keys and values needed for the locale, following the structure of `locales/en.yml` as a reference.
 You can use the `locales/en.yml` file as a template and translate the values to your desired language.
 2. (optional) Add the new locale to the `package.metadata.i18n.available-locales` array in Cargo.toml.
-3. (optional) Add the new locale to the `Locale` enum in `src/settings/locale.rs`. To do so, follow the pattern of existing locales.
+3. (optional) Add the new locale to the `Locale` enum in `src/app/settings/locale.rs`. To do so, follow the pattern of existing locales.
 4. (optional) Add the new locale to this file (`docs/LOCALE.md`) in the table above, including the translator's GitHub username or `AI` if you used it to generate the translation.
 5. (mandatory) Create a pull request with the changes.
 

@@ -13,6 +13,8 @@ pub enum Locale {
     fr_FR,
     #[serde(rename = "es-ES")]
     es_ES,
+    #[serde(rename = "de-DE")]
+    de_DE,
     #[serde(rename = "ja-JP")]
     ja_JP,
     #[serde(rename = "zh-CN")]
@@ -30,6 +32,7 @@ impl Locale {
             Locale::it_IT => "Italiano (Italia)",
             Locale::fr_FR => "Français (France)",
             Locale::es_ES => "Español (España)",
+            Locale::de_DE => "Deutsch (Deutschland)",
             Locale::ja_JP => "日本語 (日本)",
             Locale::zh_CN => "中文 (中国)",
             Locale::zh_TW => "中文 (台灣)",
@@ -42,6 +45,7 @@ impl Locale {
             Locale::it_IT => "it-IT",
             Locale::fr_FR => "fr-FR",
             Locale::es_ES => "es-ES",
+            Locale::de_DE => "de-DE",
             Locale::ja_JP => "ja-JP",
             Locale::zh_CN => "zh-CN",
             Locale::zh_TW => "zh-TW",
