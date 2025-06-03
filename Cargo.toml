@@ -13,7 +13,7 @@ license = "MIT"
 homepage = "https://etto48.github.io/HexPatch/"
 repository = "https://github.com/Etto48/HexPatch"
 keywords = ["reverse-engineering","tui","hex-editor","binary-patching"]
-categories = ["command-line-utilities","development-tools"]
+categories = ["command-line-utilities","development-tools", "security"]
 build = "build.rs"
 
 [package.metadata.i18n]
