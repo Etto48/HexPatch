@@ -644,7 +644,7 @@
     "log_limit": 1024,
     "log_level": "info",
     "theme": "auto",
-    "locale": "en"
+    "locale": "auto"
   },
   "custom": {}
 }

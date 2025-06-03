@@ -95,14 +95,13 @@ impl Locale {
                 return Some(*l);
             }
         }
-        return None;
+        None
     }
     pub fn apply(&self) {
         match self {
             Locale::auto => {
                 let locale = 'found: {
-                    for locale in sys_locale::get_locales()
-                    {
+                    for locale in sys_locale::get_locales() {
                         if let Some(locale) = self.match_locale(&locale) {
                             break 'found locale;
                         }
