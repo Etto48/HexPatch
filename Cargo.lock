@@ -1221,7 +1221,7 @@ checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hex-patch"
-version = "1.12.0"
+version = "1.12.1"
 dependencies = [
  "bitflags 2.9.1",
  "capstone",
