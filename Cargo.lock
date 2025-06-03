@@ -493,6 +493,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-str"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e991226a70654b49d34de5ed064885f0bef0348a8e70018b8ff1ac80aa984a2"
+
+[[package]]
 name = "convert_case"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1215,11 +1221,12 @@ checksum = "6fe2267d4ed49bc07b63801559be28c718ea06c4738b7a03c94df7386d2cde46"
 
 [[package]]
 name = "hex-patch"
-version = "1.11.3"
+version = "1.12.0"
 dependencies = [
  "bitflags 2.9.1",
  "capstone",
  "clap",
+ "const-str",
  "crossterm 0.29.0",
  "dirs",
  "hexpatch-keystone",
@@ -1235,6 +1242,7 @@ dependencies = [
  "serde",
  "serde_json",
  "symbolic-demangle",
+ "sys-locale",
  "tempfile",
  "termbg",
  "tokio",
@@ -2798,6 +2806,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "sys-locale"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8eab9a99a024a169fe8a903cf9d4a3b3601109bcc13bd9e3c6fff259138626c4"
+dependencies = [
+ "libc",
 ]
 
 [[package]]

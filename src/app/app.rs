@@ -132,7 +132,7 @@ impl App {
                 Settings::default()
             }
         };
-        rust_i18n::set_locale(settings.app.locale.code());
+        settings.app.locale.apply();
         logger.change_limit(settings.app.log_limit);
         logger.change_verbosity(settings.app.log_level);
         Self::print_loading_status(
