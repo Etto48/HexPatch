@@ -62,6 +62,8 @@ pub enum Locale {
     zh_TW,
     #[serde(rename = "zh-HK")]
     zh_HK,
+    #[serde(rename = "tr-TR")]
+    tr_TR,
 }
 
 impl Locale {
@@ -77,6 +79,7 @@ impl Locale {
             Locale::zh_CN => "中文 (中国)",
             Locale::zh_TW => "中文 (台灣)",
             Locale::zh_HK => "中文 (香港)",
+            Locale::tr_TR => "Türkçe (Türkiye)",
         }
     }
     pub fn language(&self) -> &'static str {

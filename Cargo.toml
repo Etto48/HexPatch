@@ -17,7 +17,7 @@ categories = ["command-line-utilities","development-tools", "security"]
 build = "build.rs"
 
 [package.metadata.i18n]
-available-locales = ["en", "it-IT", "fr-FR", "es-ES", "de-DE", "ja-JP", "zh-CN", "zh-TW", "zh-HK"]
+available-locales = ["en", "it-IT", "fr-FR", "es-ES", "de-DE", "ja-JP", "zh-CN", "zh-TW", "zh-HK", "tr-TR"]
 default-locale = "en"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
