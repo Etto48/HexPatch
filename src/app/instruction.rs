@@ -12,8 +12,12 @@ pub struct Instruction {
 
 impl Instruction {
     pub fn new(instruction: &Insn, symbols: Option<&HashMap<u64, String>>) -> Self {
-        let mnemonic = instruction.mnemonic().expect("Failed to get mnemonic");
-        let operands = instruction.op_str().expect("Failed to get operands");
+        let mnemonic = instruction
+            .mnemonic()
+            .expect(&t!("errors.instruction_no_mnemonic"));
+        let operands = instruction
+            .op_str()
+            .expect(&t!("errors.instruction_no_operands"));
         let operands = operands.split(", ").collect::<Vec<_>>();
         let mut operands_string = String::new();
         for (i, operand) in operands.iter().enumerate() {

@@ -70,7 +70,7 @@ impl PluginManager {
         let path = match path {
             Some(path) => path.to_path_buf(),
             None => Self::get_default_plugin_path()
-                .ok_or(std::io::Error::other("Could not get default plugin path"))?,
+                .ok_or(std::io::Error::other(t!("errors.get_default_plugin_path")))?,
         };
         std::fs::create_dir_all(&path)?;
         for entry in std::fs::read_dir(path)? {
@@ -83,10 +83,10 @@ impl PluginManager {
                     }
                     Err(e) => app_context.logger.log(
                         NotificationLevel::Error,
-                        &format!(
-                            "Could not load plugin \"{}\": {}",
-                            path.to_string_lossy(),
-                            e
+                        t!(
+                            "app.messages.plugin_load_error",
+                            path = path.to_string_lossy(),
+                            error = e
                         ),
                     ),
                 }

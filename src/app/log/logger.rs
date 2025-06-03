@@ -22,13 +22,13 @@ impl Logger {
         }
     }
 
-    pub fn log(&mut self, level: NotificationLevel, message: &str) {
+    pub fn log<T: Into<String>>(&mut self, level: NotificationLevel, message: T) {
         if level >= self.verbosity.as_notification_level() {
             self.notification.bump_notification_level(level);
             if self.log.len() >= self.limit && self.limit > 0 {
                 self.log.pop_front();
             }
-            self.log.push_back(LogLine::new(level, message.to_string()));
+            self.log.push_back(LogLine::new(level, message.into()));
         }
     }
 
@@ -111,7 +111,7 @@ impl Index<usize> for Logger {
 }
 
 impl App {
-    pub(in crate::app) fn log(&mut self, level: NotificationLevel, message: &str) {
+    pub(in crate::app) fn log<T: Into<String>>(&mut self, level: NotificationLevel, message: T) {
         self.logger.log(level, message);
     }
 }
@@ -156,7 +156,7 @@ mod test {
         for i in 0..10 {
             logger.log(
                 NotificationLevel::Error,
-                &format!("Test error message {}", i),
+                format!("Test error message {}", i),
             );
         }
         assert_eq!(logger.len(), 5);

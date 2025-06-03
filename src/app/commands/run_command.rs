@@ -29,7 +29,7 @@ impl App {
         scroll: usize,
     ) -> Result<(), Box<dyn Error>> {
         let command_opt = self.find_commands(command).into_iter().nth(scroll);
-        let command_info = command_opt.expect("Scroll out of bounds for run_command.");
+        let command_info = command_opt.expect(&t!("errors.run_command_scroll_out_of_bounds"));
         self.popup = None;
         match command_info.command.as_str() {
             "quit" => {
@@ -106,20 +106,29 @@ impl App {
     pub(in crate::app) fn quit(&mut self, save: Option<bool>) -> Result<(), Box<dyn Error>> {
         match save {
             Some(true) => {
-                self.log(NotificationLevel::Debug, "Saving and quitting...");
+                self.log(
+                    NotificationLevel::Debug,
+                    t!("app.messages.saving_and_quitting"),
+                );
                 if self.data.dirty() {
                     self.save_file()?;
                 }
                 self.needs_to_exit = true;
             }
             Some(false) => {
-                self.log(NotificationLevel::Debug, "Quitting without saving...");
+                self.log(
+                    NotificationLevel::Debug,
+                    t!("app.messages.quitting_without_saving"),
+                );
                 self.needs_to_exit = true;
             }
             None => {
-                self.log(NotificationLevel::Debug, "Quitting...");
+                self.log(NotificationLevel::Debug, t!("app.messages.quitting"));
                 if self.data.dirty() {
-                    self.log(NotificationLevel::Warning, "You have unsaved changes.")
+                    self.log(
+                        NotificationLevel::Warning,
+                        t!("app.messages.unsaved_changes"),
+                    )
                 } else {
                     self.needs_to_exit = true;
                 }
@@ -262,7 +271,10 @@ impl App {
                 .unwrap();
             self.edit_assembly(change.offset() + instruction_offset);
         } else {
-            self.log(NotificationLevel::Warning, "Nothing to undo.")
+            self.log(
+                NotificationLevel::Warning,
+                t!("app.messages.nothing_to_undo"),
+            )
         }
     }
 
@@ -275,7 +287,10 @@ impl App {
                 .unwrap();
             self.edit_assembly(change.offset() + instruction_offset);
         } else {
-            self.log(NotificationLevel::Warning, "Nothing to redo.")
+            self.log(
+                NotificationLevel::Warning,
+                t!("app.messages.nothing_to_redo"),
+            )
         }
     }
 }

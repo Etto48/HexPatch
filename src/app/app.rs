@@ -120,7 +120,7 @@ impl App {
             Err(e) => {
                 logger.log(
                     NotificationLevel::Debug,
-                    &format!("Could not detect terminal theme: {e}"),
+                    t!("errors.detect_terminal_theme", e = e),
                 );
                 Theme::Dark
             }
@@ -128,24 +128,22 @@ impl App {
         let settings = match Settings::load_or_create(args.config.as_deref(), terminal_theme) {
             Ok(settings) => settings,
             Err(e) => {
-                logger.log(
-                    NotificationLevel::Error,
-                    &format!("Error loading settings: {e}"),
-                );
+                logger.log(NotificationLevel::Error, t!("errors.load_settings", e = e));
                 Settings::default()
             }
         };
+        settings.app.locale.apply();
         logger.change_limit(settings.app.log_limit);
         logger.change_verbosity(settings.app.log_level);
         Self::print_loading_status(
             &settings.color,
-            &format!("Opening \"{}\"...", args.path),
+            &t!("app.messages.opening_path", path = &args.path),
             terminal,
         )?;
 
         let filesystem = if let Some(ssh) = &args.ssh {
             FileSystem::new_remote(&args.path, ssh, args.password.as_deref())
-                .map_err(|e| format!("Failed to connect to {}: {e}", ssh))?
+                .map_err(|e| t!("errors.connect_ssh", ssh = ssh, e = e))?
         } else {
             FileSystem::new_local(&args.path).map_err(|e| e.to_string())?
         };
@@ -164,10 +162,7 @@ impl App {
         app.plugin_manager = match PluginManager::load(args.plugins.as_deref(), &mut app_context) {
             Ok(plugins) => plugins,
             Err(e) => {
-                app.log(
-                    NotificationLevel::Error,
-                    &format!("Error loading plugins: {e}"),
-                );
+                app.log(NotificationLevel::Error, t!("errors.load_plugins", e = e));
                 PluginManager::default()
             }
         };
@@ -252,12 +247,14 @@ impl App {
 
                 let address_block = ratatui::widgets::Paragraph::new(address_view).block(
                     Block::default()
-                        .title("Address")
+                        .title(t!("app.address_view_title"))
                         .borders(Borders::LEFT | Borders::TOP),
                 );
 
-                let editor_title =
-                    format!("Hex Editor{}", if self.data.dirty() { " *" } else { "" });
+                let editor_title = t!(
+                    "app.hex_view_title",
+                    dirty = if self.data.dirty() { " *" } else { "" }
+                );
 
                 let hex_border_style: Style;
                 let pretty_border_style: Style;
@@ -293,7 +290,7 @@ impl App {
                             .extend(text_subview_lines.iter().cloned());
                         ratatui::widgets::Paragraph::new(text_subview).block(
                             Block::default()
-                                .title("Text View")
+                                .title(t!("app.text_view_title"))
                                 .borders(info_view_block_flags)
                                 .border_style(pretty_border_style),
                         )
@@ -327,7 +324,7 @@ impl App {
                             }));
                         ratatui::widgets::Paragraph::new(assembly_subview).block(
                             Block::default()
-                                .title("Assembly View")
+                                .title(t!("app.assembly_view_title"))
                                 .borders(info_view_block_flags)
                                 .border_style(pretty_border_style),
                         )
@@ -374,7 +371,7 @@ impl App {
             // Draw popup
             if self.popup.is_some() {
                 let mut popup_text = Text::default();
-                let mut popup_title = "Popup".into();
+                let mut popup_title = t!("app.default_popup_title").into();
 
                 let mut popup_width = 60;
                 let mut popup_height = 5;
@@ -404,8 +401,10 @@ impl App {
                         f.render_widget(popup, popup_rect);
                     }
                     Err(e) => {
-                        self.logger
-                            .log(NotificationLevel::Error, &format!("Filling popup: {e}"));
+                        self.logger.log(
+                            NotificationLevel::Error,
+                            t!("app.messages.popup_error", e = e),
+                        );
                     }
                 }
                 this_frame_info.popup = Some(popup_rect)
@@ -429,7 +428,7 @@ impl App {
                     let event = event::read()?;
                     let event_result = self.handle_event(event, terminal);
                     if let Err(e) = event_result {
-                        self.log(NotificationLevel::Error, &e.to_string());
+                        self.log(NotificationLevel::Error, e.to_string());
                     }
                 }
             }

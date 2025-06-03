@@ -179,8 +179,8 @@ impl App {
                     string.insert(*cursor, '\n');
                     *cursor += 1;
                 } else if let KeyCode::Char(c) = event.code {
-                    if (max_len.is_none() || string.len() < max_len.expect("Just checked"))
-                        && (charset.is_none() || charset.expect("Just checked").contains(c))
+                    if (max_len.is_none() || string.len() < max_len.unwrap())
+                        && (charset.is_none() || charset.unwrap().contains(c))
                     {
                         string.insert(*cursor, c);
                         *cursor += 1;

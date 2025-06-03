@@ -5,7 +5,7 @@ HexPatch is a binary patcher and editor with terminal user interface (TUI),
 it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
 Also, it can edit remote files via SSH."""
-version = "1.11.3"
+version = "1.12.0"
 authors = ["Ettore Ricci"]
 edition = "2021"
 readme = "docs/README.md"
@@ -15,6 +15,10 @@ repository = "https://github.com/Etto48/HexPatch"
 keywords = ["reverse-engineering","tui","hex-editor","binary-patching"]
 categories = ["command-line-utilities","development-tools"]
 build = "build.rs"
+
+[package.metadata.i18n]
+available-locales = ["en", "it-IT", "fr-FR", "es-ES", "de-DE", "ja-JP", "zh-CN", "zh-TW", "zh-HK"]
+default-locale = "en"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -42,6 +46,9 @@ symbolic-demangle = "12.15.5"
 tempfile = "3.20.0"
 tokio = "1.45.1"
 termbg = "0.6.2"
+rust-i18n = "3.1.5"
+sys-locale = "0.3.2"
+const-str = "0.6.2"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"

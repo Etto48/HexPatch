@@ -77,7 +77,7 @@ impl App {
         if instruction.instruction.ip() == header.entry_point() {
             line.spans.push(Span::raw(" "));
             line.spans.push(Span::styled(
-                "EntryPoint",
+                t!("app.entry_point"),
                 color_settings.assembly_entry_point,
             ));
         }
@@ -152,7 +152,7 @@ impl App {
         for section in sections {
             if section.file_offset > current_byte as u64 {
                 lines.push(AssemblyLine::SectionTag(SectionTag {
-                    name: "Unknown".to_string(),
+                    name: t!("app.unknown_section").to_string(),
                     file_address: current_byte as u64,
                     virtual_address: 0,
                     size: section.file_offset as usize - current_byte,
@@ -204,7 +204,7 @@ impl App {
         }
         if current_byte < bytes.len() {
             lines.push(AssemblyLine::SectionTag(SectionTag {
-                name: "Unknown".to_string(),
+                name: t!("app.unknown_section").to_string(),
                 file_address: current_byte as u64,
                 virtual_address: 0,
                 size: bytes.len() - current_byte,
@@ -230,13 +230,13 @@ impl App {
         let mut line_offsets = vec![0; section_size];
         let mut instructions = Vec::new();
         let mut current_byte = 0;
-        let decoder = header.get_decoder().expect("Failed to create decoder");
+        let decoder = header.get_decoder().expect(&t!("errors.create_decoder"));
         let decoded = decoder
             .disasm_all(
                 &bytes[starting_file_address..starting_file_address + section_size],
                 starting_ip as u64,
             )
-            .expect("Failed to disassemble");
+            .expect(&t!("errors.disassemble"));
         for instruction in decoded.iter() {
             let instruction_tag = InstructionTag {
                 instruction: Instruction::new(instruction, header.get_symbols()),
@@ -361,7 +361,10 @@ impl App {
             if !is_inside_text_section {
                 return;
             }
-            let decoder = self.header.get_decoder().expect("Failed to create decoder");
+            let decoder = self
+                .header
+                .get_decoder()
+                .expect(&t!("errors.create_decoder"));
             let mut offsets = Vec::new();
             let mut instructions = Vec::new();
             let mut to_byte = self.data.len();
@@ -378,7 +381,7 @@ impl App {
                 let bytes = &self.data.bytes()[current_byte..maximum_code_byte];
                 let decoded = decoder
                     .disasm_count(bytes, virtual_address + ip_offset, 1)
-                    .expect("Failed to disassemble");
+                    .expect(&t!("errors.disassemble"));
                 if decoded.is_empty() {
                     break;
                 }
@@ -436,10 +439,10 @@ impl App {
                 if let AssemblyLine::Instruction(instruction) = &self.assembly_instructions[i] {
                     self.log(
                         NotificationLevel::Debug,
-                        &format!(
-                            "Removing instruction \"{}\" at {:X}",
-                            instruction.instruction,
-                            self.assembly_instructions[i].file_address()
+                        t!(
+                            "app.messages.removing_instruction",
+                            instruction = instruction.instruction,
+                            address = self.assembly_instructions[i].file_address() : {:#X}
                         ),
                     );
                 } else {
@@ -450,10 +453,10 @@ impl App {
                 if let AssemblyLine::Instruction(instruction_tag) = instruction {
                     self.log(
                         NotificationLevel::Debug,
-                        &format!(
-                            "Adding instruction \"{}\" at {:X}",
-                            instruction_tag.instruction,
-                            instruction.file_address()
+                        t!(
+                            "app.messages.adding_instruction",
+                            instruction = instruction_tag.instruction,
+                            address = instruction.file_address() : {:#X}
                         ),
                     );
                 }

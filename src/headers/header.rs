@@ -224,7 +224,7 @@ impl Header {
                 .build(),
         };
         ret.map(|mut cs| {
-            cs.set_skipdata(true).expect("Failed to set skipdata");
+            cs.set_skipdata(true).expect(&t!("errors.set_skipdata"));
             cs
         })
     }

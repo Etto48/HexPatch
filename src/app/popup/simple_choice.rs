@@ -12,11 +12,11 @@ pub enum SimpleChoice {
 impl SimpleChoice {
     pub fn to_line(&self, color_settings: &ColorSettings) -> Line<'static> {
         let mut ret = Line::from(vec![
-            Span::styled("Yes", color_settings.yes),
+            Span::styled(t!("app.yes"), color_settings.yes),
             Span::raw("  "),
-            Span::styled("No", color_settings.no),
+            Span::styled(t!("app.no"), color_settings.no),
             Span::raw("  "),
-            Span::styled("Cancel", color_settings.menu_text),
+            Span::styled(t!("app.cancel"), color_settings.menu_text),
         ]);
 
         match self {

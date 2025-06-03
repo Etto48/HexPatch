@@ -182,7 +182,7 @@ impl KeySettings {
             "Modifier(RightMeta)" => Ok(KeyCode::Modifier(ModifierKeyCode::RightMeta)),
             "Modifier(IsoLevel3Shift)" => Ok(KeyCode::Modifier(ModifierKeyCode::IsoLevel3Shift)),
             "Modifier(IsoLevel5Shift)" => Ok(KeyCode::Modifier(ModifierKeyCode::IsoLevel5Shift)),
-            _ => Err(format!("Invalid KeyCode: {}", string)),
+            _ => Err(t!("errors.invalid_key_code", key_code = string).to_string()),
         }
     }
 
@@ -199,7 +199,7 @@ impl KeySettings {
             "Press" => Ok(KeyEventKind::Press),
             "Repeat" => Ok(KeyEventKind::Repeat),
             "Release" => Ok(KeyEventKind::Release),
-            _ => Err(format!("Invalid KeyEventKind: {}", string)),
+            _ => Err(t!("errors.invalid_key_event_kind", kind = string).to_string()),
         }
     }
 }

@@ -18,7 +18,7 @@ macro_rules! EditColorSettings {(
                             stringify!($field_name) => self.$field_name = value.clone(),
                         )*
                         key => {
-                            return Err(format!("Unknown field: {}", key));
+                            return Err(t!("errors.unknown_field", field = key).to_string());
                         }
                     }
                 }

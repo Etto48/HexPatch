@@ -61,14 +61,14 @@ impl Widget for Logo {
                 }
             }
         }
-        let string = "HexPatch";
+        let string = t!("hexpatch");
         if (area.width < string.len() as u16) || (area.height < self.matrix.len() as u16 + 2) {
             return;
         }
         buf.set_string(
             self.matrix[0].len() as u16 / 2 - string.len() as u16 / 2 + area.x,
             self.matrix.len() as u16 + 1 + area.y,
-            "HexPatch",
+            string,
             self.colors[3],
         )
     }

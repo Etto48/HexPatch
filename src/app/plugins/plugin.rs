@@ -184,9 +184,10 @@ impl Plugin {
 
     pub fn handle(&mut self, event: Event, app_context: &mut AppContext) {
         if let Err(e) = self.handle_with_error(event, app_context) {
-            app_context
-                .logger
-                .log(NotificationLevel::Error, &format!("In plugin: {}", e));
+            app_context.logger.log(
+                NotificationLevel::Error,
+                t!("app.messages.plugin_error", e = e),
+            );
         }
     }
 
@@ -242,9 +243,10 @@ impl Plugin {
             self.commands = app_context.take_exported_commands();
             match result {
                 Err(e) => {
-                    app_context
-                        .logger
-                        .log(NotificationLevel::Error, &format!("In plugin: {}", e));
+                    app_context.logger.log(
+                        NotificationLevel::Error,
+                        t!("app.messages.plugin_error", e = e),
+                    );
                 }
                 Ok(()) => {
                     if let Some(header) = header_context.try_into_custom_header() {

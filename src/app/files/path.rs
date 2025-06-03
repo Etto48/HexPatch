@@ -3,14 +3,14 @@ use regex::Regex;
 pub fn is_absolute(path: &str) -> bool {
     path.starts_with('/')
         || Regex::new(r"(^(\\\\\?\\)?[a-zA-Z]:)|(^\\\\\?\\[a-zA-Z]{1,})")
-            .expect("Invalid regex.")
+            .expect(&t!("errors.invalid_regex"))
             .is_match(path)
 }
 
 pub fn is_root(path: &str) -> bool {
     path == "/"
         || Regex::new(r"(^(\\\\\?\\)?[a-zA-Z]:\\?$)|(^\\\\\?\\[a-zA-Z]{1,}\\?$)")
-            .expect("Invalid regex.")
+            .expect(&t!("errors.invalid_regex"))
             .is_match(path)
 }
 
