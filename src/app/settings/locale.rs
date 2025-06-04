@@ -44,7 +44,7 @@ macro_rules! LocaleCode {(
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Locale {
     #[default]
-    auto,
+    auto, // "auto" has to be the first variant to make match_locale work correctly
     en,
     #[serde(rename = "it-IT")]
     it_IT,
@@ -84,13 +84,14 @@ impl Locale {
     }
     pub fn match_locale(&self, locale: &str) -> Option<Locale> {
         // Try to match exact locale first
-        for l in Locale::VALUES {
+        // Skip "auto" as it's not a valid locale code
+        for l in &Locale::VALUES[1..] {
             if locale.starts_with(l.code()) {
                 return Some(*l);
             }
         }
         // If no exact match, try to match by language code
-        for l in Locale::VALUES {
+        for l in &Locale::VALUES[1..] {
             if locale.starts_with(l.language()) {
                 return Some(*l);
             }
