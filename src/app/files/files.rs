@@ -140,7 +140,7 @@ impl App {
             );
             self.log(
                 NotificationLevel::Info,
-                t!("app.messages.entry_point", address = self.header.entry_point() : {:#X}),
+                t!("app.messages.entry_point", entry_point = self.header.entry_point() : {:#X}),
             );
             for section in self.header.get_sections() {
                 self.log(
