@@ -18,7 +18,7 @@ errors:
   parse_comments: "Yorumlar ayrıştırılamadı: %{e}"
   read_comments: "Yorumlar okunamadı: %{e}"
   no_symbols_found: "Sembol bulunamadı"
-  no_matching_symbols: "Arama desenine uyan sembol bulunamadı"
+  no_matching_symbols: "Aramaya uyan sembol bulunamadı"
   no_matching_comments: "Arama desenine uyan yorum bulunamadı"
   invalid_address: "Geçersiz adres: %{address}"
   invalid_virtual_address: "Geçersiz sanal adres: %{address}"
