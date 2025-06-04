@@ -158,7 +158,9 @@ You can find more information about the Plugin Lua API [here](./PLUGIN_API.md).
 
 ## Special thanks
 
-Thanks to [Lorenzo Colombini](https://github.com/Lorenzinco) for the instruction highlighting.
+Thanks to [@Lorenzinco](https://github.com/Lorenzinco) for the instruction highlighting.
+
+Thanks to all the [translators](./I18N.md) for their contributions to the internationalization of HexPatch.
 
 [Crate]: https://crates.io/crates/hex-patch
 [Crate Badge]: https://img.shields.io/crates/v/hex-patch?logo=rust&style=flat-square&logoColor=E05D44&color=E05D44
