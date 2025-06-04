@@ -36,7 +36,7 @@ errors:
   get_default_plugin_path: "No se pudo obtener la ruta predeterminada del plugin"
   load_color_settings: "Falló al cargar la configuración de color: %{e}"
   unknown_field: "Campo desconocido: %{field}"
-  invalid_key_code: "código clave inválido: %{key_code}"
+  invalid_key_code: "Código clave inválido: %{key_code}"
   invalid_key_event_kind: "Tipo de evento de clave inválido: %{kind}"
   home_not_found: "Directorio home no encontrado"
   ssh_dir_not_found: "Directorio SSH no encontrado"
