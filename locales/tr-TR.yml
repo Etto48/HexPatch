@@ -19,7 +19,7 @@ errors:
   read_comments: "Yorumlar okunamadı: %{e}"
   no_symbols_found: "Sembol bulunamadı"
   no_matching_symbols: "Aramaya uyan sembol bulunamadı"
-  no_matching_comments: "Arama desenine uyan yorum bulunamadı"
+  no_matching_comments: "Aramaya uyan yorum bulunamadı"
   invalid_address: "Geçersiz adres: %{address}"
   invalid_virtual_address: "Geçersiz sanal adres: %{address}"
   symbol_not_found: "Sembol bulunamadı: %{symbol}"
