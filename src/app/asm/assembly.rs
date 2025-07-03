@@ -69,7 +69,7 @@ impl App {
             if let Some(symbol) = symbol_table.get(&instruction.instruction.ip()) {
                 line.spans.push(Span::raw(" "));
                 line.spans.push(Span::styled(
-                    format!("<{}>", symbol),
+                    format!("<{symbol}>"),
                     color_settings.assembly_symbol,
                 ));
             }
@@ -88,7 +88,7 @@ impl App {
         if let Some(comment) = comment {
             line.spans.push(Span::raw(" "));
             line.spans.push(Span::styled(
-                format!("; {}", comment),
+                format!("; {comment}"),
                 color_settings.assembly_comment,
             ));
         }
@@ -125,7 +125,7 @@ impl App {
         if let Some(comment) = comment {
             line.spans.push(Span::raw(" "));
             line.spans.push(Span::styled(
-                format!("; {}", comment),
+                format!("; {comment}"),
                 color_settings.assembly_comment,
             ));
         }
@@ -523,12 +523,12 @@ mod test {
         let contains_virtual_address = line
             .spans
             .iter()
-            .any(|span| span.content.contains(&format!("{:X}", virtual_address)));
+            .any(|span| span.content.contains(&format!("{virtual_address:X}")));
         assert!(contains_virtual_address);
         let contains_file_address = line
             .spans
             .iter()
-            .any(|span| span.content.contains(&format!("{:X}", file_address)));
+            .any(|span| span.content.contains(&format!("{file_address:X}")));
         assert!(contains_file_address);
         let contains_comment = line
             .spans
@@ -563,17 +563,17 @@ mod test {
         let contains_virtual_address = line
             .spans
             .iter()
-            .any(|span| span.content.contains(&format!("{:X}", virtual_address)));
+            .any(|span| span.content.contains(&format!("{virtual_address:X}")));
         assert!(contains_virtual_address);
         let contains_file_address = line
             .spans
             .iter()
-            .any(|span| span.content.contains(&format!("{:X}", file_address)));
+            .any(|span| span.content.contains(&format!("{file_address:X}")));
         assert!(contains_file_address);
         let contains_size = line
             .spans
             .iter()
-            .any(|span| span.content.contains(&format!("{}B", section_size)));
+            .any(|span| span.content.contains(&format!("{section_size}B")));
         assert!(contains_size);
         let contains_comment = line
             .spans

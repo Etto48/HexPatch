@@ -200,8 +200,7 @@ impl PluginManager {
         }
         if !found {
             Err(mlua::Error::external(format!(
-                "Command \"{}\" not found",
-                command
+                "Command \"{command}\" not found"
             )))
         } else {
             Ok(())
@@ -269,7 +268,7 @@ mod test {
         );
 
         let messages: Vec<_> = app_context.logger.iter().collect();
-        assert_eq!(messages.len(), 5, "{:?}", messages);
+        assert_eq!(messages.len(), 5, "{messages:?}");
         assert_eq!(messages[0].message, "Plugin 1 Command 1 called");
         assert_eq!(messages[1].message, "Plugin 1 Command 2 called");
         assert_eq!(messages[2].message, "Plugin 2 Command 1 called");

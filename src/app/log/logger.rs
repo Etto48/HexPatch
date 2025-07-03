@@ -154,10 +154,7 @@ mod test {
     fn test_logger_with_limit() {
         let mut logger = Logger::new(5, Verbosity::Debug);
         for i in 0..10 {
-            logger.log(
-                NotificationLevel::Error,
-                format!("Test error message {}", i),
-            );
+            logger.log(NotificationLevel::Error, format!("Test error message {i}"));
         }
         assert_eq!(logger.len(), 5);
         assert_eq!(logger[0].message, "Test error message 5");

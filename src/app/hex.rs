@@ -159,7 +159,7 @@ impl App {
             let cursor_position = self.get_cursor_position();
 
             let old_byte = self.data.bytes()[cursor_position.global_byte_index];
-            let old_byte_str = format!("{:02X}", old_byte);
+            let old_byte_str = format!("{old_byte:02X}");
             let new_byte_str = if cursor_position.high_byte {
                 format!("{}{}", value, old_byte_str.chars().nth(1).unwrap())
             } else {

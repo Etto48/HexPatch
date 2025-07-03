@@ -173,8 +173,7 @@ impl<'app> AppContext<'app> {
                             Ok(())
                         } else {
                             Err(mlua::Error::external(format!(
-                                "Function '{}' not found but needed to export the command",
-                                command
+                                "Function '{command}' not found but needed to export the command"
                             )))
                         }
                     })
@@ -192,8 +191,7 @@ impl<'app> AppContext<'app> {
                             Ok(())
                         } else {
                             Err(mlua::Error::external(format!(
-                                "Command '{}' not found",
-                                command
+                                "Command '{command}' not found"
                             )))
                         }
                     })
@@ -217,8 +215,7 @@ impl<'app> AppContext<'app> {
                             Ok(())
                         } else {
                             Err(mlua::Error::external(format!(
-                                "Function '{}' not found but needed to export the header parser",
-                                callback
+                                "Function '{callback}' not found but needed to export the header parser"
                             )))
                         }
                     })
@@ -240,8 +237,7 @@ impl<'app> AppContext<'app> {
                             Ok(())
                         } else {
                             Err(mlua::Error::external(format!(
-                                "Header parser '{}' not found",
-                                callback
+                                "Header parser '{callback}' not found"
                             )))
                         }
                     })
@@ -259,8 +255,7 @@ impl<'app> AppContext<'app> {
                             Err(mlua::Error::external("Popup already open"))
                         } else if lua.globals().get::<Function>(callback.clone()).is_err() {
                             Err(mlua::Error::external(format!(
-                                "Function '{}' not found but needed to open the popup",
-                                callback
+                                "Function '{callback}' not found but needed to open the popup"
                             )))
                         } else {
                             **popup = Some(PopupState::Custom {

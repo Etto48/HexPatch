@@ -133,12 +133,12 @@ impl App {
                                 let style = color_settings.patch_old_instruction;
                                 preview_string
                                     .spans
-                                    .push(Span::styled(format!("{:02X} ", byte), style));
+                                    .push(Span::styled(format!("{byte:02X} "), style));
                             } else {
                                 let style = color_settings.patch_old_rest;
                                 preview_string
                                     .spans
-                                    .push(Span::styled(format!("{:02X} ", byte), style));
+                                    .push(Span::styled(format!("{byte:02X} "), style));
                             };
                         }
                     } else if preview.is_empty() {
@@ -151,7 +151,7 @@ impl App {
                             let style = Self::get_style_for_byte(color_settings, *byte);
                             preview_string
                                 .spans
-                                .push(Span::styled(format!("{:02X} ", byte), style));
+                                .push(Span::styled(format!("{byte:02X} "), style));
                         }
                     }
                 }
@@ -233,7 +233,7 @@ impl App {
     }
 
     fn get_line_number_string(line_number: usize, char_for_line_count: usize) -> String {
-        format!("{:width$}", line_number, width = char_for_line_count)
+        format!("{line_number:char_for_line_count$}")
     }
 
     fn get_multiline_from_string_and_cursor(
@@ -366,7 +366,7 @@ impl App {
 
                 popup_text.lines.extend(vec![
                     Line::styled(
-                        format!(" {}{}", prefix, currently_open_path_text),
+                        format!(" {prefix}{currently_open_path_text}"),
                         self.settings.color.path_dir,
                     )
                     .left_aligned(),
@@ -552,7 +552,7 @@ impl App {
                                 Line::from(vec![
                                     Span::styled(short_name, style_sym),
                                     Span::styled(" ".repeat(space_count), style_empty),
-                                    Span::styled(format!("{:16X}", address), style_addr),
+                                    Span::styled(format!("{address:16X}"), style_addr),
                                 ])
                                 .left_aligned()
                             };
@@ -859,7 +859,7 @@ impl App {
                             Line::from(vec![
                                 Span::styled(short_comment, style_comment),
                                 Span::styled(" ".repeat(space_count), style_empty),
-                                Span::styled(format!("{:16X}", address), style_addr),
+                                Span::styled(format!("{address:16X}"), style_addr),
                             ])
                             .left_aligned()
                         };
@@ -1014,7 +1014,7 @@ mod tests {
             .iter()
             .flat_map(|s| s.content.chars())
             .collect::<String>();
-        assert!(text.contains("Hello"), "text: {}", text);
+        assert!(text.contains("Hello"), "text: {text}");
 
         let line =
             App::get_line_from_string_and_cursor(&color_settings, s, 0, "Placeholder", 40, true);
@@ -1023,7 +1023,7 @@ mod tests {
             .iter()
             .flat_map(|s| s.content.chars())
             .collect::<String>();
-        assert!(text.contains("Hello, World!"), "text: {}", text);
+        assert!(text.contains("Hello, World!"), "text: {text}");
     }
 
     #[test]
@@ -1036,7 +1036,7 @@ mod tests {
             .iter()
             .flat_map(|l| l.spans.iter().flat_map(|s| s.content.chars()))
             .collect::<String>();
-        assert!(text.contains("Hello, World!"), "text: {}", text);
-        assert!(text.contains("This is a test"), "text: {}", text);
+        assert!(text.contains("Hello, World!"), "text: {text}");
+        assert!(text.contains("This is a test"), "text: {text}");
     }
 }

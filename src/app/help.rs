@@ -81,7 +81,7 @@ impl App {
             crossterm::event::KeyCode::Up => "↑".into(),
             crossterm::event::KeyCode::Down => "↓".into(),
             crossterm::event::KeyCode::F(n) => {
-                format!("F{}", n)
+                format!("F{n}")
             }
             crossterm::event::KeyCode::Char(c) => match c {
                 ' ' => t!("keys.space").into(),
@@ -106,7 +106,7 @@ impl App {
             crossterm::event::KeyCode::NumLock => t!("keys.num_lock").into(),
             crossterm::event::KeyCode::PrintScreen => t!("keys.print_screen").into(),
             crossterm::event::KeyCode::Pause => t!("keys.pause").into(),
-            c => format!("{:?}", c),
+            c => format!("{c:?}"),
         });
         result
     }

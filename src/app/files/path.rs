@@ -31,7 +31,7 @@ pub fn join(start: &str, end: &str, separator: char) -> String {
     } else if end == "." {
         start.to_string()
     } else {
-        format!("{}{}{}", start, separator, end)
+        format!("{start}{separator}{end}")
     }
 }
 

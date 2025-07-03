@@ -204,7 +204,7 @@ mod test {
     fn test_settings_load() {
         let settings = Settings::load(Some(Path::new("test/default_settings.json")), Theme::Dark);
         if let Err(e) = settings {
-            panic!("Could not load settings: {}", e);
+            panic!("Could not load settings: {e}");
         }
         assert_eq!(settings.unwrap(), Settings::default());
     }
@@ -216,7 +216,7 @@ mod test {
             Theme::Dark,
         );
         if let Err(e) = settings {
-            panic!("Could not load settings: {}", e);
+            panic!("Could not load settings: {e}");
         }
         assert_eq!(settings.unwrap(), Settings::default());
     }
@@ -225,7 +225,7 @@ mod test {
     fn test_settings_load_custom() {
         let settings = Settings::load(Some(Path::new("test/custom_settings.json")), Theme::Dark);
         if let Err(e) = settings {
-            panic!("Could not load settings: {}", e);
+            panic!("Could not load settings: {e}");
         }
         let mut expected = Settings::default();
         expected

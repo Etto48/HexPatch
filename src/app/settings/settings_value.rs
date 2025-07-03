@@ -66,10 +66,10 @@ impl From<KeyEvent> for SettingsValue {
 impl Display for SettingsValue {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            SettingsValue::Bool(value) => write!(f, "{}", value),
-            SettingsValue::Int(value) => write!(f, "{}", value),
-            SettingsValue::Float(value) => write!(f, "{}", value),
-            SettingsValue::String(value) => write!(f, "{}", value),
+            SettingsValue::Bool(value) => write!(f, "{value}"),
+            SettingsValue::Int(value) => write!(f, "{value}"),
+            SettingsValue::Float(value) => write!(f, "{value}"),
+            SettingsValue::String(value) => write!(f, "{value}"),
             SettingsValue::Style(value) => {
                 write!(
                     f,

@@ -70,7 +70,7 @@ impl KeySettings {
             KeyCode::BackTab => "BackTab".to_string(),
             KeyCode::Delete => "Delete".to_string(),
             KeyCode::Insert => "Insert".to_string(),
-            KeyCode::F(n) => format!("F{}", n),
+            KeyCode::F(n) => format!("F{n}"),
             KeyCode::Char(c) => c.to_string(),
             KeyCode::Null => "Null".to_string(),
             KeyCode::Esc => "Esc".to_string(),

@@ -623,7 +623,7 @@ mod test {
             Some(header) => header,
             None => {
                 let log = app_context.logger.iter().collect::<Vec<_>>();
-                panic!("Failed to parse header: {:?}", log);
+                panic!("Failed to parse header: {log:?}");
             }
         };
         assert_eq!(header.bitness, Bitness::Bit32);
@@ -651,7 +651,7 @@ mod test {
             Some(header) => header,
             None => {
                 let log = app_context.logger.iter().collect::<Vec<_>>();
-                panic!("Failed to parse header: {:?}", log);
+                panic!("Failed to parse header: {log:?}");
             }
         };
         assert_eq!(header.bitness, Bitness::Bit64);
