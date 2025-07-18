@@ -5,7 +5,7 @@ HexPatch is a binary patcher and editor with terminal user interface (TUI),
 it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
 Also, it can edit remote files via SSH."""
-version = "1.12.2"
+version = "1.12.3"
 authors = ["Ettore Ricci"]
 edition = "2021"
 readme = "docs/README.md"
@@ -28,12 +28,12 @@ winres = "0.1.12"
 [dependencies]
 bitflags = { version = "2.9.1", features = ["std"] }
 capstone = "0.13.0"
-clap = { version = "4.5.40", features = ["derive"] }
+clap = { version = "4.5.41", features = ["derive"] }
 crossterm = { version = "0.29.0", features = ["serde"] }
 dirs = "6.0.0"
 hexpatch-keystone = { version = "0.9.4", features = ["build_keystone_cmake"] }
 macro_rules_attribute = "0.2.2"
-mlua = { version = "0.10.5", features = ["lua54", "vendored", "serialize"] }
+mlua = { version = "0.11.1", features = ["lua54", "vendored", "serialize"] }
 object = "0.37.1"
 pdb = "0.8.0"
 ratatui = { version = "0.29.0", features = ["serde"] }
@@ -42,13 +42,13 @@ russh = { version = "0.53.0", default-features = false, features = ["ring"] }
 russh-sftp = "2.1.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.140"
-symbolic-demangle = "12.15.5"
+symbolic-demangle = "12.16.0"
 tempfile = "3.20.0"
-tokio = "1.46.0"
+tokio = "1.46.1"
 termbg = "0.6.2"
 rust-i18n = "3.1.5"
 sys-locale = "0.3.2"
-const-str = "0.6.2"
+const-str = "0.6.3"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"
