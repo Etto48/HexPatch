@@ -49,7 +49,7 @@ impl AssemblyLine {
         header: &Header,
         address_min_width: usize,
         comments: &Comments,
-    ) -> Line {
+    ) -> Line<'_> {
         match self {
             AssemblyLine::Instruction(instruction) => {
                 let selected = current_byte_index >= instruction.file_address as usize
