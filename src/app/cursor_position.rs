@@ -43,7 +43,7 @@ impl App {
             };
         }
         let local_x = cursor.0 as usize % (block_size * 3 + 1);
-        let high_byte = local_x % 3 == 0;
+        let high_byte = local_x.is_multiple_of(3);
         let local_byte_index = local_x / 3;
         let block_index = cursor.0 as usize / (block_size * 3 + 1)
             + (scroll + cursor.1 as usize) * blocks_per_row;

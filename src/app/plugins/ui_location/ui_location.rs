@@ -61,7 +61,7 @@ impl App {
                         .unwrap_or(current_byte as u64),
                 ),
                 Some(self.data.bytes()[current_byte]),
-                Some(block_offset % byte_size == 0),
+                Some(block_offset.is_multiple_of(byte_size)),
             )
         }
     }

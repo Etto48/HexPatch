@@ -82,6 +82,17 @@ Build and install
 cargo install --path .
 ```
 
+### Running with Docker
+
+You can run HexPatch with [Docker](https://www.docker.com/get-started).
+
+```bash
+docker build -t hexpatch .
+docker run -it -v <local file or directory>:<container file or directory> hexpatch
+```
+
+If you have problems building from source, this could be a good alternative.
+
 ## SSH connection
 
 In order to connect via SSH, you can use the following command:
