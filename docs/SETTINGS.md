@@ -42,7 +42,7 @@ You can also generate the same file by running `hexpatch --config <CONFIG_PATH>`
 
 ### Style
 
-Every setting in this categroy is a style object, a style object has the following fields:
+Every setting in this category is a style object, a style object has the following fields:
 | Field | Description |
 |-------|-------------|
 |fg|Foreground color, can be a string containing an RGB HEX color, a color name, a color index or can be `null` to be transparent.|
@@ -101,12 +101,12 @@ The following styles can be customized in the color settings:
 |patch_line_number|Line number in the patch popup.|
 |help_command|Key combination in the help popup.|
 |help_description|Command description in the help popup.|
-|yes|"Yes" in popups with choiches when not selected.|
-|yes_selected|"Yes" in popups with choiches when selected.|
-|no|"No" in popups with choiches when not selected.|
-|no_selected|"No" in popups with choiches when selected.|
-|menu_text|Generic text in a menu, is also used for "Cancel" in popups with choiches.|
-|menu_text_selected|Generic selected text in a menu, is also used for "Cancel" in popups with choiches when selected.|
+|yes|"Yes" in popups with choices when not selected.|
+|yes_selected|"Yes" in popups with choices when selected.|
+|no|"No" in popups with choices when not selected.|
+|no_selected|"No" in popups with choices when selected.|
+|menu_text|Generic text in a menu, is also used for "Cancel" in popups with choices.|
+|menu_text_selected|Generic selected text in a menu, is also used for "Cancel" in popups with choices when selected.|
 |insert_text_status|Status bar in the insert text popup.|
 |command_name|Command name in the run popup.|
 |command_description|Command description in the run popup.|
