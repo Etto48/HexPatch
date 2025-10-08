@@ -1268,6 +1268,7 @@ dependencies = [
  "bitflags 2.9.4",
  "cmake",
  "libc",
+ "pkg-config",
 ]
 
 [[package]]

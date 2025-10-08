@@ -96,3 +96,24 @@ jobs:
         run: cargo make test
         env:
           RUST_BACKTRACE: full
+
+  test-system-keystone:
+    runs-on: ubuntu-latest
+    # Use Arch Linux Docker for system Keystone testing, as Ubuntu doesn't have Keystone in the repositories
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install build dependencies and keystone
+        run: pacman -Syu --noconfirm base-devel git keystone
+      - name: Install Rust stable
+        run: pacman -S --noconfirm rust
+      - name: Install cargo-make
+        run: pacman -S --noconfirm cargo-make
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+      - name: Test
+        run: cargo make test-system-keystone
+        env:
+          RUST_BACKTRACE: full

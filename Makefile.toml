@@ -12,12 +12,12 @@ command = "typos"
 [tasks.clippy]
 description = "Run clippy"
 command = "cargo"
-args = ["clippy", "--all-targets", "--all-features"]
+args = ["clippy", "--all-targets"]
 
 [tasks.clippy-json]
 description = "Run clippy with JSON output"
 command = "cargo"
-args = ["clippy", "--all-targets", "--all-features", "--message-format=json"]
+args = ["clippy", "--all-targets", "--message-format=json"]
 
 [tasks.coverage]
 description = "Calculate test coverage"
@@ -27,12 +27,17 @@ alias = "tarpaulin"
 description = "Calculate test coverage using tarpaulin"
 install_crate = "cargo-tarpaulin"
 command = "cargo"
-args = ["tarpaulin", "--out", "Html", "--all-features", "--all-targets", "--output-dir", "coverage"]
+args = ["tarpaulin", "--out", "Html", "--all-targets", "--output-dir", "coverage"]
 
 [tasks.test]
 description = "Run all tests"
 command = "cargo"
 args = ["test"]
+
+[tasks.test-system-keystone]
+description = "Run all tests with system keystone"
+command = "cargo"
+args = ["test", "--features", "use_system_keystone"]
 
 [tasks.check]
 description = "Check for warnings and errors"
