@@ -178,10 +178,10 @@ impl App {
         Ok(app)
     }
 
-    pub fn draw<B: Backend>(
+    pub fn draw<'a, B: Backend + 'a>(
         &mut self,
         terminal: &mut ratatui::Terminal<B>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + 'a>> {
         terminal.draw(|f| {
             let screen_size = (f.area().width, f.area().height);
             self.resize_to_size(screen_size.0, screen_size.1);
@@ -415,10 +415,10 @@ impl App {
         Ok(())
     }
 
-    pub fn run<B: Backend>(
+    pub fn run<'a, B: Backend + 'a>(
         &mut self,
         terminal: &mut ratatui::Terminal<B>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), Box<dyn std::error::Error + 'a>> {
         self.screen_size = (terminal.size()?.width, terminal.size()?.height);
         self.resize_to_size(self.screen_size.0, self.screen_size.1);
 
