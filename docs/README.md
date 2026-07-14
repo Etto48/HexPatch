@@ -145,6 +145,7 @@ The following architectures are supported:
 - Riscv64
 - S390x
 - Sparc64
+- eBPF
 
 ## Settings
 
