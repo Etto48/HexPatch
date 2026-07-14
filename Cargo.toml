@@ -53,6 +53,7 @@ termbg = "0.6.2"
 rust-i18n = "4.0.0"
 sys-locale = "0.3.2"
 const-str = "1.1.0"
+rbpf = "0.4.1"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"
