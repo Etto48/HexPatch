@@ -227,7 +227,7 @@ keys:
   page_up: "Sayfa Yukarı"
   page_down: "Sayfa Aşağı"
   insert: "Ekle"
-  null: "Boş"
+  null_key: "Boş"
   caps_lock: "Büyük Harf Kilidi"
   scroll_lock: "Kaydırma Kilidi"
   num_lock: "Sayı Kilidi"

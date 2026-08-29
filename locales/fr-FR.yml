@@ -227,7 +227,7 @@ keys:
   page_up: "Page précédente"
   page_down: "Page suivante"
   insert: "Inser"
-  null: "Nul"
+  null_key: "Nul"
   caps_lock: "Verr. Maj"
   scroll_lock: "Arrêt défil"
   num_lock: "Verr. Num"

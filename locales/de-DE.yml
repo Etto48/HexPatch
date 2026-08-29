@@ -227,7 +227,7 @@ keys:
   page_up: "Bild ↑"
   page_down: "Bild ↓"
   insert: "Einfügen"
-  null: "Null"
+  null_key: "Null"
   caps_lock: "Feststelltaste"
   scroll_lock: "Scroll-Lock"
   num_lock: "Num-Lock"

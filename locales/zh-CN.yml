@@ -240,7 +240,7 @@ keys:
   page_up: "Page Up"
   page_down: "Page Down"
   insert: "Insert"
-  null: "Null"
+  null_key: "Null"
   caps_lock: "Caps Lock"
   scroll_lock: "Scroll Lock"
   num_lock: "Num Lock"

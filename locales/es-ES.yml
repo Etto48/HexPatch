@@ -227,7 +227,7 @@ keys:
   page_up: "Re Pág"
   page_down: "Av Pág"
   insert: "Insertar"
-  null: "Nulo"
+  null_key: "Nulo"
   caps_lock: "Bloq Mayús"
   scroll_lock: "Bloq Despl"
   num_lock: "Bloq Num"
