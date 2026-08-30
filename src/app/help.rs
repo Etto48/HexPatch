@@ -100,7 +100,7 @@ impl App {
             crossterm::event::KeyCode::PageDown => t!("keys.page_down").into(),
             crossterm::event::KeyCode::Insert => t!("keys.insert").into(),
             crossterm::event::KeyCode::Tab => t!("keys.tab").into(),
-            crossterm::event::KeyCode::Null => t!("keys.null").into(),
+            crossterm::event::KeyCode::Null => t!("keys.null_key").into(),
             crossterm::event::KeyCode::CapsLock => t!("keys.caps_lock").into(),
             crossterm::event::KeyCode::ScrollLock => t!("keys.scroll_lock").into(),
             crossterm::event::KeyCode::NumLock => t!("keys.num_lock").into(),
