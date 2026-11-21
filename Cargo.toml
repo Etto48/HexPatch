@@ -5,7 +5,7 @@ HexPatch is a binary patcher and editor with terminal user interface (TUI),
 it's capable of disassembling instructions and assembling patches.
 It supports a variety of architectures and file formats.
 Also, it can edit remote files via SSH."""
-version = "1.13.1"
+version = "1.13.2"
 authors = ["Ettore Ricci"]
 edition = "2021"
 readme = "docs/README.md"
@@ -30,30 +30,30 @@ use_system_keystone = ["hexpatch-keystone/use_system_keystone"]
 winres = "0.1.12"
 
 [dependencies]
-bitflags = { version = "2.13.1", features = ["std"] }
+bitflags = { version = "2.13.2", features = ["std"] }
 capstone = "0.14.0"
-clap = { version = "4.6.6", features = ["derive"] }
+clap = { version = "4.6.9", features = ["derive"] }
 crossterm = { version = "0.29.0", features = ["serde"] }
-dirs = "6.0.0"
+dirs = "7.0.0"
 hexpatch-keystone = "0.9.4"
 macro_rules_attribute = "0.2.3"
-mlua = { version = "0.12.1", features = ["lua54", "vendored", "serialize"] }
-object = "0.40.0"
+mlua = { version = "0.12.2", features = ["lua54", "vendored", "serialize"] }
+object = "0.41.0"
 pdb = "0.8.0"
 ratatui = { version = "0.30.2", features = ["serde"] }
-regex = "1.13.1"
-russh = { version = "0.63.1", default-features = false, features = ["ring"] }
-russh-sftp = "2.4.0"
+regex = "1.13.2"
+russh = { version = "0.65.2", default-features = false, features = ["ring"] }
+russh-sftp = "3.0.1"
 serde = { version = "1.0.226", features = ["derive"] }
-serde_json = "1.0.151"
+serde_json = "1.0.154"
 symbolic-demangle = "13.9.0"
 tempfile = "3.27.0"
-tokio = "1.53.1"
+tokio = "1.54.1"
 termbg = "0.6.2"
-rust-i18n = "4.2.1"
+rust-i18n = "4.2.4"
 sys-locale = "0.3.2"
 const-str = "1.1.0"
-rbpf = "0.4.1"
+rbpf = "0.4.3"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.3.9"

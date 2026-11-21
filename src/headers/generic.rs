@@ -119,7 +119,7 @@ impl GenericHeader {
                 let debug_data_dir_content = debug_data_directory.data(bytes, &section_table);
                 if let Ok(debug_data_dir_content) = debug_data_dir_content {
                     let mut pdb_file_path = None;
-                    for entry in debug_data_dir_content.chunks_exact(28) {
+                    for entry in debug_data_dir_content.as_chunks::<28>().0 {
                         let _characteristics =
                             u32::from_le_bytes([entry[0], entry[1], entry[2], entry[3]]);
                         let _time_date_stamp =

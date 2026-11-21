@@ -10,7 +10,7 @@ pub enum FileSystem {
     },
     Remote {
         path: String,
-        connection: Connection,
+        connection: Box<Connection>,
     },
 }
 
@@ -28,7 +28,7 @@ impl FileSystem {
         connection_str: &str,
         password: Option<&str>,
     ) -> Result<Self, Box<dyn Error>> {
-        let connection = Connection::new(connection_str, password)?;
+        let connection = Box::new(Connection::new(connection_str, password)?);
         Ok(Self::Remote {
             path: connection.canonicalize(path)?,
             connection,
